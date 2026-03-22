@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+:root {
+  --reader-bg: #faf8f5;
+  --reader-fg: #1f1b14;
+  --reader-accent: #f97316;
+  --surface: #f0ede8;
+  --surface-2: #e2ddd6;
+  --border: #e2ddd6;
+  --text-muted: #7a7368;
+}
+
+.theme-dark {
+  --reader-bg: #1a1814;
+  --reader-fg: #ede8e0;
+  --surface: #242018;
+  --surface-2: #2e2a22;
+  --border: #2e2a22;
+  --text-muted: #8c8478;
+}
+
+@keyframes rsvpEnter {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.rsvp-word-enter {
+  animation: rsvpEnter 80ms ease-out forwards;
+}
+
+.theme-sepia {
+  --reader-bg: #f4ecd8;
+  --reader-fg: #3b2f1e;
+  --surface: #ede0c4;
+  --surface-2: #d6c9a8;
+  --border: #d6c9a8;
+  --text-muted: #7a6048;
+}
+
+body {
+  background-color: var(--reader-bg);
+  color: var(--reader-fg);
+  transition: background-color 0.2s, color 0.2s;
+}

@@ -1,0 +1,64 @@
+import { useNavigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChevronLeft, faBars, faPen, faBolt, faBook, faGear } from '@fortawesome/free-solid-svg-icons'
+import { useReaderModeStore } from '../../hooks/useReaderMode'
+
+interface Props {
+  title: string
+  onToggleToc?: () => void
+  onToggleAnnotations?: () => void
+}
+
+export default function ReaderToolbar({ title, onToggleToc, onToggleAnnotations }: Props) {
+  const navigate = useNavigate()
+  const { mode, layout, toggleMode, toggleLayout } = useReaderModeStore()
+
+  return (
+    <div
+      className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b"
+      style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}
+    >
+      <button onClick={() => navigate('/library')} className="text-orange-500 p-1 -ml-1 w-8 flex items-center justify-center">
+        <FontAwesomeIcon icon={faChevronLeft} size="lg" />
+      </button>
+
+      <div className="flex flex-col items-center gap-0.5 flex-1 mx-2 min-w-0">
+        <h1 className="text-sm font-semibold truncate max-w-full leading-tight">{title}</h1>
+        {mode === 'ebook' && (
+          <button onClick={toggleLayout} className="text-xs leading-none" style={{ color: 'var(--text-muted)' }}>
+            {layout === 'scroll' ? '↕ Scroll' : '↔ Pages'}
+          </button>
+        )}
+      </div>
+
+      <div className="flex gap-1 items-center">
+        {onToggleToc && mode === 'ebook' && (
+          <button onClick={onToggleToc} className="p-1.5 w-8 flex items-center justify-center" title="Contents" style={{ color: 'var(--text-muted)' }}>
+            <FontAwesomeIcon icon={faBars} />
+          </button>
+        )}
+        {onToggleAnnotations && mode === 'ebook' && (
+          <button onClick={onToggleAnnotations} className="p-1.5 w-8 flex items-center justify-center" title="Annotations" style={{ color: 'var(--text-muted)' }}>
+            <FontAwesomeIcon icon={faPen} />
+          </button>
+        )}
+        <button
+          onClick={toggleMode}
+          className={`p-1.5 w-8 flex items-center justify-center rounded-lg transition-colors ${mode === 'speed' ? 'bg-orange-500 text-white' : ''}`}
+          style={mode !== 'speed' ? { color: 'var(--text-muted)' } : {}}
+          title={mode === 'ebook' ? 'Switch to Speed Reader' : 'Switch to Ebook Reader'}
+        >
+          <FontAwesomeIcon icon={mode === 'ebook' ? faBolt : faBook} />
+        </button>
+        <button
+          onClick={() => navigate('/settings')}
+          className="p-1.5 w-8 flex items-center justify-center rounded-lg transition-colors"
+          style={{ color: 'var(--text-muted)' }}
+          title="Settings"
+        >
+          <FontAwesomeIcon icon={faGear} />
+        </button>
+      </div>
+    </div>
+  )
+}
