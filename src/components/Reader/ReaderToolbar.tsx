@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronLeft, faBars, faBolt, faBook, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faBars, faBolt, faBook, faGear } from '@fortawesome/free-solid-svg-icons'
 import { useReaderModeStore } from '../../hooks/useReaderMode'
 
 interface Props {
@@ -18,8 +18,8 @@ export default function ReaderToolbar({ title, onTogglePanel }: Props) {
       style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
     >
       <div className="flex items-center gap-1 -ml-1">
-        <button onClick={() => navigate('/library')} className="p-1 w-8 flex items-center justify-center" style={{ color: 'var(--reader-accent)' }}>
-          <FontAwesomeIcon icon={faChevronLeft} size="lg" />
+        <button onClick={() => navigate('/library')} className="p-1 w-8 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+          <FontAwesomeIcon icon={faArrowLeft} />
         </button>
         {onTogglePanel && mode === 'ebook' && (
           <button onClick={onTogglePanel} className="p-1.5 w-8 flex items-center justify-center" title="Contents & Bookmarks" style={{ color: 'var(--text-muted)' }}>

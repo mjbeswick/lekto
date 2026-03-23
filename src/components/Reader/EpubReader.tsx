@@ -1,10 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import ePub from 'epubjs'
 
 interface Props {
   /** Decoded EPUB bytes — passed directly to epubjs, no base64 overhead */
   epubBuffer: ArrayBuffer
   initialCfi?: string
+  layout?: 'scroll' | 'pages'
   onProgressChange?: (cfi: string, percent: number) => void
   onTocReady?: (toc: TocItem[]) => void
 }
@@ -16,10 +17,29 @@ export interface TocItem {
   subitems?: TocItem[]
 }
 
-export default function EpubReader({ epubBuffer, initialCfi, onProgressChange, onTocReady }: Props) {
+export default function EpubReader({ epubBuffer, initialCfi, layout = 'pages', onProgressChange, onTocReady }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const bookRef = useRef<any>(null)
   const renditionRef = useRef<any>(null)
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
+  const [isSpread, setIsSpread] = useState(false)
+
+  // Measure the container so epubjs gets explicit pixel dimensions.
+  // This is required for spread mode to work correctly — percentage-based
+  // dimensions prevent epubjs from computing page widths.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      if (width > 0 && height > 0) {
+        setDimensions({ width: Math.floor(width), height: Math.floor(height) })
+        setIsSpread(width > height)
+      }
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!renditionRef.current) return
@@ -28,20 +48,27 @@ export default function EpubReader({ epubBuffer, initialCfi, onProgressChange, o
   }, [])
 
   useEffect(() => {
-    if (!containerRef.current || !epubBuffer?.byteLength) return
+    if (!containerRef.current || !epubBuffer?.byteLength || !dimensions) return
+
+    const { width, height } = dimensions
+    const isScroll = layout === 'scroll'
+    const spread = isScroll ? 'none' : (isSpread ? 'always' : 'none')
+    const flow = isScroll ? 'scrolled' : 'paginated'
+    const manager = isScroll ? 'continuous' : 'default'
 
     // Blob URL lets epubjs fetch spine items on demand without holding
     // the full ArrayBuffer on the JS heap for the lifetime of the reader.
-    const blob = new Blob([epubBuffer], { type: 'application/epub+zip' })
-    const blobUrl = URL.createObjectURL(blob)
-    const book = ePub(blobUrl)
+    // const blob = new Blob([epubBuffer], { type: 'application/epub+zip' })
+    // const blobUrl = URL.createObjectURL(blob)
+    const book = ePub(epubBuffer)
     bookRef.current = book
 
     const rendition = book.renderTo(containerRef.current, {
-      width: '100%',
-      height: '100%',
-      flow: 'paginated',
-      spread: 'none',
+      width,
+      height,
+      flow,
+      spread,
+      manager,
     })
     renditionRef.current = rendition
 
@@ -77,9 +104,20 @@ export default function EpubReader({ epubBuffer, initialCfi, onProgressChange, o
       window.removeEventListener('keydown', handleKeyDown)
       rendition.destroy()
       book.destroy()
-      URL.revokeObjectURL(blobUrl)
+      // URL.revokeObjectURL(blobUrl)
     }
-  }, [epubBuffer]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [epubBuffer, dimensions, isSpread, layout]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return <div ref={containerRef} className="w-full h-full" />
+  return (
+    <div className="relative w-full h-full">
+      <div ref={containerRef} className={`w-full h-full ${layout === 'scroll' ? 'overflow-y-auto' : ''}`} />
+      {/* Visual spine for spread mode */}
+      {layout !== 'scroll' && isSpread && (
+        <div 
+          className="absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-px pointer-events-none" 
+          style={{ backgroundColor: 'var(--border)' }}
+        />
+      )}
+    </div>
+  )
 }

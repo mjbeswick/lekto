@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronLeft, faChevronRight, faBolt } from '@fortawesome/free-solid-svg-icons'
+import { faAngleLeft, faAngleRight, faBolt } from '@fortawesome/free-solid-svg-icons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useAppStore } from '../../store/appStore'
@@ -8,7 +8,8 @@ import { getReadingPosition, setReadingPosition } from '../../utils/positionSync
 
 // Rough chars-per-page estimate based on font size and column count
 function charsPerPage(fontSize: number, columns = 1): number {
-  return Math.round(800 * (18 / fontSize) / columns)
+  const fs = Math.max(12, fontSize || 18)
+  return Math.round(800 * (18 / fs) / columns)
 }
 
 function splitIntoPages(text: string, fontSize: number, columns = 1): string[] {
@@ -55,7 +56,7 @@ function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark, maxWid
       className="flex-1 overflow-hidden px-8 py-6 flex flex-col"
       style={{ fontFamily: ff, fontSize, lineHeight }}
     >
-      <div className={`mx-auto w-full prose prose-lg prose-orange h-full overflow-hidden ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
+      <div className={`mx-auto w-full prose prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
       </div>
     </div>
@@ -74,10 +75,12 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
 
   // Detect container size changes
   useEffect(() => {
+    console.log('[PaginatedReader] Mounting with content length:', content.length, 'fontSize:', fontSize)
     const el = wrapperRef.current
     if (!el) return
     const ro = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect
+      console.log('[PaginatedReader] Resize:', width, height)
       setContainerWidth(width)
       setContainerHeight(height)
     })
@@ -90,6 +93,7 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
   const columns = isSpread ? 2 : 1
   const pages = splitIntoPages(content, fontSize, columns)
   const totalPages = pages.length
+
   // In spread mode pages advance by 2, aligned to even indices
   const step = isSpread ? 2 : 1
   const stepRef = useRef(step)
@@ -104,6 +108,24 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       return Math.max(0, Math.min(Math.floor(fraction * totalPages), totalPages - 1))
     }
     return initialPage
+  })
+  
+  console.log('[PaginatedReader] Render state:', { 
+    page, 
+    totalPages, 
+    isSpread, 
+    containerWidth, 
+    containerHeight,
+    pageContentLength: pages[page]?.length 
+  })
+  
+  console.log('[PaginatedReader] Render state:', { 
+    page, 
+    totalPages, 
+    isSpread, 
+    containerWidth, 
+    containerHeight,
+    pageContentLength: pages[page]?.length 
   })
 
   // Clamp & align page when content or spread mode changes
@@ -184,7 +206,7 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
           <>
             <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
             {/* Book spine */}
-            <div className="flex-shrink-0 w-px self-stretch my-4" style={{ backgroundColor: 'var(--border)' }} />
+            <div className="flex-shrink-0 w-px self-stretch my-8" style={{ backgroundColor: 'var(--border)' }} />
             <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
           </>
         ) : (
@@ -205,12 +227,12 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
         style={{ borderColor: 'var(--border)' }}>
         <button onClick={() => goTo(page - step)} disabled={page === 0}
           className="disabled:opacity-30 px-2 py-1" style={{ color: 'var(--text-muted)' }}>
-          <FontAwesomeIcon icon={faChevronLeft} />
+          <FontAwesomeIcon icon={faAngleLeft} />
         </button>
         <span className="text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>{spreadLabel}</span>
         <button onClick={() => goTo(page + step)} disabled={page >= totalPages - step}
           className="disabled:opacity-30 px-2 py-1" style={{ color: 'var(--text-muted)' }}>
-          <FontAwesomeIcon icon={faChevronRight} />
+          <FontAwesomeIcon icon={faAngleRight} />
         </button>
       </div>
 

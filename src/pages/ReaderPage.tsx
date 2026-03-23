@@ -169,6 +169,7 @@ export default function ReaderPage() {
                 initialCfi={initialCfi}
                 onProgressChange={handleEpubProgress}
                 onTocReady={setToc}
+                layout={layout}
               />
             )}
           </>

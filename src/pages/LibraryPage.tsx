@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faGear, faFolderOpen, faBookOpen, faFile, faTrash, faBook } from '@fortawesome/free-solid-svg-icons'
+import { faGear, faFolderOpen, faBookOpen, faFile, faTrash, faBook, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useLibraryStore } from '../store/libraryStore'
 import { FilePicker } from '@capawesome/capacitor-file-picker'
 import type { Book, BookFormat } from '../types'
@@ -130,9 +130,10 @@ export default function LibraryPage() {
         onChange={e => handleWebFile(e.target.files)} />
 
       {/* Header */}
-      <div className="flex items-center px-5 pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
+      <div className="flex items-center justify-between px-5 pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         <h1 className="text-2xl font-bold tracking-tight">Lekto</h1>
-        <div className="flex-1 flex justify-center gap-2">
+        
+        <div className="flex items-center gap-2">
           {!isWeb() && (
             <button onClick={() => navigate('/browse')}
               className="px-3 py-2 rounded-xl text-sm font-semibold transition-opacity active:opacity-50 flex items-center gap-1.5"
@@ -141,14 +142,25 @@ export default function LibraryPage() {
               Browse
             </button>
           )}
+
           <button onClick={handleOpen} disabled={importing}
-            className="bg-orange-500 text-white px-3 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-opacity active:opacity-70">
-            {importing ? '…' : '+ Open'}
+            className="p-2 w-10 h-10 flex items-center justify-center rounded-xl transition-colors active:opacity-50 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
+            style={{ color: 'var(--text-muted)' }}
+            title="Open file">
+            {importing ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <FontAwesomeIcon icon={faPlus} size="lg" />
+            )}
+          </button>
+          
+          <button onClick={() => navigate('/settings')} 
+            className="p-2 w-10 h-10 flex items-center justify-center rounded-xl transition-colors active:opacity-50 hover:bg-black/5 dark:hover:bg-white/10" 
+            style={{ color: 'var(--text-muted)' }} 
+            title="Settings">
+            <FontAwesomeIcon icon={faGear} size="lg" />
           </button>
         </div>
-        <button onClick={() => navigate('/settings')} className="p-1.5 rounded-xl transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }} title="Settings">
-          <FontAwesomeIcon icon={faGear} size="lg" />
-        </button>
       </div>
 
       {/* Book list */}
@@ -175,7 +187,9 @@ export default function LibraryPage() {
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto pb-8">
-          {books.map(book => {
+          {books
+            .sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
+            .map(book => {
             const pct = progressMap[book.id] ?? 0
             const color = titleColor(book.title)
             return (
@@ -197,8 +211,10 @@ export default function LibraryPage() {
                   </p>
                   <div className="flex items-center gap-2 mt-2">
                     {formatBadge(book.format)}
-                    {pct > 0 && (
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{Math.round(pct * 100)}%</span>
+                    {pct >= 0 && (
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {Math.floor(pct * 100)}% complete
+                      </span>
                     )}
                   </div>
                   {/* Progress bar */}

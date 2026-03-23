@@ -5,7 +5,6 @@ const RSVP_FONT = 'Inter, system-ui, -apple-system, sans-serif'
 interface Props {
   words: string[]
   fontSize?: number
-  showTicks?: boolean
 }
 
 /**
@@ -13,10 +12,9 @@ interface Props {
  * The ORP character is pinned at the horizontal center of the container;
  * pre-ORP text grows leftward, post-ORP text grows rightward.
  */
-function SingleWord({ word, fontSize, showTicks }: {
+function SingleWord({ word, fontSize }: {
   word: string
   fontSize: number
-  showTicks?: boolean
 }) {
   const orpIdx = getOrpIndex(word)
   const pre  = word.slice(0, orpIdx)
@@ -51,36 +49,6 @@ function SingleWord({ word, fontSize, showTicks }: {
         }}
       >
         {orp}
-        {showTicks && (
-          <>
-            <span
-              style={{
-                position: 'absolute',
-                top: '-1.2em',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'block',
-                width: 2,
-                height: '0.9em',
-                backgroundColor: 'var(--reader-accent)',
-                opacity: 0.5,
-              }}
-            />
-            <span
-              style={{
-                position: 'absolute',
-                bottom: '-1.2em',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'block',
-                width: 2,
-                height: '0.9em',
-                backgroundColor: 'var(--reader-accent)',
-                opacity: 0.5,
-              }}
-            />
-          </>
-        )}
       </span>
 
       {/* Post-ORP: left-aligned from the ORP char */}
@@ -91,12 +59,12 @@ function SingleWord({ word, fontSize, showTicks }: {
   )
 }
 
-export default function RsvpChunk({ words, fontSize = 52, showTicks = false }: Props) {
+export default function RsvpChunk({ words, fontSize = 52 }: Props) {
   if (words.length === 0) return null
 
   if (words.length === 1) {
     return (
-      <SingleWord word={words[0]} fontSize={fontSize} showTicks={showTicks} />
+      <SingleWord word={words[0]} fontSize={fontSize} />
     )
   }
 

@@ -27,11 +27,11 @@ Research-backed Rapid Serial Visual Presentation mode:
 | Feature | Detail |
 |---|---|
 | **ORP highlighting** | Optimal Recognition Point letter highlighted in orange on every displayed word |
-| **Alignment ticks** | Pixel-perfect top/bottom tick marks anchored to the ORP letter |
+| **Alignment ticks** | Top/bottom tick marks guiding the eye to the center line (single-word mode) |
 | **Punctuation pauses** | Clause-end pause ×1.5 · Sentence-end pause ×2.5 |
 | **Word-length scaling** | Longer words shown for proportionally more time (toggleable) |
 | **Letter-count chunking** | Slider (1–25 chars) groups multiple words per flash to match natural eye fixation width |
-| **Warm colour palette** | Slightly warm background reduces eye strain on long sessions |
+| **Clean background** | Pure white (#ffffff) light mode, #1a1814 dark mode |
 | **Context row** | Previous / next word shown dimly in single-word mode |
 
 **Controls**
@@ -169,5 +169,5 @@ The RSVP implementation draws on the following research findings:
 - **Punctuation pauses**: Studies show comprehension improves when clause boundaries (`,`, `;`, `:`) get a ×1.5 display duration and sentence boundaries (`.`, `!`, `?`) get ×2.5.
 - **Chunking**: Presenting 2–4 short words together at ~10–13 characters per flash better matches the natural perceptual span of ~13 characters. Controlled by the "Letters per flash" slider.
 - **Word-length scaling**: Longer words require more cognitive processing time. Scaling display duration with word length (×0.6–×2.0) maintains comprehension at higher WPM.
-- **Warm background**: Pure white (`#ffffff`) causes more glare-induced fatigue than a slightly warm off-white. Default background is `#faf8f5` (light) / `#1a1814` (dark).
+- **Background**: Research suggests warm backgrounds reduce glare, though many users prefer the high contrast of pure white. Lekto uses `#ffffff` (light) / `#1a1814` (dark).
 
