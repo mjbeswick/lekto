@@ -28,8 +28,8 @@ function htmlToText(html: string): string {
     .trim()
 }
 
-export async function parseEpubMeta(base64Data: string): Promise<EpubMeta> {
-  const zip = await JSZip.loadAsync(base64ToBytes(base64Data))
+export async function parseEpubMeta(data: ArrayBuffer | string): Promise<EpubMeta> {
+  const zip = await JSZip.loadAsync(typeof data === 'string' ? base64ToBytes(data) : data)
 
   const containerXml = await zip.file('META-INF/container.xml')?.async('string')
   if (!containerXml) return { title: 'Unknown', author: '' }

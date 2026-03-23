@@ -30,7 +30,11 @@ export default function EpubReader({ epubBuffer, initialCfi, onProgressChange, o
   useEffect(() => {
     if (!containerRef.current || !epubBuffer?.byteLength) return
 
-    const book = ePub(epubBuffer.slice(0))
+    // Blob URL lets epubjs fetch spine items on demand without holding
+    // the full ArrayBuffer on the JS heap for the lifetime of the reader.
+    const blob = new Blob([epubBuffer], { type: 'application/epub+zip' })
+    const blobUrl = URL.createObjectURL(blob)
+    const book = ePub(blobUrl)
     bookRef.current = book
 
     const rendition = book.renderTo(containerRef.current, {
@@ -73,6 +77,7 @@ export default function EpubReader({ epubBuffer, initialCfi, onProgressChange, o
       window.removeEventListener('keydown', handleKeyDown)
       rendition.destroy()
       book.destroy()
+      URL.revokeObjectURL(blobUrl)
     }
   }, [epubBuffer]) // eslint-disable-line react-hooks/exhaustive-deps
 

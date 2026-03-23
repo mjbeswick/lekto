@@ -8,7 +8,7 @@ import type { Book, BookFormat } from '../types'
 import { v4 as uuidv4 } from 'uuid'
 import { parseEpubMeta } from '../utils/epubParser'
 import { parseMdMeta } from '../utils/markdownMeta'
-import { isWeb, storeWebFile, webFilePath } from '../utils/fileStore'
+import { isWeb, storeWebFile, webFilePath, b64ToBuffer } from '../utils/fileStore'
 import { getProgress } from '../db/progress'
 
 const SUPPORTED = ['md', 'epub', 'txt']
@@ -44,24 +44,15 @@ function relativeDate(ts: number): string {
   return `${Math.floor(days / 30)}mo ago`
 }
 
-function base64ToUtf8(b64: string): string {
-  try {
-    const binary = atob(b64)
-    const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-    return new TextDecoder('utf-8').decode(bytes)
-  } catch { return b64 }
-}
-
-async function buildBook(id: string, name: string, ext: BookFormat, base64: string, filePath: string): Promise<Book> {
+async function buildBook(id: string, name: string, ext: BookFormat, data: ArrayBuffer, filePath: string): Promise<Book> {
   let title = name.replace(/\.[^.]+$/, '')
   let author = ''
   let coverUri: string | undefined
 
   if (ext === 'epub') {
-    try { const m = await parseEpubMeta(base64); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
+    try { const m = await parseEpubMeta(data); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
   } else {
-    try { const m = parseMdMeta(base64ToUtf8(base64)); title = m.title || title; author = m.author } catch {}
+    try { const m = parseMdMeta(new TextDecoder('utf-8').decode(data)); title = m.title || title; author = m.author } catch {}
   }
 
   return { id, title, author, filePath, format: ext, coverUri, addedAt: Date.now() }
@@ -94,15 +85,15 @@ export default function LibraryPage() {
       const ext = file.name.split('.').pop()?.toLowerCase() as BookFormat
       if (!SUPPORTED.includes(ext)) continue
       try {
-        const base64 = await new Promise<string>((resolve, reject) => {
+        const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
           const reader = new FileReader()
-          reader.onload = () => resolve((reader.result as string).split(',')[1] ?? '')
+          reader.onload = () => resolve(reader.result as ArrayBuffer)
           reader.onerror = reject
-          reader.readAsDataURL(file)
+          reader.readAsArrayBuffer(file)
         })
         const id = uuidv4()
-        await storeWebFile(id, base64)
-        const book = await buildBook(id, file.name, ext, base64, webFilePath(id))
+        await storeWebFile(id, buffer)
+        const book = await buildBook(id, file.name, ext, buffer, webFilePath(id))
         await addBook(book)
       } catch (e) { console.error('web file open error', e) }
     }
@@ -119,8 +110,9 @@ export default function LibraryPage() {
         if (!SUPPORTED.includes(ext)) continue
         const id = uuidv4()
         const filePath = file.path ?? webFilePath(id)
-        await storeWebFile(id, file.data)
-        const book = await buildBook(id, file.name, ext, file.data, filePath)
+        const buffer = b64ToBuffer(file.data)
+        await storeWebFile(id, buffer)
+        const book = await buildBook(id, file.name, ext, buffer, filePath)
         await addBook(book)
       }
     } catch (e) { console.error('native open error', e) }
