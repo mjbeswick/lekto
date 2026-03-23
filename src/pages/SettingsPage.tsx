@@ -149,7 +149,7 @@ export default function SettingsPage() {
           <input
             type="range" min={1} max={25} step={1} value={rsvpChunkLetters}
             onChange={e => setRsvpChunkLetters(Number(e.target.value))}
-            className="w-32" style={{ accentColor: 'var(--reader-accent)' }} />
+            className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </div>
       </section>
     </div>
