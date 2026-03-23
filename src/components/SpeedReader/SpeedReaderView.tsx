@@ -132,7 +132,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     >
       {/* Progress bar */}
       <div className="h-1 flex-shrink-0" style={{ backgroundColor: 'var(--surface-2)' }}>
-        <div className="h-1 bg-orange-500 transition-[width] duration-100" style={{ width: `${progress * 100}%` }} />
+        <div className="h-1 transition-[width] duration-100" style={{ width: `${progress * 100}%`, backgroundColor: 'var(--reader-accent)' }} />
       </div>
 
       {/* Stats strip */}
@@ -146,16 +146,13 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
         {extracting ? (
           <div className="flex flex-col items-center gap-3" style={{ color: 'var(--text-muted)' }}>
-            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--reader-accent)', borderTopColor: 'transparent' }} />
             <p className="text-sm">Extracting text…</p>
           </div>
         ) : (
           <>
-            <div className="relative w-full flex justify-center">
-              {/* key= causes remount → CSS animation re-triggers */}
-              <div key={index} className="rsvp-word-enter">
-                <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={52} showTicks={rsvpChunkLetters <= 1} />
-              </div>
+            <div className="relative w-full max-w-xl mx-auto flex justify-center">
+              <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={52} showTicks={rsvpChunkLetters <= 1} />
             </div>
 
             {/* Context row — only in single-word mode */}
@@ -196,7 +193,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       <div className="absolute bottom-4 right-4 flex items-baseline gap-1 tabular-nums">
         <span
           className="text-sm font-semibold font-mono transition-colors duration-200"
-          style={{ color: playing ? '#f97316' : 'var(--text-muted)' }}
+          style={{ color: playing ? 'var(--reader-accent)' : 'var(--text-muted)' }}
         >
           {wpm}
         </span>

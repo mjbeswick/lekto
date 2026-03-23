@@ -52,7 +52,7 @@ export default function PlayDragButton({ playing, wpm, onToggle, onPlay, onPause
         onPlay()
       }
       const wpmDelta = Math.round(deltaY / WPM_SENSITIVITY)
-      onWpmChange(Math.max(60, Math.min(2000, touchStartRef.current.wpm + wpmDelta)))
+      onWpmChange(Math.max(200, Math.min(2000, touchStartRef.current.wpm + wpmDelta)))
     }
   }, [onPlay, onWpmChange, clearHoldTimer])
 
@@ -105,9 +105,12 @@ export default function PlayDragButton({ playing, wpm, onToggle, onPlay, onPause
       onTouchCancel={handleTouchCancel}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
-      className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors select-none touch-none
-        ${playing ? 'bg-orange-500' : 'bg-gray-800 dark:bg-gray-700'}`}
-      style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
+      className="w-20 h-20 rounded-full flex items-center justify-center transition-colors select-none touch-none"
+      style={{
+        backgroundColor: playing ? 'var(--reader-accent)' : 'var(--surface)',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+      }}
       aria-label={playing ? 'Pause' : 'Play'}
     >
       <span className="text-white pointer-events-none">

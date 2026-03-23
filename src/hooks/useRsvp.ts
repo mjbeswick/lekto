@@ -81,12 +81,12 @@ export function useRsvp(text: string, initialWpm: number, wordLengthScaling = tr
     const chunkTokens = toks.slice(idx, idx + cs)
     const maxLen = Math.max(...chunkTokens.map(t => t.word.length))
     const lastToken = chunkTokens[chunkTokens.length - 1]
+    // Spec: duration = base * (1 + 0.015 * (len - 5)), clamped 0.8x–1.6x
     const lengthFactor = wordLengthScalingRef.current
-      ? Math.max(0.6, Math.min(2.0, maxLen / 5))
+      ? Math.max(0.8, Math.min(1.6, 1 + 0.015 * (maxLen - 5)))
       : 1
-    const pauseFactor = lastToken?.isSentenceEnd ? 2.5
-      : lastToken?.isClauseEnd ? 1.5
-      : 1
+    // Spec punctuation table: comma 1.3x, colon 1.5x, period 1.6x, paragraph 2.0x
+    const pauseFactor = lastToken?.delayMultiplier ?? 1
     const delay = (60000 / wpmRef.current) * cs * lengthFactor * pauseFactor
     timerRef.current = setTimeout(() => {
       const next = Math.min(indexRef.current + cs, toks.length - 1)
@@ -115,7 +115,7 @@ export function useRsvp(text: string, initialWpm: number, wordLengthScaling = tr
   }, [play, pause])
 
   const setWpm = useCallback((w: number) => {
-    const clamped = Math.max(60, Math.min(2000, w))
+    const clamped = Math.max(200, Math.min(2000, w))
     wpmRef.current = clamped
     setWpmState(clamped)
   }, [])
