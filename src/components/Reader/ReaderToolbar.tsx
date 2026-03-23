@@ -1,18 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronLeft, faBars, faBolt, faBook, faGear, faBookmark } from '@fortawesome/free-solid-svg-icons'
-import { faBookmark as faBookmarkOutline } from '@fortawesome/free-regular-svg-icons'
+import { faChevronLeft, faBars, faBolt, faBook, faGear } from '@fortawesome/free-solid-svg-icons'
 import { useReaderModeStore } from '../../hooks/useReaderMode'
 
 interface Props {
   title: string
-  onToggleToc?: () => void
-  onAddBookmark?: () => void
-  onToggleBookmarks?: () => void
-  isBookmarked?: boolean
+  onTogglePanel?: () => void
 }
 
-export default function ReaderToolbar({ title, onToggleToc, onAddBookmark, onToggleBookmarks, isBookmarked }: Props) {
+export default function ReaderToolbar({ title, onTogglePanel }: Props) {
   const navigate = useNavigate()
   const { mode, layout, toggleMode, toggleLayout } = useReaderModeStore()
 
@@ -25,8 +21,8 @@ export default function ReaderToolbar({ title, onToggleToc, onAddBookmark, onTog
         <button onClick={() => navigate('/library')} className="p-1 w-8 flex items-center justify-center" style={{ color: 'var(--reader-accent)' }}>
           <FontAwesomeIcon icon={faChevronLeft} size="lg" />
         </button>
-        {onToggleToc && mode === 'ebook' && (
-          <button onClick={onToggleToc} className="p-1.5 w-8 flex items-center justify-center" title="Contents" style={{ color: 'var(--text-muted)' }}>
+        {onTogglePanel && mode === 'ebook' && (
+          <button onClick={onTogglePanel} className="p-1.5 w-8 flex items-center justify-center" title="Contents & Bookmarks" style={{ color: 'var(--text-muted)' }}>
             <FontAwesomeIcon icon={faBars} />
           </button>
         )}
@@ -42,26 +38,6 @@ export default function ReaderToolbar({ title, onToggleToc, onAddBookmark, onTog
       </div>
 
       <div className="flex gap-1 items-center">
-        {onAddBookmark && mode === 'ebook' && (
-          <button
-            onClick={isBookmarked ? onToggleBookmarks : onAddBookmark}
-            className="p-1.5 w-8 flex items-center justify-center"
-            title={isBookmarked ? 'View bookmarks' : 'Add bookmark'}
-            style={{ color: isBookmarked ? 'var(--reader-accent)' : 'var(--text-muted)' }}
-          >
-            <FontAwesomeIcon icon={isBookmarked ? faBookmark : faBookmarkOutline} />
-          </button>
-        )}
-        {onToggleBookmarks && mode === 'ebook' && (
-          <button
-            onClick={onToggleBookmarks}
-            className="p-1.5 w-8 flex items-center justify-center"
-            title="Bookmarks"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <FontAwesomeIcon icon={faBookmark} />
-          </button>
-        )}
         <button
           onClick={toggleMode}
           className="p-1.5 w-8 flex items-center justify-center rounded-lg transition-colors"
