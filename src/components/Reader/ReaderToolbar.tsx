@@ -15,8 +15,8 @@ export default function ReaderToolbar({ title, onToggleToc, onToggleAnnotations 
 
   return (
     <div
-      className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b"
-      style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}
+      className="flex items-center justify-between px-4 pb-3 flex-shrink-0 border-b"
+      style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
     >
       <button onClick={() => navigate('/library')} className="text-orange-500 p-1 -ml-1 w-8 flex items-center justify-center">
         <FontAwesomeIcon icon={faChevronLeft} size="lg" />

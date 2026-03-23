@@ -21,7 +21,7 @@ export default function SettingsPage() {
     defaultWpm, setDefaultWpm, wordLengthScaling, setWordLengthScaling, rsvpChunkLetters, setRsvpChunkLetters } = useAppStore()
 
   return (
-    <div className="min-h-screen px-5 pt-safe-top pt-6 pb-8" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+    <div className="min-h-screen px-5 pb-8" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)', paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}>
       <div className="flex items-center gap-3 mb-8">
         <button onClick={() => navigate(-1)} className="text-orange-500 p-1"><FontAwesomeIcon icon={faChevronLeft} size="lg" /></button>
         <h1 className="text-2xl font-bold">Settings</h1>

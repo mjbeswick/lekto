@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { App as CapApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
+import { StatusBar, Style } from '@capacitor/status-bar'
 import LibraryPage from './pages/LibraryPage'
 import ReaderPage from './pages/ReaderPage'
 import SettingsPage from './pages/SettingsPage'
@@ -17,6 +19,13 @@ function AppInner() {
   const theme = useAppStore(s => s.theme)
   const { addBook } = useLibraryStore()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.setOverlaysWebView({ overlay: true })
+      StatusBar.setStyle({ style: Style.Default })
+    }
+  }, [])
 
   useEffect(() => {
     const listener = CapApp.addListener('appUrlOpen', async (event) => {
