@@ -151,8 +151,12 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
           </div>
         ) : (
           <>
-            <div className="relative w-full max-w-xl mx-auto flex justify-center">
+            <div className="relative w-full max-w-xl mx-auto flex flex-col items-center gap-3">
+              {/* Top guide line */}
+              <div className="w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
               <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={52} showTicks={rsvpChunkLetters <= 1} />
+              {/* Bottom guide line */}
+              <div className="w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
             </div>
 
             {/* Context row — only in single-word mode */}
