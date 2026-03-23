@@ -23,7 +23,7 @@ interface Props {
 export default function MarkdownReader({ content, initialOffset = 0, onProgressChange, onHighlight, onNote }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const restoredRef = useRef(false)
-  const { fontSize, fontFamily, lineHeight } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, maxWidth } = useAppStore()
   const [selection, setSelection] = useState<SelectionState | null>(null)
   const [noteText, setNoteText] = useState('')
   const [showNoteInput, setShowNoteInput] = useState(false)
@@ -90,7 +90,7 @@ export default function MarkdownReader({ content, initialOffset = 0, onProgressC
   return (
     <>
       <div ref={containerRef} className="h-full overflow-y-auto" style={{ fontFamily: ff, fontSize, lineHeight }}>
-        <div className="max-w-2xl mx-auto px-6 py-8 prose prose-lg prose-orange dark:prose-invert max-w-none">
+        <div className={`mx-auto px-6 py-8 prose prose-lg prose-orange dark:prose-invert ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
         </div>
       </div>

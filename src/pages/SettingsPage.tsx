@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const {
     theme, setTheme, accentColor, setAccentColor,
     fontSize, setFontSize, fontFamily, setFontFamily, lineHeight, setLineHeight,
+    maxWidth, setMaxWidth,
     defaultWpm, setDefaultWpm, wordLengthScaling, setWordLengthScaling,
     rsvpChunkLetters, setRsvpChunkLetters,
   } = useAppStore()
@@ -110,6 +111,24 @@ export default function SettingsPage() {
           <input type="range" min={1.2} max={2.4} step={0.1} value={lineHeight} onChange={e => setLineHeight(Number(e.target.value))}
             className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </label>
+        <div className="flex items-center justify-between mt-4">
+          <div>
+            <p className="text-sm">Limit line width</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Constrain text to a readable column width</p>
+          </div>
+          <button
+            onClick={() => setMaxWidth(!maxWidth)}
+            className="relative flex-shrink-0 w-12 h-7 rounded-full transition-colors duration-200"
+            style={{ backgroundColor: maxWidth ? 'var(--reader-accent)' : 'var(--surface-2)' }}
+            role="switch"
+            aria-checked={maxWidth}
+          >
+            <span
+              className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200"
+              style={{ left: 4, transform: maxWidth ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
+        </div>
       </section>
 
       <section>

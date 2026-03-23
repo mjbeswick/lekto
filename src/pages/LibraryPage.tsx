@@ -138,12 +138,9 @@ export default function LibraryPage() {
         onChange={e => handleWebFile(e.target.files)} />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
+      <div className="flex items-center px-5 pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         <h1 className="text-2xl font-bold tracking-tight">Lekto</h1>
-        <div className="flex gap-2 items-center">
-          <button onClick={() => navigate('/settings')} className="p-1.5 rounded-xl transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }} title="Settings">
-            <FontAwesomeIcon icon={faGear} size="lg" />
-          </button>
+        <div className="flex-1 flex justify-center gap-2">
           {!isWeb() && (
             <button onClick={() => navigate('/browse')}
               className="px-3 py-2 rounded-xl text-sm font-semibold transition-opacity active:opacity-50 flex items-center gap-1.5"
@@ -157,6 +154,9 @@ export default function LibraryPage() {
             {importing ? '…' : '+ Open'}
           </button>
         </div>
+        <button onClick={() => navigate('/settings')} className="p-1.5 rounded-xl transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }} title="Settings">
+          <FontAwesomeIcon icon={faGear} size="lg" />
+        </button>
       </div>
 
       {/* Book list */}

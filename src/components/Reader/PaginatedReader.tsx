@@ -6,15 +6,13 @@ import remarkGfm from 'remark-gfm'
 import { useAppStore } from '../../store/appStore'
 import { getReadingPosition, setReadingPosition } from '../../utils/positionSync'
 
-const SPREAD_BREAKPOINT = 720  // px — show two pages side-by-side above this width
-
-// Rough chars-per-page estimate based on font size
-function charsPerPage(fontSize: number): number {
-  return Math.round(800 * (18 / fontSize))
+// Rough chars-per-page estimate based on font size and column count
+function charsPerPage(fontSize: number, columns = 1): number {
+  return Math.round(800 * (18 / fontSize) / columns)
 }
 
-function splitIntoPages(text: string, fontSize: number): string[] {
-  const cpp = charsPerPage(fontSize)
+function splitIntoPages(text: string, fontSize: number, columns = 1): string[] {
+  const cpp = charsPerPage(fontSize, columns)
   const pages: string[] = []
   let remaining = text
 
@@ -65,25 +63,32 @@ function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark }: {
 
 export default function PaginatedReader({ content, initialPage = 0, onProgressChange, onWordTap }: Props) {
   const { fontSize, fontFamily, lineHeight, theme } = useAppStore()
-  const pages = splitIntoPages(content, fontSize)
-  const totalPages = pages.length
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number | null>(null)
   const [containerWidth, setContainerWidth] = useState(() => window.innerWidth)
+  const [containerHeight, setContainerHeight] = useState(() => window.innerHeight)
   const [tapHint, setTapHint] = useState(false)
 
-  // Detect container width changes
+  // Detect container size changes
   useEffect(() => {
     const el = wrapperRef.current
     if (!el) return
-    const ro = new ResizeObserver(entries => setContainerWidth(entries[0].contentRect.width))
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      setContainerWidth(width)
+      setContainerHeight(height)
+    })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
 
-  const isSpread = containerWidth >= SPREAD_BREAKPOINT
+  // Wide aspect ratio → spread (two-page) mode
+  const isSpread = containerWidth > containerHeight
+  const columns = isSpread ? 2 : 1
+  const pages = splitIntoPages(content, fontSize, columns)
+  const totalPages = pages.length
   // In spread mode pages advance by 2, aligned to even indices
   const step = isSpread ? 2 : 1
   const stepRef = useRef(step)

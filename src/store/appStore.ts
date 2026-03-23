@@ -8,6 +8,7 @@ interface AppState {
   fontSize: number
   fontFamily: string
   lineHeight: number
+  maxWidth: boolean
   defaultWpm: number
   wordLengthScaling: boolean
   rsvpChunkLetters: number
@@ -16,6 +17,7 @@ interface AppState {
   setFontSize: (n: number) => void
   setFontFamily: (f: string) => void
   setLineHeight: (n: number) => void
+  setMaxWidth: (v: boolean) => void
   setDefaultWpm: (n: number) => void
   setWordLengthScaling: (v: boolean) => void
   setRsvpChunkLetters: (n: number) => void
@@ -29,6 +31,7 @@ export const useAppStore = create<AppState>()(
       fontSize: 18,
       fontFamily: 'serif',
       lineHeight: 1.7,
+      maxWidth: true,
       defaultWpm: 300,
       wordLengthScaling: true,
       rsvpChunkLetters: 1,
@@ -37,6 +40,7 @@ export const useAppStore = create<AppState>()(
       setFontSize: (fontSize) => set({ fontSize }),
       setFontFamily: (fontFamily) => set({ fontFamily }),
       setLineHeight: (lineHeight) => set({ lineHeight }),
+      setMaxWidth: (maxWidth) => set({ maxWidth }),
       setDefaultWpm: (defaultWpm) => set({ defaultWpm }),
       setWordLengthScaling: (wordLengthScaling) => set({ wordLengthScaling }),
       setRsvpChunkLetters: (rsvpChunkLetters) => set({ rsvpChunkLetters }),
