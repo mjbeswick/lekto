@@ -138,7 +138,7 @@ export default function LibraryPage() {
         onChange={e => handleWebFile(e.target.files)} />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-10 pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)' }}>
+      <div className="flex items-center justify-between px-5 pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         <h1 className="text-2xl font-bold tracking-tight">Lekto</h1>
         <div className="flex gap-2 items-center">
           <button onClick={() => navigate('/settings')} className="p-1.5 rounded-xl transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }} title="Settings">

@@ -142,7 +142,7 @@ export default function FileBrowserPage() {
   return (
     <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 pt-10 pb-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+      <div className="flex items-center gap-3 px-5 pb-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         <button onClick={() => navigate('/library')} className="text-orange-500 p-1"><FontAwesomeIcon icon={faChevronLeft} size="lg" /></button>
         <h1 className="text-lg font-bold">Browse Files</h1>
       </div>
