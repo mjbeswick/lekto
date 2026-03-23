@@ -62,8 +62,8 @@ export async function parseEpubMeta(base64Data: string): Promise<EpubMeta> {
 }
 
 /** Extract all readable text from an EPUB in spine order. */
-export async function extractEpubText(base64Data: string): Promise<string> {
-  const zip = await JSZip.loadAsync(base64ToBytes(base64Data))
+export async function extractEpubText(data: ArrayBuffer | string): Promise<string> {
+  const zip = await JSZip.loadAsync(typeof data === 'string' ? base64ToBytes(data) : data)
 
   const containerXml = await zip.file('META-INF/container.xml')?.async('string')
   if (!containerXml) throw new Error('No META-INF/container.xml')

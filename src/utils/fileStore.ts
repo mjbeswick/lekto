@@ -34,15 +34,22 @@ export async function readFileContent(filePath: string): Promise<string> {
   return new TextDecoder().decode(raw as unknown as ArrayBuffer)
 }
 
-/** Read a file as base64 (needed for EPUB which epubjs consumes as base64). */
-export async function readFileBase64(filePath: string): Promise<string> {
+/** Read a file as an ArrayBuffer (decoded once from base64 storage). */
+export async function readFileAsArrayBuffer(filePath: string): Promise<ArrayBuffer> {
+  const b64ToBuffer = (b64: string): ArrayBuffer => {
+    const binary = atob(b64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return bytes.buffer
+  }
   if (isWeb()) {
     const key = filePath.startsWith('web:') ? filePath.slice(4) : filePath
     const { value } = await Preferences.get({ key: `lekto.file.${key}` })
-    return value ?? ''
+    return value ? b64ToBuffer(value) : new ArrayBuffer(0)
   }
   const result = await Filesystem.readFile({ path: filePath })
-  return typeof result.data === 'string' ? result.data : ''
+  if (typeof result.data === 'string') return b64ToBuffer(result.data)
+  return result.data as unknown as ArrayBuffer
 }
 
 /** Persist web file content (base64). Called at import time on web. */

@@ -12,14 +12,15 @@ import SpeedReaderView from '../components/SpeedReader/SpeedReaderView'
 import { stripMarkdown } from '../utils/textTokenizer'
 import { useBookmarks } from '../hooks/useBookmarks'
 import { useReaderModeStore } from '../hooks/useReaderMode'
-import { readFileContent, readFileBase64 } from '../utils/fileStore'
+import { readFileContent, readFileAsArrayBuffer } from '../utils/fileStore'
 import { extractEpubText } from '../utils/epubParser'
 
 export default function ReaderPage() {
   const { bookId } = useParams<{ bookId: string }>()
   const [book, setBook] = useState<Book | null>(null)
   const [mdContent, setMdContent] = useState('')
-  const [epubBase64, setEpubBase64] = useState('')
+  const [epubBuffer, setEpubBuffer] = useState<ArrayBuffer | null>(null)
+  const epubExtractedRef = useRef(false)
   const [plainText, setPlainText] = useState('')
   const [extracting, setExtracting] = useState(false)
   const [initialOffset, setInitialOffset] = useState(0)
@@ -46,14 +47,9 @@ export default function ReaderPage() {
       const saved = await getProgress(bookId)
 
       if (b.format === 'epub') {
-        const base64 = await readFileBase64(b.filePath)
-        setEpubBase64(base64)
+        const buffer = await readFileAsArrayBuffer(b.filePath)
+        setEpubBuffer(buffer)
         if (saved) setInitialCfi(saved.position)
-        setExtracting(true)
-        extractEpubText(base64)
-          .then(text => setPlainText(text))
-          .catch(err => console.error('[Lekto] EPUB text extraction failed:', err))
-          .finally(() => setExtracting(false))
       } else {
         const text = await readFileContent(b.filePath)
         setMdContent(text)
@@ -68,6 +64,17 @@ export default function ReaderPage() {
       }
     })()
   }, [bookId])
+
+  // Lazy EPUB text extraction — only triggered when speed reader is first activated
+  useEffect(() => {
+    if (mode !== 'speed' || !epubBuffer || epubExtractedRef.current) return
+    epubExtractedRef.current = true
+    setExtracting(true)
+    extractEpubText(epubBuffer)
+      .then(text => setPlainText(text))
+      .catch(err => console.error('[Lekto] EPUB text extraction failed:', err))
+      .finally(() => setExtracting(false))
+  }, [mode, epubBuffer])
 
   const handleScrollProgress = useCallback(async (offset: number, percent: number) => {
     if (!bookId) return
@@ -156,9 +163,9 @@ export default function ReaderPage() {
                 onWordTap={toggleMode}
               />
             )}
-            {book.format === 'epub' && epubBase64 && (
+            {book.format === 'epub' && epubBuffer && (
               <EpubReader
-                base64Data={epubBase64}
+                epubBuffer={epubBuffer}
                 initialCfi={initialCfi}
                 onProgressChange={handleEpubProgress}
                 onTocReady={setToc}

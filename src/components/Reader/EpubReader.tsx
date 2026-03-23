@@ -2,8 +2,8 @@ import { useEffect, useRef, useCallback } from 'react'
 import ePub from 'epubjs'
 
 interface Props {
-  /** base64-encoded epub data */
-  base64Data: string
+  /** Decoded EPUB bytes — passed directly to epubjs, no base64 overhead */
+  epubBuffer: ArrayBuffer
   initialCfi?: string
   onProgressChange?: (cfi: string, percent: number) => void
   onTocReady?: (toc: TocItem[]) => void
@@ -16,7 +16,7 @@ export interface TocItem {
   subitems?: TocItem[]
 }
 
-export default function EpubReader({ base64Data, initialCfi, onProgressChange, onTocReady }: Props) {
+export default function EpubReader({ epubBuffer, initialCfi, onProgressChange, onTocReady }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const bookRef = useRef<any>(null)
   const renditionRef = useRef<any>(null)
@@ -28,13 +28,9 @@ export default function EpubReader({ base64Data, initialCfi, onProgressChange, o
   }, [])
 
   useEffect(() => {
-    if (!containerRef.current || !base64Data) return
+    if (!containerRef.current || !epubBuffer?.byteLength) return
 
-    const binary = atob(base64Data)
-    const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-
-    const book = ePub(bytes.buffer)
+    const book = ePub(epubBuffer.slice(0))
     bookRef.current = book
 
     const rendition = book.renderTo(containerRef.current, {
@@ -78,7 +74,7 @@ export default function EpubReader({ base64Data, initialCfi, onProgressChange, o
       rendition.destroy()
       book.destroy()
     }
-  }, [base64Data]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [epubBuffer]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={containerRef} className="w-full h-full" />
 }
