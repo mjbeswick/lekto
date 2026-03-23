@@ -1,23 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBackwardStep, faForwardStep, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faBackwardStep, faForwardStep } from '@fortawesome/free-solid-svg-icons'
 import { useAppStore } from '../../store/appStore'
 import { useRsvp } from '../../hooks/useRsvp'
 import RsvpChunk from './RsvpChunk'
 import PlayDragButton from './PlayDragButton'
 import { getReadingPosition, setReadingPosition } from '../../utils/positionSync'
 
-const WPM_PRESETS: { wpm: number; label: string }[] = [
-  { wpm: 100,  label: 'Very Slow'    },
-  { wpm: 150,  label: 'Slow'         },
-  { wpm: 200,  label: 'Comfortable'  },
-  { wpm: 300,  label: 'Normal'       },
-  { wpm: 400,  label: 'Brisk'        },
-  { wpm: 500,  label: 'Fast'         },
-  { wpm: 700,  label: 'Speed Reader' },
-  { wpm: 900,  label: 'Very Fast'    },
-  { wpm: 1200, label: 'Expert'       },
-]
 
 interface Props {
   text: string
@@ -44,7 +33,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const wpmRef = useRef(wpm)
   wpmRef.current = wpm
   const containerRef = useRef<HTMLDivElement>(null)
-  const [showPresets, setShowPresets] = useState(false)
+
 
   // Keep shared position in sync so returning to ebook lands on the right page
   const tokensLenRef = useRef(0)
@@ -138,7 +127,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col h-full select-none"
+      className="relative flex flex-col h-full select-none"
       style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}
     >
       {/* Progress bar */}
@@ -182,68 +171,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       </div>
 
       {/* Controls */}
-      <div className="flex-shrink-0 pb-10 pt-3 flex flex-col items-center gap-5 px-8">
-        {/* Hint — always rendered to prevent layout shift, hidden while playing */}
-        <div className={`flex items-center gap-3 transition-opacity duration-200 ${playing ? 'invisible' : ''}`}>
-          <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-            Space · ←→ sentence · ↑↓ speed · scroll
-          </p>
-        </div>
-
-        {/* WPM picker */}
-        <div className="relative">
-          <button
-            onClick={() => setShowPresets(v => !v)}
-            className="flex items-baseline gap-1.5 group"
-            aria-label="Change WPM"
-          >
-            <span
-              className="text-4xl font-bold font-mono tabular-nums transition-colors duration-200"
-              style={{ color: playing ? '#f97316' : 'var(--reader-fg)' }}
-            >
-              {wpm}
-            </span>
-            <span className="text-sm flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-              WPM
-              <FontAwesomeIcon
-                icon={faChevronDown}
-                className={`transition-transform duration-200 ${showPresets ? 'rotate-180' : ''}`}
-                size="xs"
-              />
-            </span>
-          </button>
-
-          {showPresets && (
-            <>
-              {/* Backdrop */}
-              <div className="fixed inset-0 z-10" onClick={() => setShowPresets(false)} />
-              {/* Preset list */}
-              <div
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 rounded-2xl shadow-xl overflow-hidden z-20 w-48"
-                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-              >
-                {WPM_PRESETS.map(({ wpm: p, label }) => {
-                  const active = wpm === p
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => { setWpm(p); setShowPresets(false) }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors"
-                      style={{
-                        backgroundColor: active ? '#f9731620' : undefined,
-                        color: active ? '#f97316' : 'var(--reader-fg)',
-                      }}
-                    >
-                      <span className="font-semibold font-mono tabular-nums">{p}</span>
-                      <span className="opacity-60 text-xs">{label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </>
-          )}
-        </div>
-
+      <div className="flex-shrink-0 pb-8 pt-3 flex flex-col items-center gap-5 px-8">
         {/* Controls row */}
         <div className="flex items-center gap-10">
           <button
@@ -261,6 +189,36 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
             style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
             aria-label="Next sentence"
           ><FontAwesomeIcon icon={faForwardStep} size="lg" /></button>
+        </div>
+      </div>
+
+      {/* WPM — bottom right */}
+      <div className="absolute bottom-4 right-4 flex items-baseline gap-1 tabular-nums">
+        <span
+          className="text-sm font-semibold font-mono transition-colors duration-200"
+          style={{ color: playing ? '#f97316' : 'var(--text-muted)' }}
+        >
+          {wpm}
+        </span>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>WPM</span>
+      </div>
+
+      {/* Help icon — bottom left */}
+      <div className={`absolute bottom-4 left-4 transition-opacity duration-200 ${playing ? 'invisible' : ''}`}>
+        <div className="relative group">
+          <button
+            className="flex items-center justify-center w-5 h-5 rounded-full text-xs leading-none"
+            style={{ color: 'var(--text-muted)', border: '1px solid var(--text-muted)' }}
+            aria-label="Keyboard shortcuts"
+          >
+            ?
+          </button>
+          <div
+            className="absolute bottom-full left-0 mb-2 px-2.5 py-1.5 rounded text-xs whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+            style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+          >
+            Space · ←→ sentence · ↑↓ speed · scroll
+          </div>
         </div>
       </div>
     </div>

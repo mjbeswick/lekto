@@ -7,14 +7,15 @@ import MarkdownReader from '../components/Reader/MarkdownReader'
 import PaginatedReader from '../components/Reader/PaginatedReader'
 import EpubReader, { type TocItem } from '../components/Reader/EpubReader'
 import TocDrawer from '../components/Reader/TocDrawer'
-import AnnotationsPanel from '../components/Reader/AnnotationsPanel'
+import BookmarksPanel from '../components/Reader/BookmarksPanel'
 import ReaderToolbar from '../components/Reader/ReaderToolbar'
 import SpeedReaderView from '../components/SpeedReader/SpeedReaderView'
 import { stripMarkdown } from '../utils/textTokenizer'
-import { useHighlights } from '../hooks/useHighlights'
+import { useBookmarks } from '../hooks/useBookmarks'
 import { useReaderModeStore } from '../hooks/useReaderMode'
 import { readFileContent, readFileBase64 } from '../utils/fileStore'
 import { extractEpubText } from '../utils/epubParser'
+import { setReadingPosition } from '../utils/positionSync'
 
 export default function ReaderPage() {
   const { bookId } = useParams<{ bookId: string }>()
@@ -26,13 +27,15 @@ export default function ReaderPage() {
   const [initialOffset, setInitialOffset] = useState(0)
   const [initialPage, setInitialPage] = useState(0)
   const [initialCfi, setInitialCfi] = useState<string | undefined>()
+  const [readerKey, setReaderKey] = useState(0)
   const [showToc, setShowToc] = useState(false)
-  const [showAnnotations, setShowAnnotations] = useState(false)
+  const [showBookmarks, setShowBookmarks] = useState(false)
   const [toc, setToc] = useState<TocItem[]>([])
   const renditionRef = useRef<any>(null)
+  const currentPositionRef = useRef<string>('')
 
   const { mode, layout, toggleMode } = useReaderModeStore()
-  const { highlights, notes, load: loadAnnotations, addHighlight, removeHighlight, addNote } = useHighlights(bookId ?? '')
+  const { bookmarks, load: loadBookmarks, addBookmark, removeBookmark } = useBookmarks(bookId ?? '')
 
   useEffect(() => {
     if (!bookId) return
@@ -41,7 +44,7 @@ export default function ReaderPage() {
       if (!b) return
       setBook(b)
       await updateLastOpened(bookId)
-      await loadAnnotations()
+      await loadBookmarks()
 
       const saved = await getProgress(bookId)
 
@@ -49,14 +52,12 @@ export default function ReaderPage() {
         const base64 = await readFileBase64(b.filePath)
         setEpubBase64(base64)
         if (saved) setInitialCfi(saved.position)
-        // Extract plain text for speed reader in background
         setExtracting(true)
         extractEpubText(base64)
           .then(text => setPlainText(text))
           .catch(err => console.error('[Lekto] EPUB text extraction failed:', err))
           .finally(() => setExtracting(false))
       } else {
-        // md and txt both render as plain/markdown text
         const text = await readFileContent(b.filePath)
         setMdContent(text)
         setPlainText(stripMarkdown(text))
@@ -73,27 +74,61 @@ export default function ReaderPage() {
 
   const handleScrollProgress = useCallback(async (offset: number, percent: number) => {
     if (!bookId) return
-    await saveProgress({ bookId, position: `scroll:${offset}`, percent, updatedAt: Date.now() })
+    const pos = `scroll:${offset}`
+    currentPositionRef.current = pos
+    await saveProgress({ bookId, position: pos, percent, updatedAt: Date.now() })
   }, [bookId])
 
   const handlePageProgress = useCallback(async (page: number, percent: number) => {
     if (!bookId) return
-    await saveProgress({ bookId, position: `page:${page}`, percent, updatedAt: Date.now() })
+    const pos = `page:${page}`
+    currentPositionRef.current = pos
+    await saveProgress({ bookId, position: pos, percent, updatedAt: Date.now() })
   }, [bookId])
 
   const handleEpubProgress = useCallback(async (cfi: string, percent: number) => {
     if (!bookId) return
+    currentPositionRef.current = cfi
     await saveProgress({ bookId, position: cfi, percent, updatedAt: Date.now() })
   }, [bookId])
 
-  const handleHighlight = async (start: number, end: number, text: string, color: string) => {
-    await addHighlight(String(start), String(end), text, color)
-  }
+  const handleAddBookmark = useCallback(async () => {
+    const pos = currentPositionRef.current
+    if (!pos) return
+    let label = 'Bookmark'
+    if (pos.startsWith('page:')) {
+      label = `Page ${parseInt(pos.slice(5)) + 1}`
+    } else if (pos.startsWith('scroll:')) {
+      label = `Position ${pos.slice(7)}`
+    } else {
+      label = `Location ${pos.slice(0, 20)}`
+    }
+    await addBookmark(pos, label)
+  }, [addBookmark])
+
+  const handleNavigateBookmark = useCallback((position: string) => {
+    if (position.startsWith('page:')) {
+      const page = parseInt(position.slice(5)) || 0
+      setInitialPage(page)
+      // Convert page to fraction for positionSync (approximation)
+      setReaderKey(k => k + 1)
+    } else if (position.startsWith('scroll:')) {
+      const offset = Number(position.replace('scroll:', '')) || 0
+      setInitialOffset(offset)
+      setReaderKey(k => k + 1)
+    } else {
+      // EPUB CFI
+      renditionRef.current?.display(position)
+    }
+  }, [])
+
+  // Check if current position is already bookmarked
+  const isBookmarked = bookmarks.some(b => b.position === currentPositionRef.current)
 
   if (!book) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
-        <p className="text-gray-400">Loading…</p>
+        <p style={{ color: 'var(--text-muted)' }}>Loading…</p>
       </div>
     )
   }
@@ -103,7 +138,9 @@ export default function ReaderPage() {
       <ReaderToolbar
         title={book.title}
         onToggleToc={book.format === 'epub' && toc.length > 0 ? () => setShowToc(true) : undefined}
-        onToggleAnnotations={() => setShowAnnotations(true)}
+        onAddBookmark={handleAddBookmark}
+        onToggleBookmarks={() => setShowBookmarks(true)}
+        isBookmarked={isBookmarked}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -113,15 +150,15 @@ export default function ReaderPage() {
           <>
             {(book.format === 'md' || book.format === 'txt') && layout === 'scroll' && (
               <MarkdownReader
+                key={readerKey}
                 content={mdContent}
                 initialOffset={initialOffset}
                 onProgressChange={handleScrollProgress}
-                onHighlight={handleHighlight}
-                onNote={text => addNote(text)}
               />
             )}
             {(book.format === 'md' || book.format === 'txt') && layout === 'pages' && (
               <PaginatedReader
+                key={readerKey}
                 content={mdContent}
                 initialPage={initialPage}
                 onProgressChange={handlePageProgress}
@@ -141,12 +178,12 @@ export default function ReaderPage() {
       </div>
 
       {showToc && <TocDrawer toc={toc} onSelect={(href) => { renditionRef.current?.display(href); setShowToc(false) }} onClose={() => setShowToc(false)} />}
-      {showAnnotations && (
-        <AnnotationsPanel
-          highlights={highlights}
-          notes={notes}
-          onDeleteHighlight={removeHighlight}
-          onClose={() => setShowAnnotations(false)}
+      {showBookmarks && (
+        <BookmarksPanel
+          bookmarks={bookmarks}
+          onNavigate={handleNavigateBookmark}
+          onDelete={removeBookmark}
+          onClose={() => setShowBookmarks(false)}
         />
       )}
     </div>

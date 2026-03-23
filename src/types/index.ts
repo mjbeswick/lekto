@@ -1,5 +1,5 @@
 export type BookFormat = 'md' | 'epub' | 'txt'
-export type Theme = 'light' | 'dark' | 'sepia'
+export type Theme = 'light' | 'dark' | 'amoled' | 'sepia'
 
 export interface Book {
   id: string
@@ -34,5 +34,13 @@ export interface Note {
   highlightId?: string
   bookId: string
   text: string
+  createdAt: number
+}
+
+export interface Bookmark {
+  id: string
+  bookId: string
+  position: string   // same format as ReadingProgress.position
+  label: string      // snippet or page label
   createdAt: number
 }

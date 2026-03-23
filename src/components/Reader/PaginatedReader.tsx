@@ -42,12 +42,13 @@ interface Props {
   onWordTap?: () => void
 }
 
-function PageColumn({ text, ff, fontSize, lineHeight, contentRef }: {
+function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark }: {
   text: string
   ff: string
   fontSize: number
   lineHeight: number
   contentRef?: React.Ref<HTMLDivElement>
+  isDark?: boolean
 }) {
   return (
     <div
@@ -55,7 +56,7 @@ function PageColumn({ text, ff, fontSize, lineHeight, contentRef }: {
       className="flex-1 overflow-hidden px-8 py-6"
       style={{ fontFamily: ff, fontSize, lineHeight }}
     >
-      <div className="prose prose-lg prose-orange dark:prose-invert max-w-none h-full overflow-hidden">
+      <div className={`prose prose-lg prose-orange max-w-none h-full overflow-hidden ${isDark ? 'prose-invert' : ''}`}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
       </div>
     </div>
@@ -63,7 +64,7 @@ function PageColumn({ text, ff, fontSize, lineHeight, contentRef }: {
 }
 
 export default function PaginatedReader({ content, initialPage = 0, onProgressChange, onWordTap }: Props) {
-  const { fontSize, fontFamily, lineHeight } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, theme } = useAppStore()
   const pages = splitIntoPages(content, fontSize)
   const totalPages = pages.length
 
@@ -175,10 +176,10 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       <div className="flex-1 overflow-hidden flex">
         {isSpread ? (
           <>
-            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} />
+            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark'} />
             {/* Book spine */}
             <div className="flex-shrink-0 w-px self-stretch my-4" style={{ backgroundColor: 'var(--border)' }} />
-            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} />
+            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark'} />
           </>
         ) : (
           <PageColumn
@@ -187,6 +188,7 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
             ff={ff}
             fontSize={fontSize}
             lineHeight={lineHeight}
+            isDark={theme === 'dark'}
           />
         )}
       </div>

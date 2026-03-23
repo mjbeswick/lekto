@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 function AppInner() {
   const theme = useAppStore(s => s.theme)
+  const accentColor = useAppStore(s => s.accentColor)
   const { addBook } = useLibraryStore()
   const navigate = useNavigate()
 
@@ -26,6 +27,10 @@ function AppInner() {
       StatusBar.setStyle({ style: Style.Default })
     }
   }, [])
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--reader-accent', accentColor)
+  }, [accentColor])
 
   useEffect(() => {
     const listener = CapApp.addListener('appUrlOpen', async (event) => {
@@ -58,7 +63,7 @@ function AppInner() {
   }, [addBook, navigate])
 
   return (
-    <div className={`theme-${theme} ${theme === 'dark' ? 'dark' : ''} h-full overflow-hidden`} style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+    <div className={`theme-${theme} ${theme === 'dark' || theme === 'amoled' ? 'dark' : ''} h-full overflow-hidden`} style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
       <Routes>
         <Route path="/" element={<Navigate to="/library" replace />} />
         <Route path="/library" element={<LibraryPage />} />

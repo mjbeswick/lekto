@@ -40,6 +40,15 @@ html, body {
   animation: rsvpEnter 80ms ease-out forwards;
 }
 
+.theme-amoled {
+  --reader-bg: #000000;
+  --reader-fg: #e8e4dc;
+  --surface: #111111;
+  --surface-2: #1a1a1a;
+  --border: #222222;
+  --text-muted: #888880;
+}
+
 .theme-sepia {
   --reader-bg: #f4ecd8;
   --reader-fg: #3b2f1e;

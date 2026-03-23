@@ -52,7 +52,7 @@ export default function PlayDragButton({ playing, wpm, onToggle, onPlay, onPause
         onPlay()
       }
       const wpmDelta = Math.round(deltaY / WPM_SENSITIVITY)
-      onWpmChange(Math.max(60, Math.min(1200, touchStartRef.current.wpm + wpmDelta)))
+      onWpmChange(Math.max(60, Math.min(2000, touchStartRef.current.wpm + wpmDelta)))
     }
   }, [onPlay, onWpmChange, clearHoldTimer])
 

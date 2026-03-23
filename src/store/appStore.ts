@@ -4,6 +4,7 @@ import type { Theme } from '../types'
 
 interface AppState {
   theme: Theme
+  accentColor: string
   fontSize: number
   fontFamily: string
   lineHeight: number
@@ -11,6 +12,7 @@ interface AppState {
   wordLengthScaling: boolean
   rsvpChunkLetters: number
   setTheme: (t: Theme) => void
+  setAccentColor: (c: string) => void
   setFontSize: (n: number) => void
   setFontFamily: (f: string) => void
   setLineHeight: (n: number) => void
@@ -23,6 +25,7 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       theme: 'light',
+      accentColor: '#f97316',
       fontSize: 18,
       fontFamily: 'serif',
       lineHeight: 1.7,
@@ -30,6 +33,7 @@ export const useAppStore = create<AppState>()(
       wordLengthScaling: true,
       rsvpChunkLetters: 1,
       setTheme: (theme) => set({ theme }),
+      setAccentColor: (accentColor) => set({ accentColor }),
       setFontSize: (fontSize) => set({ fontSize }),
       setFontFamily: (fontFamily) => set({ fontFamily }),
       setLineHeight: (lineHeight) => set({ lineHeight }),

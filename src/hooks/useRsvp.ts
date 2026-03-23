@@ -115,7 +115,7 @@ export function useRsvp(text: string, initialWpm: number, wordLengthScaling = tr
   }, [play, pause])
 
   const setWpm = useCallback((w: number) => {
-    const clamped = Math.max(60, Math.min(1200, w))
+    const clamped = Math.max(60, Math.min(2000, w))
     wpmRef.current = clamped
     setWpmState(clamped)
   }, [])
