@@ -7,21 +7,19 @@ interface Props {
 
 export default function RsvpWord({ word, fontSize = 52 }: Props) {
   const orpIdx = getOrpIndex(word)
+  const before = word.slice(0, orpIdx)
+  const orpChar = word[orpIdx] ?? ''
+  const after = word.slice(orpIdx + 1)
 
   return (
     <div
-      className="font-serif select-none tracking-wide"
+      className="font-serif select-none tracking-wide w-full flex"
       style={{ fontSize, lineHeight: 1 }}
       aria-live="off"
     >
-      {word.split('').map((ch, i) => (
-        <span
-          key={i}
-          style={{ color: i === orpIdx ? '#f97316' : 'var(--reader-fg)' }}
-        >
-          {ch}
-        </span>
-      ))}
+      <span style={{ flex: 1, textAlign: 'right', color: 'var(--reader-fg)' }}>{before}</span>
+      <span style={{ color: 'var(--reader-accent)' }}>{orpChar}</span>
+      <span style={{ flex: 1, textAlign: 'left', color: 'var(--reader-fg)' }}>{after}</span>
     </div>
   )
 }

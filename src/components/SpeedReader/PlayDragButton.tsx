@@ -113,7 +113,7 @@ export default function PlayDragButton({ playing, wpm, onToggle, onPlay, onPause
       }}
       aria-label={playing ? 'Pause' : 'Play'}
     >
-      <span className="text-white pointer-events-none">
+      <span className="pointer-events-none" style={{ color: playing ? 'white' : 'var(--reader-fg)' }}>
         <FontAwesomeIcon icon={playing ? faPause : faPlay} size="2x" />
       </span>
     </button>

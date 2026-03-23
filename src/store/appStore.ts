@@ -12,6 +12,8 @@ interface AppState {
   defaultWpm: number
   wordLengthScaling: boolean
   rsvpChunkLetters: number
+  rsvpShowContext: boolean
+  rsvpFontSize: number
   setTheme: (t: Theme) => void
   setAccentColor: (c: string) => void
   setFontSize: (n: number) => void
@@ -21,6 +23,8 @@ interface AppState {
   setDefaultWpm: (n: number) => void
   setWordLengthScaling: (v: boolean) => void
   setRsvpChunkLetters: (n: number) => void
+  setRsvpShowContext: (v: boolean) => void
+  setRsvpFontSize: (n: number) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -35,6 +39,8 @@ export const useAppStore = create<AppState>()(
       defaultWpm: 300,
       wordLengthScaling: true,
       rsvpChunkLetters: 1,
+      rsvpShowContext: true,
+      rsvpFontSize: 52,
       setTheme: (theme) => set({ theme }),
       setAccentColor: (accentColor) => set({ accentColor }),
       setFontSize: (fontSize) => set({ fontSize }),
@@ -44,6 +50,8 @@ export const useAppStore = create<AppState>()(
       setDefaultWpm: (defaultWpm) => set({ defaultWpm }),
       setWordLengthScaling: (wordLengthScaling) => set({ wordLengthScaling }),
       setRsvpChunkLetters: (rsvpChunkLetters) => set({ rsvpChunkLetters }),
+      setRsvpShowContext: (rsvpShowContext) => set({ rsvpShowContext }),
+      setRsvpFontSize: (rsvpFontSize) => set({ rsvpFontSize }),
     }),
     { name: 'lekto-settings' }
   )

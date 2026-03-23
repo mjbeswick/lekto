@@ -5,7 +5,7 @@ import { getProgress, saveProgress } from '../db/progress'
 import type { Book } from '../types'
 import MarkdownReader from '../components/Reader/MarkdownReader'
 import PaginatedReader from '../components/Reader/PaginatedReader'
-import EpubReader, { type TocItem } from '../components/Reader/EpubReader'
+import EpubReader, { type EpubReaderHandle, type TocItem } from '../components/Reader/EpubReader'
 import ContentPanel from '../components/Reader/ContentPanel'
 import ReaderToolbar from '../components/Reader/ReaderToolbar'
 import SpeedReaderView from '../components/SpeedReader/SpeedReaderView'
@@ -29,7 +29,7 @@ export default function ReaderPage() {
   const [readerKey, setReaderKey] = useState(0)
   const [showPanel, setShowPanel] = useState(false)
   const [toc, setToc] = useState<TocItem[]>([])
-  const renditionRef = useRef<any>(null)
+  const renditionRef = useRef<EpubReaderHandle | null>(null)
   const currentPositionRef = useRef<string>('')
 
   const { mode, layout, toggleMode } = useReaderModeStore()
@@ -165,6 +165,7 @@ export default function ReaderPage() {
             )}
             {book.format === 'epub' && epubBuffer && (
               <EpubReader
+                ref={renditionRef}
                 epubBuffer={epubBuffer}
                 initialCfi={initialCfi}
                 onProgressChange={handleEpubProgress}

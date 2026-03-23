@@ -41,6 +41,7 @@ function SingleWord({ word, fontSize }: {
 
       {/* ORP character: always at center, bold + accent color */}
       <span
+        data-orp-char
         style={{
           color: 'var(--reader-accent)',
           fontWeight: 700,
@@ -68,9 +69,8 @@ export default function RsvpChunk({ words, fontSize = 52 }: Props) {
     )
   }
 
-  // Multi-word chunk: center the group, scale font down to fit
-  const totalChars = words.reduce((sum, w, i) => sum + w.length + (i > 0 ? 1 : 0), 0)
-  const scaledSize = Math.min(fontSize, Math.max(22, Math.round(300 / totalChars)))
+  // Multi-word chunk: center the group
+  const scaledSize = fontSize
 
   return (
     <div
@@ -93,7 +93,7 @@ export default function RsvpChunk({ words, fontSize = 52 }: Props) {
           <span key={i}>
             {word.split('').map((ch, ci) =>
               ci === orpIdx
-                ? <span key={ci} style={{ color: 'var(--reader-accent)', fontWeight: 700 }}>{ch}</span>
+                ? <span key={ci} data-orp-char style={{ color: 'var(--reader-accent)', fontWeight: 700 }}>{ch}</span>
                 : <span key={ci} style={{ color: 'var(--reader-fg)' }}>{ch}</span>
             )}
           </span>

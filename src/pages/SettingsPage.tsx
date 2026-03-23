@@ -33,6 +33,8 @@ export default function SettingsPage() {
     maxWidth, setMaxWidth,
     defaultWpm, setDefaultWpm, wordLengthScaling, setWordLengthScaling,
     rsvpChunkLetters, setRsvpChunkLetters,
+    rsvpShowContext, setRsvpShowContext,
+    rsvpFontSize, setRsvpFontSize,
   } = useAppStore()
 
   return (
@@ -158,6 +160,25 @@ export default function SettingsPage() {
           </button>
         </div>
 
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm">Show context words</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Display previous and next words greyed out</p>
+          </div>
+          <button
+            onClick={() => setRsvpShowContext(!rsvpShowContext)}
+            className="relative flex-shrink-0 w-12 h-7 rounded-full transition-colors duration-200"
+            style={{ backgroundColor: rsvpShowContext ? 'var(--reader-accent)' : 'var(--surface-2)' }}
+            role="switch"
+            aria-checked={rsvpShowContext}
+          >
+            <span
+              className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200"
+              style={{ left: 4, transform: rsvpShowContext ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
+        </div>
+
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm">Letters per flash: {rsvpChunkLetters <= 1 ? 'Off' : rsvpChunkLetters}</p>
@@ -170,6 +191,12 @@ export default function SettingsPage() {
             onChange={e => setRsvpChunkLetters(Number(e.target.value))}
             className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </div>
+
+        <label className="flex items-center justify-between mt-4">
+          <span className="text-sm">Speed reader font size: {rsvpFontSize}px</span>
+          <input type="range" min={32} max={80} step={2} value={rsvpFontSize} onChange={e => setRsvpFontSize(Number(e.target.value))}
+            className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+        </label>
       </section>
     </div>
   )

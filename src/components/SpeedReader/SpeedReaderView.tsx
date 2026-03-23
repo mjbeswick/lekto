@@ -13,6 +13,8 @@ interface Props {
   extracting?: boolean
 }
 
+const RSVP_FONT = 'Inter, system-ui, -apple-system, sans-serif'
+
 function formatTime(seconds: number): string {
   if (seconds <= 0) return '0s'
   if (seconds < 60) return `${seconds}s`
@@ -26,6 +28,8 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const setDefaultWpm = useAppStore(s => s.setDefaultWpm)
   const wordLengthScaling = useAppStore(s => s.wordLengthScaling)
   const rsvpChunkLetters = useAppStore(s => s.rsvpChunkLetters)
+  const rsvpShowContext = useAppStore(s => s.rsvpShowContext)
+  const rsvpFontSize = useAppStore(s => s.rsvpFontSize)
   // Capture reading position at mount time — applied when text tokenizes
   const [startFraction] = useState(() => getReadingPosition())
   const { tokens, index, playing, wpm, play, pause, toggle, setWpm, jumpSentence } = useRsvp(text, defaultWpm, wordLengthScaling, rsvpChunkLetters, startFraction)
@@ -151,30 +155,45 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
           </div>
         ) : (
           <>
-            <div className="relative w-full max-w-xl mx-auto flex flex-col items-center gap-3">
+            <div className="relative w-full mx-auto" style={{ height: '120px' }}>
               {/* Top guide line */}
-              <div className="w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
-              <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={52} />
-              {/* Bottom guide line */}
-              <div className="w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
-              
-              {/* Center guide ticks */}
-              {rsvpChunkLetters <= 1 && (
-                <>
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-3" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.5 }} />
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0.5 h-3" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.5 }} />
-                </>
-              )}
-            </div>
+              <div className="absolute top-3 w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
 
-            {/* Context row — only in single-word mode */}
-            {rsvpChunkLetters <= 1 && (
-              <div className="flex gap-4 items-baseline text-lg font-serif" style={{ color: 'var(--reader-fg)', opacity: 0.25 }}>
-                <span className="truncate max-w-[30vw] text-right">{tokens[index - 1]?.word ?? ''}</span>
-                <span className="text-sm opacity-0">·</span>
-                <span className="truncate max-w-[30vw]">{tokens[index + chunkWords.length]?.word ?? ''}</span>
+              {/* Top vertical line - aligned with ORP character */}
+              <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', top: '0.75rem', height: '0.85rem', width: '1px', backgroundColor: 'var(--reader-accent)', opacity: 0.8 }} />
+
+              {/* Text container - centered vertically */}
+              <div data-text-container className="absolute inset-0 flex items-center justify-center px-4 sm:px-8" style={{ top: '1.75rem', bottom: '1.75rem' }}>
+                <div
+                  className="grid items-center w-full"
+                  style={{
+                    gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
+                    columnGap: '1.5rem',
+                  }}
+                >
+                  {/* Previous word */}
+                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: rsvpShowContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
+                    {rsvpShowContext ? (tokens[index - 1]?.word ?? '') : ''}
+                  </span>
+
+                  {/* Current chunk */}
+                  <div data-current-chunk style={{ minWidth: 0 }}>
+                    <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={rsvpFontSize} />
+                  </div>
+
+                  {/* Next word */}
+                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: rsvpShowContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
+                    {rsvpShowContext ? (tokens[index + chunkWords.length]?.word ?? '') : ''}
+                  </span>
+                </div>
               </div>
-            )}
+
+              {/* Bottom vertical line - aligned with ORP character */}
+              <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', bottom: '0.75rem', height: '0.85rem', width: '1px', backgroundColor: 'var(--reader-accent)', opacity: 0.8 }} />
+
+              {/* Bottom guide line */}
+              <div className="absolute bottom-3 w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
+            </div>
           </>
         )}
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { forwardRef, useEffect, useRef, useCallback, useState, useImperativeHandle } from 'react'
 import ePub from 'epubjs'
 
 interface Props {
@@ -17,12 +17,25 @@ export interface TocItem {
   subitems?: TocItem[]
 }
 
-export default function EpubReader({ epubBuffer, initialCfi, layout = 'pages', onProgressChange, onTocReady }: Props) {
+export interface EpubReaderHandle {
+  display: (target: string) => void
+}
+
+const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
+  { epubBuffer, initialCfi, layout = 'pages', onProgressChange, onTocReady }: Props,
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement>(null)
   const bookRef = useRef<any>(null)
   const renditionRef = useRef<any>(null)
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
   const [isSpread, setIsSpread] = useState(false)
+
+  useImperativeHandle(ref, () => ({
+    display: (target: string) => {
+      renditionRef.current?.display(target)
+    },
+  }), [])
 
   // Measure the container so epubjs gets explicit pixel dimensions.
   // This is required for spread mode to work correctly — percentage-based
@@ -102,6 +115,8 @@ export default function EpubReader({ epubBuffer, initialCfi, layout = 'pages', o
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
+      renditionRef.current = null
+      bookRef.current = null
       rendition.destroy()
       book.destroy()
       // URL.revokeObjectURL(blobUrl)
@@ -120,4 +135,6 @@ export default function EpubReader({ epubBuffer, initialCfi, layout = 'pages', o
       )}
     </div>
   )
-}
+})
+
+export default EpubReader
