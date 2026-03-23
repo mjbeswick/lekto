@@ -15,7 +15,7 @@ import { useBookmarks } from '../hooks/useBookmarks'
 import { useReaderModeStore } from '../hooks/useReaderMode'
 import { readFileContent, readFileBase64 } from '../utils/fileStore'
 import { extractEpubText } from '../utils/epubParser'
-import { setReadingPosition } from '../utils/positionSync'
+
 
 export default function ReaderPage() {
   const { bookId } = useParams<{ bookId: string }>()
