@@ -40,21 +40,22 @@ interface Props {
   onWordTap?: () => void
 }
 
-function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark }: {
+function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark, maxWidth }: {
   text: string
   ff: string
   fontSize: number
   lineHeight: number
   contentRef?: React.Ref<HTMLDivElement>
   isDark?: boolean
+  maxWidth?: boolean
 }) {
   return (
     <div
       ref={contentRef}
-      className="flex-1 overflow-hidden px-8 py-6"
+      className="flex-1 overflow-hidden px-8 py-6 flex flex-col"
       style={{ fontFamily: ff, fontSize, lineHeight }}
     >
-      <div className={`prose prose-lg prose-orange max-w-none h-full overflow-hidden ${isDark ? 'prose-invert' : ''}`}>
+      <div className={`mx-auto w-full prose prose-lg prose-orange h-full overflow-hidden ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
       </div>
     </div>
@@ -62,7 +63,7 @@ function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark }: {
 }
 
 export default function PaginatedReader({ content, initialPage = 0, onProgressChange, onWordTap }: Props) {
-  const { fontSize, fontFamily, lineHeight, theme } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, theme, maxWidth } = useAppStore()
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -181,10 +182,10 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       <div className="flex-1 overflow-hidden flex">
         {isSpread ? (
           <>
-            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark'} />
+            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
             {/* Book spine */}
             <div className="flex-shrink-0 w-px self-stretch my-4" style={{ backgroundColor: 'var(--border)' }} />
-            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark'} />
+            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
           </>
         ) : (
           <PageColumn
@@ -193,7 +194,8 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
             ff={ff}
             fontSize={fontSize}
             lineHeight={lineHeight}
-            isDark={theme === 'dark'}
+            isDark={theme === 'dark' || theme === 'amoled'}
+            maxWidth={maxWidth}
           />
         )}
       </div>
