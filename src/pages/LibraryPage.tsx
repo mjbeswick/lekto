@@ -293,7 +293,7 @@ export default function LibraryPage() {
 
         <div className="h-full overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-[var(--app-gutter)] pb-8 pt-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleOpen}
                 disabled={importing}
@@ -313,6 +313,38 @@ export default function LibraryPage() {
                   <FontAwesomeIcon icon={faClock} />
                   Continue reading
                 </button>
+              )}
+
+              {books.length > 0 && (
+                <div className="ml-auto flex flex-nowrap items-center gap-3">
+                  <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                    {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
+                  </p>
+
+                  <div className="inline-flex gap-0 rounded-xl border-2" style={{ borderColor: 'var(--border)' }}>
+                    <button
+                      onClick={() => setLibraryView('list')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-semibold sm:text-sm"
+                      style={libraryView === 'list'
+                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
+                        : { backgroundColor: 'transparent', color: 'var(--reader-fg)' }}
+                    >
+                      <FontAwesomeIcon icon={faList} />
+                      List
+                    </button>
+                    <div style={{ width: '1px', backgroundColor: 'var(--border)' }} />
+                    <button
+                      onClick={() => setLibraryView('grid')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-semibold sm:text-sm"
+                      style={libraryView === 'grid'
+                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
+                        : { backgroundColor: 'transparent', color: 'var(--reader-fg)' }}
+                    >
+                      <FontAwesomeIcon icon={faTableCells} />
+                      Grid
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -378,39 +410,8 @@ export default function LibraryPage() {
               </section>
             ) : (
               <>
-                <div className="flex flex-nowrap items-center gap-3 pb-4">
-                  <div>
-                    <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                      {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
-                    </p>
-                  </div>
-
-                  <div className="inline-flex rounded-xl p-1" style={{ backgroundColor: 'var(--surface-2)' }}>
-                    <button
-                      onClick={() => setLibraryView('list')}
-                      className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[13px] font-semibold sm:text-sm"
-                      style={libraryView === 'list'
-                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
-                        : { backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
-                    >
-                      <FontAwesomeIcon icon={faList} />
-                      List
-                    </button>
-                    <button
-                      onClick={() => setLibraryView('grid')}
-                      className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[13px] font-semibold sm:text-sm"
-                      style={libraryView === 'grid'
-                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
-                        : { backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
-                    >
-                      <FontAwesomeIcon icon={faTableCells} />
-                      Grid
-                    </button>
-                  </div>
-                </div>
-
                 {libraryView === 'grid' ? (
-                  <div className="grid grid-cols-2 gap-3 pt-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {sortedVisibleBooks.map(book => {
                       const hasCover = Boolean(book.coverUri)
                       const progress = progressMap[book.id] ?? 0
@@ -488,7 +489,7 @@ export default function LibraryPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="grid gap-3 pt-4">
+                  <div className="grid gap-3">
                     {sortedVisibleBooks.map(book => {
                       const progress = progressMap[book.id] ?? 0
                       const color = titleColor(book.title)
