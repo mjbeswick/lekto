@@ -120,6 +120,7 @@ export async function rescanNativeDirectory(
       sourceType: 'directory',
       directoryId: source.id,
       collectionId: source.collectionId,
+      fileSize: data.byteLength,
     })
   }
 
@@ -207,6 +208,7 @@ export async function rescanWebDirectory(
       sourceType: 'directory',
       directoryId: source.id,
       collectionId: source.collectionId,
+      fileSize: file.size,
     })
   }
 

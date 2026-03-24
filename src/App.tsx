@@ -33,6 +33,13 @@ function AppInner() {
   }, [accentColor])
 
   useEffect(() => {
+    const el = document.documentElement
+    el.classList.remove('theme-light', 'theme-dark', 'theme-amoled', 'theme-sepia', 'dark')
+    el.classList.add('theme-' + theme)
+    if (theme === 'dark' || theme === 'amoled') el.classList.add('dark')
+  }, [theme])
+
+  useEffect(() => {
     const listener = CapApp.addListener('appUrlOpen', async (event) => {
       const url = event.url
       if (!url) return

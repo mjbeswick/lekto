@@ -93,6 +93,25 @@ export default function CollectionDrawer({ open, onClose }: Props) {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
+          {/* Folder sources */}
+          {directories.length > 0 && (
+            <div>
+              <p className="px-4 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
+                Folder sources
+              </p>
+              {directories.map(dir => {
+                const count = books.filter(b => b.directoryId === dir.id).length
+                return (
+                  <div key={dir.id} className="flex items-center gap-2.5 px-4 py-2.5">
+                    <FontAwesomeIcon icon={faFolder} className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <span className="flex-1 min-w-0 truncate text-sm">{dir.name}</span>
+                    <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{count}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* All Books */}
           <button
             className="w-full flex items-center gap-3 px-4 py-3.5 text-left text-sm font-medium transition-opacity active:opacity-70"
@@ -178,25 +197,6 @@ export default function CollectionDrawer({ open, onClose }: Props) {
               </div>
             ))}
         </div>
-
-        {/* Footer: New Collection */}
-        {directories.length > 0 && (
-          <div className="flex-shrink-0 border-t" style={{ borderColor: 'var(--border)' }}>
-            <p className="px-4 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
-              Folder sources
-            </p>
-            {directories.map(dir => {
-              const count = books.filter(b => b.directoryId === dir.id).length
-              return (
-                <div key={dir.id} className="flex items-center gap-2.5 px-4 py-2.5">
-                  <FontAwesomeIcon icon={faFolder} className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  <span className="flex-1 min-w-0 truncate text-sm">{dir.name}</span>
-                  <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{count}</span>
-                </div>
-              )
-            })}
-          </div>
-        )}
 
         {/* Footer: New Collection */}
         <div

@@ -21,10 +21,12 @@ let _db: IDBDatabase | null = null
 function getDb(): Promise<IDBDatabase> {
   if (_db) return Promise.resolve(_db)
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('lekto-files', 1)
+    const req = indexedDB.open('lekto-files', 2)
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains('files'))
         req.result.createObjectStore('files')
+      if (!req.result.objectStoreNames.contains('dir-handles'))
+        req.result.createObjectStore('dir-handles')
     }
     req.onsuccess = () => {
       _db = req.result
@@ -129,31 +131,7 @@ export async function readFileContent(filePath: string): Promise<string> {
 // FileSystemDirectoryHandle instances are structured-cloneable and can live in IDB.
 
 function getDirHandleStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
-  return getDb().then(db => {
-    // The 'dir-handles' store is created lazily on first access if the current
-    // db version does not yet contain it.  We bump the version in that case.
-    if (db.objectStoreNames.contains('dir-handles')) {
-      return db.transaction('dir-handles', mode).objectStore('dir-handles')
-    }
-    return new Promise((resolve, reject) => {
-      const newVersion = db.version + 1
-      db.close()
-      _db = null
-      const req = indexedDB.open('lekto-files', newVersion)
-      req.onupgradeneeded = () => {
-        if (!req.result.objectStoreNames.contains('files'))
-          req.result.createObjectStore('files')
-        if (!req.result.objectStoreNames.contains('dir-handles'))
-          req.result.createObjectStore('dir-handles')
-      }
-      req.onsuccess = () => {
-        _db = req.result
-        _db.onclose = () => { _db = null }
-        resolve(_db.transaction('dir-handles', mode).objectStore('dir-handles'))
-      }
-      req.onerror = () => reject(req.error)
-    })
-  })
+  return getDb().then(db => db.transaction('dir-handles', mode).objectStore('dir-handles'))
 }
 
 export async function storeDirHandle(dirId: string, handle: FileSystemDirectoryHandle): Promise<void> {

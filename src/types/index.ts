@@ -20,6 +20,7 @@ export interface Book {
   collectionId?: string
   sourceType?: 'import' | 'directory'
   directoryId?: string
+  fileSize?: number
 }
 
 export interface DirectorySource {
