@@ -23,6 +23,21 @@ html, body {
   --surface-2: #e5e5e5;
   --border: #e5e5e5;
   --text-muted: #737373;
+  --font-ui: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-display: 'Lexend', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-reading: 'Merriweather', Georgia, serif;
+  --shadow-soft: 0 14px 32px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 28px 60px rgba(15, 23, 42, 0.08);
+  --library-hero-from: rgba(255, 255, 255, 0.76);
+  --library-hero-to: rgba(255, 255, 255, 0.48);
+  --library-surface-1: rgba(255, 255, 255, 0.42);
+  --library-surface-2: rgba(255, 255, 255, 0.52);
+  --library-surface-3: rgba(255, 255, 255, 0.58);
+  --library-surface-4: rgba(255, 255, 255, 0.72);
+  --library-surface-5: rgba(255, 255, 255, 0.82);
+  --library-border-soft: rgba(255, 255, 255, 0.28);
+  --library-border-strong: rgba(255, 255, 255, 0.35);
+  --library-overlay-border: rgba(255, 255, 255, 0.12);
   --app-gutter: clamp(16px, 4vw, 24px);
   --panel-width: min(24rem, calc(100vw - 16px));
   --safe-top: env(safe-area-inset-top);
@@ -38,6 +53,16 @@ html, body {
   --surface-2: #2e2a22;
   --border: #2e2a22;
   --text-muted: #8c8478;
+  --library-hero-from: rgba(36, 32, 24, 0.9);
+  --library-hero-to: rgba(26, 24, 20, 0.74);
+  --library-surface-1: rgba(36, 32, 24, 0.74);
+  --library-surface-2: rgba(36, 32, 24, 0.84);
+  --library-surface-3: rgba(46, 42, 34, 0.88);
+  --library-surface-4: rgba(36, 32, 24, 0.92);
+  --library-surface-5: rgba(46, 42, 34, 0.96);
+  --library-border-soft: rgba(140, 132, 120, 0.18);
+  --library-border-strong: rgba(140, 132, 120, 0.24);
+  --library-overlay-border: rgba(255, 255, 255, 0.14);
 }
 
 @keyframes rsvpEnter {
@@ -55,6 +80,16 @@ html, body {
   --surface-2: #1a1a1a;
   --border: #222222;
   --text-muted: #888880;
+  --library-hero-from: rgba(17, 17, 17, 0.94);
+  --library-hero-to: rgba(0, 0, 0, 0.84);
+  --library-surface-1: rgba(17, 17, 17, 0.8);
+  --library-surface-2: rgba(17, 17, 17, 0.9);
+  --library-surface-3: rgba(26, 26, 26, 0.92);
+  --library-surface-4: rgba(17, 17, 17, 0.95);
+  --library-surface-5: rgba(26, 26, 26, 0.98);
+  --library-border-soft: rgba(136, 136, 128, 0.18);
+  --library-border-strong: rgba(136, 136, 128, 0.26);
+  --library-overlay-border: rgba(255, 255, 255, 0.14);
 }
 
 .theme-sepia {
@@ -64,14 +99,37 @@ html, body {
   --surface-2: #d6c9a8;
   --border: #d6c9a8;
   --text-muted: #7a6048;
+  --library-hero-from: rgba(248, 240, 220, 0.78);
+  --library-hero-to: rgba(237, 224, 196, 0.56);
+  --library-surface-1: rgba(244, 236, 216, 0.48);
+  --library-surface-2: rgba(248, 240, 220, 0.56);
+  --library-surface-3: rgba(248, 240, 220, 0.64);
+  --library-surface-4: rgba(248, 240, 220, 0.76);
+  --library-surface-5: rgba(248, 240, 220, 0.86);
+  --library-border-soft: rgba(122, 96, 72, 0.16);
+  --library-border-strong: rgba(122, 96, 72, 0.22);
+  --library-overlay-border: rgba(59, 47, 30, 0.14);
 }
 
 body {
   background-color: var(--reader-bg);
   color: var(--reader-fg);
+  font-family: var(--font-ui);
   transition: background-color 0.2s, color 0.2s;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.2);
+  color: inherit;
 }
 
 .lekto-file-icon {

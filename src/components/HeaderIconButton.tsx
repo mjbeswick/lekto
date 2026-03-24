@@ -9,10 +9,10 @@ export default function HeaderIconButton({ children, active = false, className =
   return (
     <button
       {...props}
-      className={`w-11 h-11 rounded-2xl flex items-center justify-center text-base transition-colors active:opacity-60 sm:w-10 sm:h-10 sm:rounded-xl ${className}`.trim()}
+      className={`flex h-11 w-11 items-center justify-center rounded-2xl border text-base transition-all active:opacity-60 sm:h-10 sm:w-10 sm:rounded-xl ${className}`.trim()}
       style={active
-        ? { backgroundColor: 'var(--surface-2)', color: 'var(--reader-fg)', ...style }
-        : { backgroundColor: 'var(--surface)', color: 'var(--text-muted)', ...style }}
+        ? { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--reader-fg)', boxShadow: 'var(--shadow-soft)', backdropFilter: 'blur(10px)', ...style }
+        : { backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-muted)', boxShadow: 'var(--shadow-soft)', backdropFilter: 'blur(10px)', ...style }}
     >
       {children}
     </button>

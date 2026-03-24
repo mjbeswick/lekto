@@ -1,28 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faGear, faFolderOpen, faTrash, faBook, faPlus, faBars, faEllipsisV, faBookOpen, faMinus, faList, faTableCells } from '@fortawesome/free-solid-svg-icons'
-import { useLibraryStore } from '../store/libraryStore'
-import { useCollectionStore } from '../store/bookcaseStore'
-import { useAppStore } from '../store/appStore'
+import { faArrowRight, faBars, faBook, faBookOpen, faClock, faEllipsisV, faFolderOpen, faGear, faList, faMinus, faPlus, faTableCells, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FilePicker } from '@capawesome/capacitor-file-picker'
-import type { Book, BookFormat } from '../types'
 import { v4 as uuidv4 } from 'uuid'
+import HeaderIconButton from '../components/HeaderIconButton'
+import CollectionDrawer from '../components/BookcaseDrawer'
+import FileTypeIcon from '../components/FileTypeIcon'
+import { getProgress } from '../db/progress'
+import { useAppStore } from '../store/appStore'
+import { useCollectionStore } from '../store/bookcaseStore'
+import { useLibraryStore } from '../store/libraryStore'
+import type { Book, BookFormat } from '../types'
+import { parseDocxMeta } from '../utils/docxParser'
 import { parseEpubMeta } from '../utils/epubParser'
+import { parseFb2Meta } from '../utils/fb2Parser'
+import { b64ToBuffer, isWeb, readFileAsArrayBuffer, storeWebFile, webFilePath } from '../utils/fileStore'
 import { parseMdMeta } from '../utils/markdownMeta'
 import { parsePdfMeta } from '../utils/pdfParser'
-import { parseDocxMeta } from '../utils/docxParser'
-import { parseFb2Meta } from '../utils/fb2Parser'
-import { isWeb, storeWebFile, webFilePath, b64ToBuffer, readFileAsArrayBuffer } from '../utils/fileStore'
-import { getProgress } from '../db/progress'
-import HeaderIconButton from '../components/HeaderIconButton'
-import FileTypeIcon from '../components/FileTypeIcon'
-import CollectionDrawer from '../components/BookcaseDrawer'
 
 const SUPPORTED = ['md', 'epub', 'txt', 'pdf', 'docx', 'fb2']
+const ACCENT_COLORS = ['#f97316', '#3b82f6', '#8b5cf6', '#ef4444', '#10b981', '#f59e0b', '#06b6d4', '#ec4899']
 
-// Deterministic accent colour per book title
-const ACCENT_COLORS = ['#f97316','#3b82f6','#8b5cf6','#ef4444','#10b981','#f59e0b','#06b6d4','#ec4899']
 function titleColor(title: string): string {
   let hash = 0
   for (const c of title) hash = (hash * 31 + c.charCodeAt(0)) & 0xfffffff
@@ -39,21 +38,27 @@ function relativeDate(ts: number): string {
   return `${Math.floor(days / 30)}mo ago`
 }
 
+function progressLabel(progress: number): string {
+  if (progress >= 1) return 'Finished'
+  if (progress <= 0) return 'Not started'
+  return `${Math.floor(progress * 100)}% complete`
+}
+
 async function buildBook(id: string, name: string, ext: BookFormat, data: ArrayBuffer, filePath: string): Promise<Book> {
   let title = name.replace(/\.[^.]+$/, '')
   let author = ''
   let coverUri: string | undefined
 
   if (ext === 'epub') {
-    try { const m = await parseEpubMeta(data); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
+    try { const meta = await parseEpubMeta(data); title = meta.title || title; author = meta.author; coverUri = meta.coverBase64 } catch { /* ignore unreadable metadata */ }
   } else if (ext === 'pdf') {
-    try { const m = await parsePdfMeta(data); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
+    try { const meta = await parsePdfMeta(data); title = meta.title || title; author = meta.author; coverUri = meta.coverBase64 } catch { /* ignore unreadable metadata */ }
   } else if (ext === 'docx') {
-    try { const m = await parseDocxMeta(data); title = m.title || title; author = m.author } catch {}
+    try { const meta = await parseDocxMeta(data); title = meta.title || title; author = meta.author } catch { /* ignore unreadable metadata */ }
   } else if (ext === 'fb2') {
-    try { const m = await parseFb2Meta(data); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
+    try { const meta = await parseFb2Meta(data); title = meta.title || title; author = meta.author; coverUri = meta.coverBase64 } catch { /* ignore unreadable metadata */ }
   } else {
-    try { const m = parseMdMeta(new TextDecoder('utf-8').decode(data)); title = m.title || title; author = m.author } catch {}
+    try { const meta = parseMdMeta(new TextDecoder('utf-8').decode(data)); title = meta.title || title; author = meta.author } catch { /* ignore unreadable metadata */ }
   }
 
   return { id, title, author, filePath, format: ext, coverUri, addedAt: Date.now() }
@@ -74,28 +79,26 @@ export default function LibraryPage() {
   useEffect(() => { loadBooks() }, [loadBooks])
   useEffect(() => { loadCollections() }, [loadCollections])
 
-  // Close context menu on outside click
   useEffect(() => {
     if (menuOpenId === null) return
+
     function handleMouseDown(e: MouseEvent) {
       const target = e.target as Node
-      // Close if click is outside any open menu; the menu buttons use stopPropagation
       setMenuOpenId(null)
       e.stopPropagation()
-      // Don't prevent default so the click still works normally
       void target
     }
+
     document.addEventListener('mousedown', handleMouseDown, true)
     return () => document.removeEventListener('mousedown', handleMouseDown, true)
   }, [menuOpenId])
 
-  // Load reading progress for all books
   useEffect(() => {
     if (!books.length) return
     Promise.all(
-      books.map(async b => {
-        const p = await getProgress(b.id)
-        return [b.id, p?.percent ?? 0] as [string, number]
+      books.map(async book => {
+        const progress = await getProgress(book.id)
+        return [book.id, progress?.percent ?? 0] as [string, number]
       })
     ).then(entries => setProgressMap(Object.fromEntries(entries)))
   }, [books])
@@ -123,7 +126,7 @@ export default function LibraryPage() {
             await updateBook(book.id, { coverUri: meta.coverBase64 })
           }
         } catch {
-          // Ignore books whose metadata cannot be read; they will keep the fallback icon.
+          // Keep the fallback file tile when embedded cover extraction fails.
         } finally {
           enrichingBookIdsRef.current.delete(book.id)
         }
@@ -137,9 +140,21 @@ export default function LibraryPage() {
     }
   }, [books, updateBook])
 
-  const visibleBooks = selectedId === null
-    ? books
-    : books.filter(b => b.collectionId === selectedId)
+  const visibleBooks = selectedId === null ? books : books.filter(book => book.collectionId === selectedId)
+  const collectionName = selectedId === null
+    ? 'My Books'
+    : (collections.find(collection => collection.id === selectedId)?.name ?? 'My Books')
+
+  const sortedVisibleBooks = [...visibleBooks].sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
+  const continueBook = sortedVisibleBooks.find(book => {
+    const progress = progressMap[book.id] ?? 0
+    return progress > 0 && progress < 1
+  }) ?? sortedVisibleBooks[0]
+  const inProgressCount = visibleBooks.filter(book => {
+    const progress = progressMap[book.id] ?? 0
+    return progress > 0 && progress < 1
+  }).length
+  const completedCount = visibleBooks.filter(book => (progressMap[book.id] ?? 0) >= 1).length
 
   async function handleWebFile(files: FileList | null) {
     if (!files?.length) return
@@ -159,7 +174,9 @@ export default function LibraryPage() {
         await storeWebFile(id, buffer)
         const book = await buildBook(id, file.name, ext, buffer, webFilePath(id))
         await addBook({ ...book, collectionId: selectedId ?? undefined })
-      } catch (e) { console.error('web file open error', e) }
+      } catch (e) {
+        console.error('web file open error', e)
+      }
     }
     setImporting(false)
   }
@@ -180,261 +197,453 @@ export default function LibraryPage() {
         const book = await buildBook(id, file.name, ext, buffer, filePath)
         await addBook({ ...book, collectionId: selectedId ?? undefined })
       }
-    } catch (e) { console.error('native open error', e) }
+    } catch (e) {
+      console.error('native open error', e)
+    }
     setImporting(false)
   }
 
   function handleOpen() {
     if (isWeb()) fileInputRef.current?.click()
-    else handleNativeOpen()
+    else void handleNativeOpen()
+  }
+
+  function renderBookMenu(book: Book) {
+    return (
+      <div
+        className="absolute right-0 top-full mt-2 z-10 min-w-[180px] overflow-hidden rounded-2xl border"
+        style={{
+          backgroundColor: 'var(--reader-bg)',
+          borderColor: 'var(--border)',
+          boxShadow: 'var(--shadow-soft)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {collections.map(collection => (
+          <button
+            key={collection.id}
+            onClick={() => { updateBook(book.id, { collectionId: collection.id }); setMenuOpenId(null) }}
+            className="flex w-full items-center gap-2 border-b px-4 py-3 text-left text-sm"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            <FontAwesomeIcon icon={faBookOpen} className="text-xs" style={{ color: 'var(--text-muted)' }} />
+            {collection.name}
+          </button>
+        ))}
+        {book.collectionId && (
+          <button
+            onClick={() => { updateBook(book.id, { collectionId: undefined }); setMenuOpenId(null) }}
+            className="flex w-full items-center gap-2 border-b px-4 py-3 text-left text-sm"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            <FontAwesomeIcon icon={faMinus} className="text-xs" style={{ color: 'var(--text-muted)' }} />
+            Remove from collection
+          </button>
+        )}
+        <button
+          onClick={() => { removeBook(book.id); setMenuOpenId(null) }}
+          className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm"
+          style={{ color: '#ef4444' }}
+        >
+          <FontAwesomeIcon icon={faTrash} className="text-xs" />
+          Delete book
+        </button>
+      </div>
+    )
   }
 
   return (
     <>
       <CollectionDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
-        <input ref={fileInputRef} type="file" accept=".md,.epub,.txt,.pdf,.docx,.fb2,.fb2.zip" multiple className="hidden"
-          onChange={e => handleWebFile(e.target.files)} />
+      <div
+        className="h-full overflow-hidden"
+        style={{
+          backgroundColor: 'var(--reader-bg)',
+          color: 'var(--reader-fg)',
+          backgroundImage: [
+            'radial-gradient(circle at 8% 0%, rgba(249, 115, 22, 0.14), transparent 24%)',
+            'radial-gradient(circle at 90% 12%, rgba(59, 130, 246, 0.12), transparent 22%)',
+            'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0))',
+          ].join(', '),
+        }}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".md,.epub,.txt,.pdf,.docx,.fb2,.fb2.zip"
+          multiple
+          className="hidden"
+          onChange={e => handleWebFile(e.target.files)}
+        />
 
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-[var(--app-gutter)] pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))' }}>
-          {/* Left: hamburger + title */}
-          <div className="flex items-center gap-2 min-w-0 pt-1">
-            <HeaderIconButton onClick={() => setDrawerOpen(true)} title="Collections" aria-label="Manage collections">
-              <FontAwesomeIcon icon={faBars} />
-            </HeaderIconButton>
-            <h1 className="text-2xl font-bold tracking-tight truncate">
-              {selectedId === null ? 'My Books' : (collections.find(b => b.id === selectedId)?.name ?? 'My Books')}
-            </h1>
-          </div>
+        <div className="h-full overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-[var(--app-gutter)] pb-8 pt-[calc(0.9rem+var(--safe-top))]">
+            <section
+              className="overflow-hidden rounded-[32px] border px-5 py-5 sm:px-6 sm:py-6"
+              style={{
+                background: 'linear-gradient(135deg, var(--library-hero-from), var(--library-hero-to))',
+                borderColor: 'var(--library-border-soft)',
+                boxShadow: 'var(--shadow-card)',
+                backdropFilter: 'blur(18px)',
+              }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <HeaderIconButton onClick={() => setDrawerOpen(true)} title="Collections" aria-label="Manage collections">
+                    <FontAwesomeIcon icon={faBars} />
+                  </HeaderIconButton>
+                  <div className="min-w-0 pt-0.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: 'var(--text-muted)' }}>
+                      Library
+                    </p>
+                    <h1 className="truncate text-[clamp(1.9rem,4vw,3.4rem)] leading-none" style={{ fontFamily: 'var(--font-display)' }}>
+                      {collectionName}
+                    </h1>
+                    <p className="mt-2 max-w-2xl text-sm sm:text-[15px]" style={{ color: 'var(--text-muted)' }}>
+                      {books.length === 0
+                        ? 'Bring your reading stack into one calm, focused space built for long-form reading.'
+                        : selectedId === null
+                          ? `${books.length} books, ${inProgressCount} active reads, and a faster path back to what you were reading.`
+                          : `${visibleBooks.length} books in this collection, arranged for quick return visits and lower visual noise.`}
+                    </p>
+                  </div>
+                </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {!isWeb() && (
-              <button onClick={() => navigate('/browse')}
-                className="px-3 py-2.5 rounded-2xl text-sm font-semibold transition-opacity active:opacity-50 flex items-center gap-1.5"
-                style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}>
-                <FontAwesomeIcon icon={faFolderOpen} />
-                <span className="hidden sm:inline">Browse</span>
-              </button>
-            )}
-
-            <HeaderIconButton onClick={() => setLibraryView(libraryView === 'list' ? 'grid' : 'list')} title={libraryView === 'list' ? 'Switch to grid view' : 'Switch to list view'} aria-label="Toggle view">
-            <FontAwesomeIcon icon={libraryView === 'list' ? faTableCells : faList} />
-          </HeaderIconButton>
-
-          <HeaderIconButton onClick={handleOpen} disabled={importing} title="Open file" aria-label="Open file" className="disabled:opacity-50">
-              {importing ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <FontAwesomeIcon icon={faPlus} />
-              )}
-            </HeaderIconButton>
-
-            <HeaderIconButton onClick={() => navigate('/settings')} title="Settings" aria-label="Settings">
-              <FontAwesomeIcon icon={faGear} />
-            </HeaderIconButton>
-          </div>
-        </div>
-
-        {/* Book list */}
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Loading library…</span>
-            </div>
-          </div>
-        ) : books.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-5 px-6 sm:px-10 text-center">
-            <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl" style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)' }}>
-              <FontAwesomeIcon icon={faBook} />
-            </div>
-            <div>
-              <p className="text-lg font-semibold mb-1">Your library is empty</p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Tap <strong>+ Open</strong> to add an EPUB, PDF, DOCX, FB2, Markdown or TXT file</p>
-            </div>
-            <button onClick={handleOpen}
-              className="bg-orange-500 text-white px-6 py-3 rounded-2xl text-sm font-semibold transition-opacity active:opacity-70">
-              + Open a book
-            </button>
-          </div>
-        ) : visibleBooks.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-5 px-6 sm:px-10 text-center">
-            <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl" style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)' }}>
-              <FontAwesomeIcon icon={faBook} />
-            </div>
-            <div>
-              <p className="text-lg font-semibold mb-1">No books in this collection</p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Add books by opening a file</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto pb-8">
-            {libraryView === 'grid' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-[var(--app-gutter)] pt-4">
-                {visibleBooks
-                  .sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
-                  .map(book => {
-                  const pct = progressMap[book.id] ?? 0
-                  const color = titleColor(book.title)
-                  return (
-                    <div key={book.id} className="flex flex-col rounded-2xl overflow-hidden border transition-opacity active:opacity-70"
-                      style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
-                      {/* Cover */}
-                      <div className="relative cursor-pointer" style={{ aspectRatio: '2/3' }}
-                        onClick={() => navigate(`/reader/${book.id}`)}>
-                        {book.coverUri
-                          ? <img src={book.coverUri} alt={book.title} className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center text-4xl"
-                              style={{ backgroundColor: color + '22' }}>
-                              <FileTypeIcon format={book.format} className="text-[2.5rem]" title={`${book.format.toUpperCase()} cover icon`} />
-                            </div>
-                        }
-                        {/* Progress bar overlay at bottom of cover */}
-                        {pct > 0 && (
-                          <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
-                            <div className="h-1 transition-[width]" style={{ width: `${pct * 100}%`, backgroundColor: color }} />
-                          </div>
-                        )}
-                        {/* Menu button */}
-                        <div className="absolute top-1.5 right-1.5" onClick={e => e.stopPropagation()}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-opacity active:opacity-50"
-                            style={{ backgroundColor: 'rgba(0,0,0,0.35)', color: '#fff' }}>
-                            <FontAwesomeIcon icon={faEllipsisV} />
-                          </button>
-                          {menuOpenId === book.id && (
-                            <div
-                              className="absolute right-0 top-full mt-1 z-10 rounded-xl shadow-lg overflow-hidden min-w-[160px] border"
-                              style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}
-                              onClick={e => e.stopPropagation()}
-                            >
-                              {collections.map(bc => (
-                                <button key={bc.id}
-                                  onClick={() => { updateBook(book.id, { collectionId: bc.id }); setMenuOpenId(null) }}
-                                  className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 border-b"
-                                  style={{ borderColor: 'var(--border)' }}>
-                                  <FontAwesomeIcon icon={faBookOpen} className="text-xs" style={{ color: 'var(--text-muted)' }} />
-                                  {bc.name}
-                                </button>
-                              ))}
-                              {book.collectionId && (
-                                <button
-                                  onClick={() => { updateBook(book.id, { collectionId: undefined }); setMenuOpenId(null) }}
-                                  className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 border-b"
-                                  style={{ borderColor: 'var(--border)' }}>
-                                  <FontAwesomeIcon icon={faMinus} className="text-xs" style={{ color: 'var(--text-muted)' }} />
-                                  Remove from collection
-                                </button>
-                              )}
-                              <button
-                                onClick={() => { removeBook(book.id); setMenuOpenId(null) }}
-                                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2"
-                                style={{ color: '#ef4444' }}>
-                                <FontAwesomeIcon icon={faTrash} className="text-xs" />
-                                Delete book
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {/* Title */}
-                      <div className="px-2.5 py-2 cursor-pointer" onClick={() => navigate(`/reader/${book.id}`)}>
-                        <p className="text-xs font-semibold leading-snug line-clamp-2">{book.title}</p>
-                        {book.author && <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{book.author}</p>}
-                      </div>
-                    </div>
-                  )
-                })}
+                <div className="flex items-center gap-2">
+                  {!isWeb() && (
+                    <HeaderIconButton onClick={() => navigate('/browse')} title="Browse files" aria-label="Browse files">
+                      <FontAwesomeIcon icon={faFolderOpen} />
+                    </HeaderIconButton>
+                  )}
+                  <HeaderIconButton onClick={() => navigate('/settings')} title="Settings" aria-label="Settings">
+                    <FontAwesomeIcon icon={faGear} />
+                  </HeaderIconButton>
+                </div>
               </div>
-            ) : (
-              visibleBooks
-                .sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
-                .map(book => {
-                const pct = progressMap[book.id] ?? 0
-                const color = titleColor(book.title)
-                return (
-                  <div key={book.id} className="flex items-center gap-3 px-[var(--app-gutter)] py-4 border-b transition-colors sm:gap-4"
-                    style={{ borderColor: 'var(--border)' }}>
-                    {/* Cover */}
-                    <div className="w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
-                      style={{ backgroundColor: book.coverUri ? undefined : color + '22', border: `1.5px solid ${color}33` }}>
-                      {book.coverUri
-                        ? <img src={book.coverUri} alt={book.title} className="w-full h-full object-cover" />
-                        : <FileTypeIcon format={book.format} className="text-[2rem]" title={`${book.format.toUpperCase()} cover icon`} />}
-                    </div>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/reader/${book.id}`)}>
-                      <p className="font-semibold truncate text-sm leading-snug">{book.title}</p>
-                      <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        {book.author || 'Unknown author'} · {relativeDate(book.addedAt)}
-                      </p>
-                      {pct >= 0 && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {Math.floor(pct * 100)}% complete
-                          </span>
-                        </div>
-                      )}
-                      {/* Progress bar */}
-                      {pct > 0 && (
-                        <div className="mt-2 h-0.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--surface-2)' }}>
-                          <div className="h-0.5 rounded-full transition-[width]" style={{ width: `${pct * 100}%`, backgroundColor: color }} />
-                        </div>
-                      )}
-                    </div>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={handleOpen}
+                  disabled={importing}
+                  className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60"
+                  style={{ backgroundColor: 'var(--reader-accent)', boxShadow: 'var(--shadow-soft)' }}
+                >
+                  {importing ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FontAwesomeIcon icon={faPlus} />}
+                  {books.length === 0 ? 'Import your first book' : 'Add more books'}
+                </button>
 
-                    {/* Context menu */}
-                    <div className="relative flex-shrink-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                        className="p-2 rounded-xl transition-opacity active:opacity-50"
-                        style={{ color: 'var(--text-muted)' }}>
-                        <FontAwesomeIcon icon={faEllipsisV} />
-                      </button>
-                      {menuOpenId === book.id && (
-                        <div
-                          className="absolute right-0 top-full mt-1 z-10 rounded-xl shadow-lg overflow-hidden min-w-[160px] border"
-                          style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}
-                          onClick={e => e.stopPropagation()}
+                {continueBook && books.length > 0 && (
+                  <button
+                    onClick={() => navigate(`/reader/${continueBook.id}`)}
+                    className="inline-flex items-center gap-2 rounded-2xl border px-5 py-3 text-sm font-semibold transition-colors active:opacity-70"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
+                  >
+                    <FontAwesomeIcon icon={faClock} />
+                    Continue reading
+                  </button>
+                )}
+              </div>
+
+              {books.length === 0 ? (
+                <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+                  <div
+                    className="rounded-[28px] border p-5 sm:p-6"
+                    style={{ backgroundColor: 'var(--library-surface-2)', borderColor: 'var(--library-border-strong)' }}
+                  >
+                    <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-3xl text-2xl" style={{ backgroundColor: 'rgba(249, 115, 22, 0.12)', color: 'var(--reader-accent)' }}>
+                      <FontAwesomeIcon icon={faBook} />
+                    </div>
+                    <h2 className="text-xl sm:text-2xl" style={{ fontFamily: 'var(--font-display)' }}>
+                      Start with the file you actually want to finish.
+                    </h2>
+                    <p className="mt-3 max-w-xl text-sm sm:text-[15px]" style={{ color: 'var(--text-muted)' }}>
+                      The home screen now favors fewer decisions: import, jump back into recent reading, and keep your library visually organized instead of buried in a flat list.
+                    </p>
+                  </div>
+
+                  <div
+                    className="rounded-[28px] border p-5 sm:p-6"
+                    style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)' }}
+                  >
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em]" style={{ color: 'var(--text-muted)' }}>
+                      Supported formats
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2.5">
+                      {['EPUB', 'PDF', 'DOCX', 'FB2', 'Markdown', 'TXT'].map(format => (
+                        <span
+                          key={format}
+                          className="rounded-full border px-3 py-1.5 text-sm"
+                          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--library-surface-3)' }}
                         >
-                          {collections.map(bc => (
-                            <button key={bc.id}
-                              onClick={() => { updateBook(book.id, { collectionId: bc.id }); setMenuOpenId(null) }}
-                              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 border-b"
-                              style={{ borderColor: 'var(--border)' }}>
-                              <FontAwesomeIcon icon={faBookOpen} className="text-xs" style={{ color: 'var(--text-muted)' }} />
-                              {bc.name}
-                            </button>
-                          ))}
-                          {book.collectionId && (
-                            <button
-                              onClick={() => { updateBook(book.id, { collectionId: undefined }); setMenuOpenId(null) }}
-                              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 border-b"
-                              style={{ borderColor: 'var(--border)' }}>
-                              <FontAwesomeIcon icon={faMinus} className="text-xs" style={{ color: 'var(--text-muted)' }} />
-                              Remove from collection
-                            </button>
-                          )}
-                          <button
-                            onClick={() => { removeBook(book.id); setMenuOpenId(null) }}
-                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2"
-                            style={{ color: '#ef4444' }}>
-                            <FontAwesomeIcon icon={faTrash} className="text-xs" />
-                            Delete book
-                          </button>
-                        </div>
-                      )}
+                          {format}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                )
-              })
+                </div>
+              ) : (
+                <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[
+                      { label: 'Books ready', value: visibleBooks.length, tone: 'rgba(59,130,246,0.12)', color: '#2563eb' },
+                      { label: 'In progress', value: inProgressCount, tone: 'rgba(249,115,22,0.12)', color: '#ea580c' },
+                      { label: 'Finished', value: completedCount, tone: 'rgba(16,185,129,0.12)', color: '#059669' },
+                    ].map(stat => (
+                      <div
+                        key={stat.label}
+                        className="rounded-[24px] border p-4"
+                        style={{ backgroundColor: 'var(--library-surface-2)', borderColor: 'var(--library-border-strong)' }}
+                      >
+                        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: stat.tone, color: stat.color }}>
+                          <span className="text-sm font-semibold">{String(stat.value).padStart(2, '0')}</span>
+                        </div>
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
+                        <p className="mt-1 text-2xl" style={{ fontFamily: 'var(--font-display)' }}>{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {continueBook && (
+                    <button
+                      onClick={() => navigate(`/reader/${continueBook.id}`)}
+                      className="group overflow-hidden rounded-[28px] border p-4 text-left transition-transform active:scale-[0.99]"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(15,23,42,0.93), rgba(44,33,19,0.92))',
+                        borderColor: 'var(--library-overlay-border)',
+                        color: '#f8fafc',
+                        boxShadow: 'var(--shadow-soft)',
+                      }}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="relative w-20 flex-shrink-0 overflow-hidden rounded-[20px] border" style={{ aspectRatio: '2 / 3', borderColor: 'var(--library-overlay-border)' }}>
+                          {continueBook.coverUri ? (
+                            <img src={continueBook.coverUri} alt={continueBook.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[2.4rem]" style={{ backgroundColor: `${titleColor(continueBook.title)}33` }}>
+                              <FileTypeIcon format={continueBook.format} className="text-[2.25rem]" title={`${continueBook.format.toUpperCase()} cover icon`} />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Continue reading</p>
+                          <p className="mt-2 line-clamp-2 text-lg leading-tight sm:text-[1.35rem]" style={{ fontFamily: 'var(--font-display)' }}>
+                            {continueBook.title}
+                          </p>
+                          <p className="mt-1 truncate text-sm text-white/70">{continueBook.author || 'Unknown author'}</p>
+                          <div className="mt-4 flex items-center justify-between gap-3 text-sm text-white/70">
+                            <span>{progressLabel(progressMap[continueBook.id] ?? 0)}</span>
+                            <span>Last opened {relativeDate(continueBook.lastOpenedAt ?? continueBook.addedAt)}</span>
+                          </div>
+                          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                            <div
+                              className="h-1.5 rounded-full transition-[width]"
+                              style={{ width: `${(progressMap[continueBook.id] ?? 0) * 100}%`, backgroundColor: titleColor(continueBook.title) }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                        Open book
+                        <FontAwesomeIcon icon={faArrowRight} className="transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    </button>
+                  )}
+                </div>
+              )}
+            </section>
+
+            {loading ? (
+              <section
+                className="flex min-h-[280px] items-center justify-center rounded-[32px] border"
+                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-card)' }}
+              >
+                <div className="flex flex-col items-center gap-3" style={{ color: 'var(--text-muted)' }}>
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+                  <span className="text-sm">Loading library…</span>
+                </div>
+              </section>
+            ) : books.length === 0 ? null : visibleBooks.length === 0 ? (
+              <section
+                className="rounded-[32px] border px-6 py-10 text-center"
+                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-card)' }}
+              >
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] text-4xl" style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)' }}>
+                  <FontAwesomeIcon icon={faBook} />
+                </div>
+                <p className="mt-5 text-xl" style={{ fontFamily: 'var(--font-display)' }}>No books in this collection</p>
+                <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>Import another file or move books here from the library menu.</p>
+              </section>
+            ) : (
+              <section
+                className="rounded-[32px] border p-4 sm:p-5"
+                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-card)' }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
+                      Shelf view
+                    </p>
+                    <h2 className="mt-1 text-xl sm:text-2xl" style={{ fontFamily: 'var(--font-display)' }}>
+                      {selectedId === null ? 'Recent and ready to read' : `${collectionName} collection`}
+                    </h2>
+                  </div>
+
+                  <div className="inline-flex rounded-2xl border p-1" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--library-surface-3)' }}>
+                    <button
+                      onClick={() => setLibraryView('list')}
+                      className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold"
+                      style={libraryView === 'list'
+                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
+                        : { color: 'var(--text-muted)' }}
+                    >
+                      <FontAwesomeIcon icon={faList} />
+                      List
+                    </button>
+                    <button
+                      onClick={() => setLibraryView('grid')}
+                      className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold"
+                      style={libraryView === 'grid'
+                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
+                        : { color: 'var(--text-muted)' }}
+                    >
+                      <FontAwesomeIcon icon={faTableCells} />
+                      Grid
+                    </button>
+                  </div>
+                </div>
+
+                {libraryView === 'grid' ? (
+                  <div className="grid grid-cols-2 gap-4 pt-2 sm:grid-cols-3 xl:grid-cols-4">
+                    {sortedVisibleBooks.map(book => {
+                      const progress = progressMap[book.id] ?? 0
+                      const color = titleColor(book.title)
+
+                      return (
+                        <article
+                          key={book.id}
+                          className="overflow-hidden rounded-[28px] border p-2"
+                          style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)' }}
+                        >
+                          <div className="relative">
+                            <button
+                              onClick={() => navigate(`/reader/${book.id}`)}
+                              className="relative block w-full overflow-hidden rounded-[22px] text-left"
+                              style={{ aspectRatio: '2 / 3' }}
+                            >
+                              {book.coverUri ? (
+                                <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-[2.7rem]" style={{ backgroundColor: `${color}1f` }}>
+                                  <FileTypeIcon format={book.format} className="text-[2.7rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                </div>
+                              )}
+
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-3 pb-3 pt-8 text-white">
+                                <div className="flex items-center justify-between gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-white/80">
+                                  <span>{book.format.toUpperCase()}</span>
+                                  <span>{progressLabel(progress)}</span>
+                                </div>
+                              </div>
+
+                              {progress > 0 && (
+                                <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/20">
+                                  <div className="h-1.5 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
+                                </div>
+                              )}
+                            </button>
+
+                            <div className="absolute right-2 top-2" onClick={e => e.stopPropagation()}>
+                              <button
+                                onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
+                                className="flex h-8 w-8 items-center justify-center rounded-xl text-xs text-white transition-opacity active:opacity-60"
+                                style={{ backgroundColor: 'rgba(15, 23, 42, 0.48)', backdropFilter: 'blur(10px)' }}
+                              >
+                                <FontAwesomeIcon icon={faEllipsisV} />
+                              </button>
+                              {menuOpenId === book.id && renderBookMenu(book)}
+                            </div>
+                          </div>
+
+                          <div className="px-1 pb-1 pt-3">
+                            <button onClick={() => navigate(`/reader/${book.id}`)} className="block w-full text-left">
+                              <p className="line-clamp-2 text-sm font-semibold leading-snug">{book.title}</p>
+                              <p className="mt-1 truncate text-xs" style={{ color: 'var(--text-muted)' }}>
+                                {book.author || 'Unknown author'}
+                              </p>
+                              <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                {book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}
+                              </p>
+                            </button>
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid gap-3 pt-2">
+                    {sortedVisibleBooks.map(book => {
+                      const progress = progressMap[book.id] ?? 0
+                      const color = titleColor(book.title)
+
+                      return (
+                        <article
+                          key={book.id}
+                          className="flex items-center gap-3 rounded-[26px] border px-3 py-3 sm:gap-4 sm:px-4"
+                          style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)' }}
+                        >
+                          <button
+                            onClick={() => navigate(`/reader/${book.id}`)}
+                            className="flex w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-[18px] border sm:w-16"
+                            style={{ aspectRatio: '2 / 3', backgroundColor: book.coverUri ? undefined : `${color}1f`, borderColor: `${color}3d` }}
+                          >
+                            {book.coverUri ? (
+                              <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
+                            ) : (
+                              <FileTypeIcon format={book.format} className="text-[2rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                            )}
+                          </button>
+
+                          <button onClick={() => navigate(`/reader/${book.id}`)} className="min-w-0 flex-1 text-left">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <p className="truncate text-sm font-semibold sm:text-[15px]">{book.title}</p>
+                              <span className="rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ backgroundColor: `${color}1a`, color }}>
+                                {book.format}
+                              </span>
+                            </div>
+                            <p className="mt-1 truncate text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
+                              {book.author || 'Unknown author'}
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
+                              <span>{progressLabel(progress)}</span>
+                              <span>{book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}</span>
+                            </div>
+                            <div className="mt-3 h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
+                              <div className="h-1.5 rounded-full transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
+                            </div>
+                          </button>
+
+                          <div className="relative flex-shrink-0">
+                            <button
+                              onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
+                              className="flex h-10 w-10 items-center justify-center rounded-2xl transition-opacity active:opacity-60"
+                              style={{ backgroundColor: 'var(--library-surface-5)', color: 'var(--text-muted)' }}
+                            >
+                              <FontAwesomeIcon icon={faEllipsisV} />
+                            </button>
+                            {menuOpenId === book.id && renderBookMenu(book)}
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
             )}
           </div>
-        )}
+        </div>
       </div>
     </>
   )
