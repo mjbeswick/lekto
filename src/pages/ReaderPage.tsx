@@ -11,6 +11,7 @@ import HtmlReader from '../components/Reader/HtmlReader'
 import ContentPanel from '../components/Reader/ContentPanel'
 import ReaderToolbar from '../components/Reader/ReaderToolbar'
 import SpeedReaderView from '../components/SpeedReader/SpeedReaderView'
+import TtsReaderView from '../components/TtsReader/TtsReaderView'
 import { stripMarkdown } from '../utils/textTokenizer'
 import { useBookmarks } from '../hooks/useBookmarks'
 import { useReaderModeStore } from '../hooks/useReaderMode'
@@ -20,6 +21,7 @@ import { extractEpubText } from '../utils/epubParser'
 import { extractPdfText } from '../utils/pdfParser'
 import { extractDocxText, docxToHtml } from '../utils/docxParser'
 import { extractFb2Text, fb2ToHtml } from '../utils/fb2Parser'
+import { setReadingPosition } from '../utils/positionSync'
 
 export default function ReaderPage() {
   const { bookId } = useParams<{ bookId: string }>()
@@ -53,7 +55,17 @@ export default function ReaderPage() {
   const [headerVisible, setHeaderVisible] = useState(true)
 
   const { mode, layout, toggleMode } = useReaderModeStore()
-  const { theme, removePageBackground, fullscreenHeaderAutohide } = useAppStore()
+  const {
+    theme,
+    removePageBackground,
+    fullscreenHeaderAutohide,
+    ttsRate,
+    ttsPitch,
+    ttsVoiceURI,
+    setTtsRate,
+    setTtsPitch,
+    setTtsVoiceURI,
+  } = useAppStore()
   const { bookmarks, load: loadBookmarks, addBookmark, removeBookmark } = useBookmarks(bookId ?? '')
   const readerCanvasBg = theme === 'light' && !removePageBackground ? '#d8d8d8' : 'var(--reader-canvas-bg)'
   const headerOffset = 'calc(4.75rem + var(--safe-top))'
@@ -70,6 +82,18 @@ export default function ReaderPage() {
       window.clearTimeout(headerHideTimerRef.current)
       headerHideTimerRef.current = null
     }
+  }, [])
+
+  const showHeaderImmediately = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      setHeaderVisible(true)
+    })
+  }, [])
+
+  const startExtracting = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      setExtracting(true)
+    })
   }, [])
 
   const scheduleHeaderHide = useCallback(() => {
@@ -199,51 +223,51 @@ export default function ReaderPage() {
   useEffect(() => {
     if (!fullscreenHeaderAutohide || showPanel) {
       clearHeaderHideTimer()
-      setHeaderVisible(true)
+      showHeaderImmediately()
       return
     }
-    setHeaderVisible(true)
+    showHeaderImmediately()
     scheduleHeaderHide()
     return clearHeaderHideTimer
-  }, [bookId, clearHeaderHideTimer, fullscreenHeaderAutohide, scheduleHeaderHide, showPanel])
+  }, [bookId, clearHeaderHideTimer, fullscreenHeaderAutohide, scheduleHeaderHide, showHeaderImmediately, showPanel])
 
   useEffect(() => clearHeaderHideTimer, [clearHeaderHideTimer])
 
   // Lazy EPUB text extraction — only triggered when speed reader is first activated
   useEffect(() => {
-    if (mode !== 'speed' || !epubBuffer || epubExtractedRef.current) return
+    if ((mode !== 'speed' && mode !== 'tts') || !epubBuffer || epubExtractedRef.current) return
     epubExtractedRef.current = true
-    setExtracting(true)
+    startExtracting()
     extractEpubText(epubBuffer)
       .then(text => setPlainText(text))
       .catch(err => console.error('[Lekto] EPUB text extraction failed:', err))
       .finally(() => setExtracting(false))
-  }, [mode, epubBuffer])
+  }, [mode, epubBuffer, startExtracting])
 
   // Lazy PDF text extraction — only triggered when speed reader is first activated
   useEffect(() => {
-    if (mode !== 'speed' || !docBuffer || !book || pdfExtractedRef.current) return
+    if ((mode !== 'speed' && mode !== 'tts') || !docBuffer || !book || pdfExtractedRef.current) return
     if (book.format !== 'pdf') return
     pdfExtractedRef.current = true
-    setExtracting(true)
+    startExtracting()
     extractPdfText(docBuffer)
       .then(text => setPlainText(text))
       .catch(err => console.error('[Lekto] PDF text extraction failed:', err))
       .finally(() => setExtracting(false))
-  }, [mode, docBuffer, book])
+  }, [mode, docBuffer, book, startExtracting])
 
   // Lazy DOCX/FB2 text extraction — only triggered when speed reader is first activated
   useEffect(() => {
-    if (mode !== 'speed' || !docBuffer || !book || docExtractedRef.current) return
+    if ((mode !== 'speed' && mode !== 'tts') || !docBuffer || !book || docExtractedRef.current) return
     if (book.format !== 'docx' && book.format !== 'fb2') return
     docExtractedRef.current = true
-    setExtracting(true)
+    startExtracting()
     const extract = book.format === 'docx' ? extractDocxText : extractFb2Text
     extract(docBuffer)
       .then(text => setPlainText(text))
       .catch(err => console.error('[Lekto] text extraction failed:', err))
       .finally(() => setExtracting(false))
-  }, [mode, docBuffer, book])
+  }, [mode, docBuffer, book, startExtracting])
 
   const handleScrollProgress = useCallback(async (offset: number, percent: number) => {
     if (!bookId) return
@@ -363,6 +387,18 @@ export default function ReaderPage() {
       >
         {mode === 'speed' ? (
           <SpeedReaderView text={plainText || stripMarkdown(mdContent)} extracting={extracting} />
+        ) : mode === 'tts' ? (
+          <TtsReaderView
+            text={plainText || stripMarkdown(mdContent)}
+            extracting={extracting}
+            rate={ttsRate}
+            pitch={ttsPitch}
+            voiceUri={ttsVoiceURI}
+            onRateChange={setTtsRate}
+            onPitchChange={setTtsPitch}
+            onVoiceChange={(voiceUri) => setTtsVoiceURI(voiceUri ?? '')}
+            onProgress={(progress) => setReadingPosition(progress.fraction)}
+          />
         ) : (
           <>
             {(book.format === 'md' || book.format === 'txt') && layout === 'scroll' && (

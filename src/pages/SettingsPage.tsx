@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faSun, faMoon, faCircleHalfStroke, faMobileScreen } from '@fortawesome/free-solid-svg-icons'
 import { useAppStore } from '../store/appStore'
@@ -7,7 +8,7 @@ import type { Theme } from '../types'
 import HeaderIconButton from '../components/HeaderIconButton'
 import { READER_FONTS } from '../utils/readerFonts'
 
-const THEMES: { label: string; value: Theme; icon: any }[] = [
+const THEMES: { label: string; value: Theme; icon: IconDefinition }[] = [
   { label: 'Light',  value: 'light',  icon: faSun },
   { label: 'Dark',   value: 'dark',   icon: faMoon },
   { label: 'AMOLED', value: 'amoled', icon: faMobileScreen },
@@ -38,6 +39,8 @@ export default function SettingsPage() {
     rsvpChunkLetters, setRsvpChunkLetters,
     rsvpShowContext, setRsvpShowContext,
     rsvpFontSize, setRsvpFontSize,
+    ttsRate, setTtsRate,
+    ttsPitch, setTtsPitch,
   } = useAppStore()
   const { layout, setLayout } = useReaderModeStore()
   const headerBg = theme === 'light' ? '#ffffff' : 'var(--surface)'
@@ -320,6 +323,20 @@ export default function SettingsPage() {
         <label className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm">Speed reader font size: {rsvpFontSize}px</span>
           <input type="range" min={32} max={80} step={2} value={rsvpFontSize} onChange={e => setRsvpFontSize(Number(e.target.value))}
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+        </label>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Text To Speech</h2>
+        <label className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm">Speech rate: {ttsRate.toFixed(2)}x</span>
+          <input type="range" min={0.5} max={2} step={0.05} value={ttsRate} onChange={e => setTtsRate(Number(e.target.value))}
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+        </label>
+        <label className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm">Speech pitch: {ttsPitch.toFixed(2)}x</span>
+          <input type="range" min={0.5} max={2} step={0.05} value={ttsPitch} onChange={e => setTtsPitch(Number(e.target.value))}
             className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </label>
       </section>

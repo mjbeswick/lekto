@@ -20,6 +20,9 @@ interface AppState {
   rsvpChunkLetters: number
   rsvpShowContext: boolean
   rsvpFontSize: number
+  ttsRate: number
+  ttsPitch: number
+  ttsVoiceURI: string
   setTheme: (t: Theme) => void
   setAccentColor: (c: string) => void
   setFontSize: (n: number) => void
@@ -37,6 +40,9 @@ interface AppState {
   setRsvpChunkLetters: (n: number) => void
   setRsvpShowContext: (v: boolean) => void
   setRsvpFontSize: (n: number) => void
+  setTtsRate: (n: number) => void
+  setTtsPitch: (n: number) => void
+  setTtsVoiceURI: (voiceURI: string) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -59,6 +65,9 @@ export const useAppStore = create<AppState>()(
       rsvpChunkLetters: 1,
       rsvpShowContext: true,
       rsvpFontSize: 52,
+      ttsRate: 1,
+      ttsPitch: 1,
+      ttsVoiceURI: '',
       setTheme: (theme) => set({ theme }),
       setAccentColor: (accentColor) => set({ accentColor }),
       setFontSize: (fontSize) => set({ fontSize }),
@@ -76,6 +85,9 @@ export const useAppStore = create<AppState>()(
       setRsvpChunkLetters: (rsvpChunkLetters) => set({ rsvpChunkLetters }),
       setRsvpShowContext: (rsvpShowContext) => set({ rsvpShowContext }),
       setRsvpFontSize: (rsvpFontSize) => set({ rsvpFontSize }),
+      setTtsRate: (ttsRate) => set({ ttsRate }),
+      setTtsPitch: (ttsPitch) => set({ ttsPitch }),
+      setTtsVoiceURI: (ttsVoiceURI) => set({ ttsVoiceURI }),
     }),
     { name: 'lekto-settings' }
   )

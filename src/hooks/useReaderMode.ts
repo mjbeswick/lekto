@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type ReaderMode = 'ebook' | 'speed'
+export type ReaderMode = 'ebook' | 'speed' | 'tts'
 export type EbookLayout = 'scroll' | 'pages'
 
 interface ReaderModeState {

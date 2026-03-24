@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faBars, faBolt, faBook, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faBars, faBolt, faBook, faGear, faVolumeHigh } from '@fortawesome/free-solid-svg-icons'
 import { useReaderModeStore } from '../../hooks/useReaderMode'
 import { useAppStore } from '../../store/appStore'
 import HeaderIconButton from '../HeaderIconButton'
@@ -12,7 +12,7 @@ interface Props {
 
 export default function ReaderToolbar({ title, onTogglePanel }: Props) {
   const navigate = useNavigate()
-  const { mode, toggleMode } = useReaderModeStore()
+  const { mode, setMode } = useReaderModeStore()
   const theme = useAppStore(s => s.theme)
   const headerBg = theme === 'light' ? '#ffffff' : 'var(--surface)'
 
@@ -38,13 +38,22 @@ export default function ReaderToolbar({ title, onTogglePanel }: Props) {
 
       <div className="flex gap-2 items-center">
         <HeaderIconButton
-          onClick={toggleMode}
+          onClick={() => setMode(mode === 'tts' ? 'ebook' : 'tts')}
+          className="w-11 h-11 rounded-2xl sm:w-10 sm:h-10 sm:rounded-xl"
+          active={mode === 'tts'}
+          title={mode === 'tts' ? 'Switch to Ebook Reader' : 'Switch to Text-to-Speech'}
+          aria-label={mode === 'tts' ? 'Switch to Ebook Reader' : 'Switch to Text-to-Speech'}
+        >
+          <FontAwesomeIcon icon={mode === 'tts' ? faBook : faVolumeHigh} />
+        </HeaderIconButton>
+        <HeaderIconButton
+          onClick={() => setMode(mode === 'speed' ? 'ebook' : 'speed')}
           className="w-11 h-11 rounded-2xl sm:w-10 sm:h-10 sm:rounded-xl"
           active={mode === 'speed'}
-          title={mode === 'ebook' ? 'Switch to Speed Reader' : 'Switch to Ebook Reader'}
-          aria-label={mode === 'ebook' ? 'Switch to Speed Reader' : 'Switch to Ebook Reader'}
+          title={mode === 'speed' ? 'Switch to Ebook Reader' : 'Switch to Speed Reader'}
+          aria-label={mode === 'speed' ? 'Switch to Ebook Reader' : 'Switch to Speed Reader'}
         >
-          <FontAwesomeIcon icon={mode === 'ebook' ? faBolt : faBook} />
+          <FontAwesomeIcon icon={mode === 'speed' ? faBook : faBolt} />
         </HeaderIconButton>
         <HeaderIconButton
           onClick={() => navigate('/settings')}
