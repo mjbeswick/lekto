@@ -129,6 +129,14 @@ npm run build
 ### Android
 
 ```bash
+npm run android:build
+```
+
+This creates `lekto.apk` in the repo root from the Android release build.
+
+For installing directly to a connected device during development:
+
+```bash
 npm run android:push
 ```
 

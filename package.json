@@ -8,6 +8,7 @@
     "generate:icons": "node scripts/generate-app-icons.mjs",
     "prebuild": "npm run generate:icons",
     "build": "tsc -b && vite build",
+    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew clean assembleRelease && cp app/build/outputs/apk/release/app-release-unsigned.apk ../lekto.apk",
     "android:push": "npm run build && npx cap sync android && npx cap run android",
     "lint": "eslint .",
     "preview": "vite preview",
