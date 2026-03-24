@@ -43,7 +43,7 @@ export default function SettingsPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
-      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-5 flex-shrink-0" style={{ paddingTop: 'calc(1.25rem + var(--safe-top))' }}>
+      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-5 flex-shrink-0 border-b" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', paddingTop: 'calc(1.25rem + var(--safe-top))' }}>
         <HeaderIconButton onClick={() => navigate(-1)} title="Back" aria-label="Back">
           <FontAwesomeIcon icon={faArrowLeft} />
         </HeaderIconButton>

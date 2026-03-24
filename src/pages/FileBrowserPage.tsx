@@ -288,7 +288,7 @@ export default function FileBrowserPage() {
   return (
     <div className="flex flex-col min-h-[100dvh]" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0" style={{ paddingTop: 'calc(1rem + var(--safe-top))' }}>
+      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-3 border-b flex-shrink-0" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))' }}>
         <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library">
           <FontAwesomeIcon icon={faArrowLeft} />
         </HeaderIconButton>

@@ -324,7 +324,7 @@ export default function LibraryPage() {
 
         <div
           className="border-b flex-shrink-0 px-[var(--app-gutter)] py-2.5 flex items-center justify-between gap-3"
-          style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.65rem + var(--safe-top))' }}
+          style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', paddingTop: 'calc(0.65rem + var(--safe-top))' }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <HeaderIconButton onClick={() => setDrawerOpen(true)} title="Collections" aria-label="Manage collections" className="h-10 w-10 rounded-xl text-[15px] sm:h-10 sm:w-10 sm:rounded-xl">
