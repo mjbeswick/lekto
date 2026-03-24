@@ -1,179 +1,152 @@
 # Lekto
 
-A mobile-first ebook reader and speed reader (RSVP) app built with Capacitor, React, and TypeScript. Supports EPUB and Markdown/plain-text files with a focus on a clean reading experience and research-backed speed-reading techniques.
-
----
+Lekto is a mobile-first reading app built with React, TypeScript, Capacitor, and Electrobun. It combines a standard ebook reader, an RSVP speed reader, and a text-to-speech mode in one app, with shared progress and library management across formats.
 
 ## Features
 
-### 📚 Library
-- Import EPUB, Markdown (`.md`), and plain-text (`.txt`) files from device storage
-- Persistent library with cover art extracted from EPUB metadata
-- Reading progress tracked per book
-- Last-opened sorting
+### Library
+- Imports `EPUB`, `PDF`, `DOCX`, `FB2`/`.fb2.zip`, Markdown (`.md`), and plain text (`.txt`)
+- Supports direct file import on web, Capacitor mobile builds, and the Electrobun desktop shell
+- Extracts metadata when available, including title, author, and embedded cover art for EPUB, PDF, and FB2
+- Tracks reading progress per book and sorts the library by most recently opened titles
+- Offers list and grid library views
+- Includes title/author search
 
-### 📖 Ebook Reader
-- **Scroll mode** — continuous scrolling with progress auto-save
-- **Paginated mode** — tap left/right edges or swipe to turn pages
-  - **Two-page spread** — automatically activates when the window is ≥ 720 px wide (portrait tablet, landscape phone, desktop), with a subtle spine divider
-- **EPUB** — rendered via epub.js with table of contents navigation
-- **Markdown / plain text** — rendered with GFM support (tables, task lists, etc.)
-- Highlights and notes panel
-- Tap the centre zone in paginated mode to jump straight to speed reader from that position
+### Collections And Directories
+- Create, rename, delete, and filter by collections
+- Assign books to collections or remove them from a collection
+- Attach folders/directories and scan them into the library
+- Refresh tracked directories to add newly discovered books and remove missing ones
+- Supports recursive folder import in the native file browser flow
 
-### ⚡ Speed Reader (RSVP)
-Research-backed Rapid Serial Visual Presentation mode:
+### Ebook Reader
+- Scroll and paginated layouts for supported formats
+- Two-page spread mode on wider screens
+- EPUB rendering with table of contents navigation
+- PDF reading with page navigation and outline-derived contents when available
+- Markdown and plain text rendering with `remark-gfm` support
+- DOCX and FB2 conversion into readable HTML/text flows
+- Auto-saved progress across scroll, pages, PDF page position, and EPUB CFI locations
+- Reader search panel for extracted plain text
+- Bookmark creation, navigation, and deletion
+- Contents/bookmarks/search side panel
+- Reader header auto-hide option for a fullscreen-style experience
 
-| Feature | Detail |
-|---|---|
-| **ORP highlighting** | Optimal Recognition Point letter highlighted in orange on every displayed word |
-| **Alignment ticks** | Top/bottom tick marks guiding the eye to the center line (single-word mode) |
-| **Punctuation pauses** | Clause-end pause ×1.5 · Sentence-end pause ×2.5 |
-| **Word-length scaling** | Longer words shown for proportionally more time (toggleable) |
-| **Letter-count chunking** | Slider (1–25 chars) groups multiple words per flash to match natural eye fixation width |
-| **Clean background** | Pure white (#ffffff) light mode, #1a1814 dark mode |
-| **Context row** | Previous / next word shown dimly in single-word mode |
+### Speed Reader
+- Dedicated RSVP mode with shared position syncing from the ebook reader
+- ORP-highlighted word rendering
+- Sentence and punctuation-aware timing
+- Optional word-length scaling
+- Adjustable chunking by letters per flash
+- Previous/next sentence controls, keyboard shortcuts, and wheel/drag speed controls
+- Progress bar, elapsed time, and time-remaining display
+- Context-word preview around the active chunk on larger screens
 
-**Controls**
-- `Space` — play / pause
-- `← →` — jump back / forward one sentence
-- `↑ ↓` — adjust WPM ±25
-- Scroll wheel — fine-tune WPM
-- Drag the play button up/down — change WPM continuously
-- Tap the WPM display — open preset picker (Very Slow 100 → Expert 1200)
+### Text To Speech
+- Dedicated TTS mode alongside ebook and speed-reader modes
+- Uses browser speech synthesis behind a platform abstraction
+- Async voice discovery with voice picker support
+- Play, pause, resume, stop, previous sentence, and next sentence controls
+- Adjustable speech rate and pitch
+- Sentence-based progress tracking with current-word updates when boundary events are available
+- Shared position syncing back into the rest of the reader flow
 
-**WPM Presets**
+### Settings And Reading Preferences
+- Themes: `Light`, `Dark`, `AMOLED`, `Sepia`
+- Accent color selection
+- Reader font family, font size, line height, and paragraph spacing
+- Toggle for constrained line width
+- Toggle for removing reader margins
+- Toggle for removing page backgrounds
+- Scroll page fill behavior (`width` or `height`)
+- Default RSVP WPM
+- RSVP word-length scaling toggle
+- RSVP context-word toggle
+- RSVP chunk-size slider
+- RSVP font-size slider
+- TTS rate and pitch controls
 
-| WPM | Level |
-|---|---|
-| 100 | Very Slow |
-| 150 | Slow |
-| 200 | Comfortable |
-| 300 | Normal |
-| 400 | Brisk |
-| 500 | Fast |
-| 700 | Speed Reader |
-| 900 | Very Fast |
-| 1200 | Expert |
+### Platform Support
+- Web app via Vite
+- Android and iOS via Capacitor
+- Desktop shell via Electrobun
+- Mobile-safe layout with safe-area-aware headers and panels
 
-### 🔁 Mode Sync
-Switching between ebook and speed reader remembers your position:
-- Page fraction is tracked continuously by both readers via a shared position store
-- Speed reader resumes from the same approximate word when switching modes
-- Returning to paginated mode lands on the correct page
+## Reader Modes
 
-### ⚙️ Settings
-Accessible from the reader toolbar (gear icon, navigates back with back button):
-- **Theme** — Light, Dark, Sepia
-- **Font family** — Serif / Sans-serif
-- **Font size** — slider
-- **Line height** — slider
-- **Default WPM** — slider
-- **Word-length scaling** — toggle
-- **Letters per flash** — slider (RSVP chunk size)
+Lekto has three reader modes:
 
----
+- `ebook`: standard reading layout for the source document
+- `speed`: RSVP presentation using extracted plain text
+- `tts`: text-to-speech playback using extracted plain text
+
+Switching between modes keeps an approximate shared reading position so you can move between visual reading, RSVP, and speech playback without starting over.
+
+## Supported Formats
+
+| Format | Library Import | Ebook Reading | Speed Reader | TTS |
+| --- | --- | --- | --- | --- |
+| EPUB | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
+| PDF | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
+| DOCX | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
+| FB2 / `.fb2.zip` | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
+| Markdown | Yes | Yes | Yes | Yes |
+| Plain text | Yes | Yes | Yes | Yes |
 
 ## Tech Stack
 
-| Layer | Library |
-|---|---|
-| Framework | [Capacitor 8](https://capacitorjs.com/) + [React 19](https://react.dev/) |
+| Layer | Library / Tool |
+| --- | --- |
+| Framework | React 19 |
+| Native shell | Capacitor 8 |
+| Desktop shell | Electrobun |
 | Language | TypeScript |
-| Build | [Vite](https://vitejs.dev/) |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
-| Routing | React Router v7 |
-| State | [Zustand](https://zustand-demo.pmnd.rs/) (persisted via localStorage) |
-| EPUB rendering | [epub.js](https://github.com/futurepress/epub.js) |
-| EPUB parsing | [JSZip](https://stuk.github.io/jszip/) (text extraction for RSVP) |
-| Markdown | [react-markdown](https://github.com/remarkjs/react-markdown) + remark-gfm |
-| Icons | [Font Awesome](https://fontawesome.com/) (free solid + regular) |
-| DB | SQLite via `@capacitor-community/sqlite` (books, highlights, progress) |
-| File access | `@capawesome/capacitor-file-picker` + `@capacitor/filesystem` |
-
----
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── Reader/
-│   │   ├── AnnotationsPanel.tsx   # Highlights & notes sidebar
-│   │   ├── EpubReader.tsx         # epub.js wrapper
-│   │   ├── HighlightMenu.tsx      # Text-selection highlight popup
-│   │   ├── MarkdownReader.tsx     # Scroll-mode MD/TXT reader
-│   │   ├── PaginatedReader.tsx    # Page-turn reader (single + spread)
-│   │   ├── ReaderToolbar.tsx      # Top bar: back, title, mode toggle, settings
-│   │   └── TocDrawer.tsx          # EPUB table of contents
-│   └── SpeedReader/
-│       ├── PlayDragButton.tsx     # Play/pause + drag-to-adjust-WPM
-│       ├── RsvpChunk.tsx          # Word chunk with ORP highlighting & ticks
-│       ├── RsvpWord.tsx           # Single-word ORP rendering primitive
-│       └── SpeedReaderView.tsx    # Full RSVP UI
-├── db/
-│   ├── books.ts                   # Book CRUD
-│   ├── database.ts                # SQLite init & migrations
-│   ├── highlights.ts              # Highlight CRUD
-│   └── progress.ts                # Reading progress CRUD
-├── hooks/
-│   ├── useHighlights.ts           # Highlights state hook
-│   ├── useReaderMode.ts           # ebook | speed mode + scroll | pages layout
-│   └── useRsvp.ts                 # RSVP engine (tokenizer, timer, controls)
-├── pages/
-│   ├── FileBrowserPage.tsx        # Native file picker / import
-│   ├── LibraryPage.tsx            # Book grid
-│   ├── ReaderPage.tsx             # Orchestrates reader + speed reader + toolbar
-│   └── SettingsPage.tsx           # App settings
-├── store/
-│   ├── appStore.ts                # Persisted settings (theme, font, WPM, …)
-│   └── libraryStore.ts            # In-memory library cache
-├── utils/
-│   ├── epubParser.ts              # EPUB text extraction (JSZip, attribute-order-safe)
-│   ├── fileStore.ts               # Capacitor Filesystem helpers
-│   ├── markdownMeta.ts            # Front-matter parsing
-│   ├── positionSync.ts            # Module-level read-position fraction (mode sync)
-│   └── textTokenizer.ts           # Tokenizer: ORP index, sentence/clause detection
-└── types/
-    └── index.ts                   # Shared TypeScript types (Book, etc.)
-```
-
----
+| Build | Vite |
+| Routing | React Router 7 |
+| State | Zustand |
+| Styling | Tailwind CSS 3 |
+| EPUB rendering | `epub.js` |
+| PDF rendering | `pdfjs-dist` |
+| Markdown rendering | `react-markdown` + `remark-gfm` |
+| DOCX parsing | `mammoth` |
+| EPUB/ZIP parsing | `jszip` |
+| Storage | `@capacitor/preferences` plus file storage helpers |
+| File picking | `@capawesome/capacitor-file-picker` |
 
 ## Development
 
 ```bash
-# Install dependencies
 npm install
-
-# Regenerate platform icons
-npm run generate:icons
-
-# Start dev server (browser)
 npm run dev
-
-# Build
-npm run build
-
-# iOS (requires Xcode)
-npx cap sync ios && npx cap open ios
-
-# Android (requires Android Studio)
-npx cap sync android && npx cap open android
 ```
 
-The build icon assets for web, Android, iOS, and desktop are generated from
-scripts/generate-app-icons.mjs.
+### Build
 
----
+```bash
+npm run build
+```
 
-## Reading Science Notes
+### Android
 
-The RSVP implementation draws on the following research findings:
+```bash
+npm run android:push
+```
 
-- **ORP (Optimal Recognition Point)**: The eye fixates slightly left of centre on a word. Aligning this point to a fixed screen position reduces saccade distance. Implemented at ~30% of the word's alphabetic characters.
-- **Punctuation pauses**: Studies show comprehension improves when clause boundaries (`,`, `;`, `:`) get a ×1.5 display duration and sentence boundaries (`.`, `!`, `?`) get ×2.5.
-- **Chunking**: Presenting 2–4 short words together at ~10–13 characters per flash better matches the natural perceptual span of ~13 characters. Controlled by the "Letters per flash" slider.
-- **Word-length scaling**: Longer words require more cognitive processing time. Scaling display duration with word length (×0.6–×2.0) maintains comprehension at higher WPM.
-- **Background**: Research suggests warm backgrounds reduce glare, though many users prefer the high contrast of pure white. Lekto uses `#ffffff` (light) / `#1a1814` (dark).
+### Desktop
 
+```bash
+cd desktop && bun install
+npm run dev
+npm run desktop:dev
+```
+
+Desktop production build:
+
+```bash
+npm run desktop:build
+```
+
+### Notes
+
+- `npm run build` runs the repo `prebuild` step first, which currently calls `npm run generate:icons`.
+- Desktop instructions and release workflow expectations are also documented in [AGENTS.md](/Users/michael/Projects/lekto/AGENTS.md).
