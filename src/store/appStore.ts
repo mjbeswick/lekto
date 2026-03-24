@@ -11,6 +11,7 @@ interface AppState {
   paragraphSpacing: number
   maxWidth: boolean
   removeBookMargins: boolean
+  removePageBackground: boolean
   libraryView: 'list' | 'grid'
   defaultWpm: number
   wordLengthScaling: boolean
@@ -25,6 +26,7 @@ interface AppState {
   setParagraphSpacing: (n: number) => void
   setMaxWidth: (v: boolean) => void
   setRemoveBookMargins: (v: boolean) => void
+  setRemovePageBackground: (v: boolean) => void
   setLibraryView: (v: 'list' | 'grid') => void
   setDefaultWpm: (n: number) => void
   setWordLengthScaling: (v: boolean) => void
@@ -44,6 +46,7 @@ export const useAppStore = create<AppState>()(
       paragraphSpacing: 1,
       maxWidth: true,
       removeBookMargins: false,
+      removePageBackground: false,
       libraryView: 'list',
       defaultWpm: 300,
       wordLengthScaling: true,
@@ -58,6 +61,7 @@ export const useAppStore = create<AppState>()(
       setParagraphSpacing: (paragraphSpacing) => set({ paragraphSpacing }),
       setMaxWidth: (maxWidth) => set({ maxWidth }),
       setRemoveBookMargins: (removeBookMargins) => set({ removeBookMargins }),
+      setRemovePageBackground: (removePageBackground) => set({ removePageBackground }),
       setLibraryView: (libraryView) => set({ libraryView }),
       setDefaultWpm: (defaultWpm) => set({ defaultWpm }),
       setWordLengthScaling: (wordLengthScaling) => set({ wordLengthScaling }),

@@ -18,6 +18,8 @@ html, body {
 
 :root {
   --reader-bg: #ffffff;
+  --reader-canvas-bg: #ececec;
+  --reader-page-bg: #ffffff;
   --reader-fg: #1f1b14;
   --reader-accent: #f97316;
   --surface: #f5f5f5;
@@ -50,6 +52,8 @@ html, body {
 
 .theme-dark {
   --reader-bg: #1a1814;
+  --reader-canvas-bg: #1a1814;
+  --reader-page-bg: #1a1814;
   --reader-fg: #ede8e0;
   --surface: #242018;
   --surface-2: #2e2a22;
@@ -78,6 +82,8 @@ html, body {
 
 .theme-amoled {
   --reader-bg: #000000;
+  --reader-canvas-bg: #000000;
+  --reader-page-bg: #000000;
   --reader-fg: #e8e4dc;
   --surface: #111111;
   --surface-2: #1a1a1a;
@@ -98,6 +104,8 @@ html, body {
 
 .theme-sepia {
   --reader-bg: #f4ecd8;
+  --reader-canvas-bg: #f4ecd8;
+  --reader-page-bg: #f4ecd8;
   --reader-fg: #3b2f1e;
   --surface: #ede0c4;
   --surface-2: #d6c9a8;

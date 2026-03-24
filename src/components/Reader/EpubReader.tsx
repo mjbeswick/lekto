@@ -28,7 +28,16 @@ function flattenToc(items: TocItem[]): TocItem[] {
   return items.flatMap(item => [item, ...flattenToc(item.subitems ?? [])])
 }
 
-function applyTypographyTheme(rendition: any, fontSize: number, fontStack: string, lineHeight: number, paragraphSpacing: number, accentColor: string, removeBookMargins: boolean) {
+function applyTypographyTheme(
+  rendition: any,
+  fontSize: number,
+  fontStack: string,
+  lineHeight: number,
+  paragraphSpacing: number,
+  accentColor: string,
+  removeBookMargins: boolean,
+  pageBackgroundColor: string,
+) {
   const paragraphMargin = `${paragraphSpacing}em`
   const listParagraphMargin = `${Math.max(0, paragraphSpacing * 0.65)}em`
   const outerSpacing = removeBookMargins ? '0 !important' : '16px !important'
@@ -38,6 +47,7 @@ function applyTypographyTheme(rendition: any, fontSize: number, fontStack: strin
       'font-size': `${fontSize}px !important`,
       'margin': '0 !important',
       'padding': '0 !important',
+      'background-color': `${pageBackgroundColor} !important`,
     },
     body: {
       'font-size': `${fontSize}px !important`,
@@ -45,6 +55,7 @@ function applyTypographyTheme(rendition: any, fontSize: number, fontStack: strin
       'line-height': `${lineHeight} !important`,
       'margin': '0 !important',
       'padding': outerSpacing,
+      'background-color': `${pageBackgroundColor} !important`,
     },
     p: {
       'margin-top': '0 !important',
@@ -73,8 +84,11 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
   const currentHrefRef = useRef('')
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
   const [isSpread, setIsSpread] = useState(false)
-  const { fontSize, fontFamily, lineHeight, paragraphSpacing, accentColor, removeBookMargins } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, paragraphSpacing, accentColor, removeBookMargins, removePageBackground } = useAppStore()
   const fontStack = getReaderFontStack(fontFamily)
+  const pageBackgroundColor = removePageBackground
+    ? 'transparent'
+    : getComputedStyle(document.documentElement).getPropertyValue('--reader-page-bg').trim() || '#ffffff'
 
   useImperativeHandle(ref, () => ({
     display: (target: string) => {
@@ -140,7 +154,7 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
       manager,
     })
     renditionRef.current = rendition
-    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins)
+    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins, pageBackgroundColor)
 
     rendition.display(initialCfi ?? undefined)
 
@@ -183,16 +197,20 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
       book.destroy()
       // URL.revokeObjectURL(blobUrl)
     }
-    }, [epubBuffer, dimensions, isSpread, layout]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [epubBuffer, dimensions, isSpread, layout, pageBackgroundColor]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!renditionRef.current) return
-      applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins)
-    }, [fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins])
+      applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins, pageBackgroundColor)
+    }, [fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins, pageBackgroundColor])
 
   return (
     <div className="relative w-full h-full">
-      <div ref={containerRef} className={`w-full h-full ${layout === 'scroll' ? 'overflow-y-auto' : ''}`} />
+      <div
+        ref={containerRef}
+        className={`w-full h-full ${layout === 'scroll' ? 'overflow-y-auto' : ''}`}
+        style={{ backgroundColor: removePageBackground ? 'transparent' : 'var(--reader-page-bg)' }}
+      />
       {/* Visual spine for spread mode */}
       {layout !== 'scroll' && isSpread && (
         <div 

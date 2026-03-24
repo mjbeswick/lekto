@@ -16,7 +16,7 @@ export default function ReaderToolbar({ title, onTogglePanel }: Props) {
   return (
     <div
       className="flex items-center justify-between gap-2 px-[var(--app-gutter)] pb-3 pt-3 flex-shrink-0 border-b"
-      style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + var(--safe-top))' }}
+      style={{ backgroundColor: 'var(--reader-canvas-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + var(--safe-top))' }}
     >
       <div className="flex items-center gap-2 min-w-0">
         <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library" className="w-11 h-11 rounded-2xl sm:w-10 sm:h-10 sm:rounded-xl">

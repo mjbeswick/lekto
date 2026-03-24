@@ -269,7 +269,7 @@ export default function ReaderPage() {
 
   if (!book) {
     return (
-      <div className="flex items-center justify-center min-h-[100dvh]" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+      <div className="flex items-center justify-center min-h-[100dvh]" style={{ backgroundColor: 'var(--reader-canvas-bg)', color: 'var(--reader-fg)' }}>
         <p style={{ color: 'var(--text-muted)' }}>Loading…</p>
       </div>
     )
@@ -278,7 +278,7 @@ export default function ReaderPage() {
   const isHtmlFormat = book.format === 'docx' || book.format === 'fb2'
 
   return (
-    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden" style={{ backgroundColor: 'var(--reader-canvas-bg)', color: 'var(--reader-fg)' }}>
       <ReaderToolbar
         title={book.title}
         onTogglePanel={() => setShowPanel(true)}
