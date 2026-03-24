@@ -1,21 +1,33 @@
 import { createRPC, Electroview } from 'electrobun/view'
 import type { LektoRPCType } from './rpcTypes'
 
-// Webview side: local handles nothing, remote is the bun process
-const rpc = createRPC<
+type LektoRPC = ReturnType<typeof createRPC<
   { requests: Record<never, never>; messages: Record<never, never> },
   { requests: LektoRPCType['bun']['requests']; messages: Record<never, never> }
->({
-  requestHandler: {},
-  transport: { registerHandler: () => {} },
-})
+>>
 
-const electroview = new Electroview({ rpc })
+let _electroview: Electroview<LektoRPC> | null = null
+
+// Lazily initialised — only constructed when running inside Electrobun,
+// so the WebSocket attempt never fires in a regular browser dev session.
+function getElectroview(): Electroview<LektoRPC> {
+  if (!_electroview) {
+    const rpc = createRPC<
+      { requests: Record<never, never>; messages: Record<never, never> },
+      { requests: LektoRPCType['bun']['requests']; messages: Record<never, never> }
+    >({
+      requestHandler: {},
+      transport: { registerHandler: () => {} },
+    })
+    _electroview = new Electroview({ rpc })
+  }
+  return _electroview
+}
 
 export async function rpcOpenFileDialog(): Promise<{ paths: string[] }> {
-  return electroview.rpc!.request.openFileDialog()
+  return getElectroview().rpc!.request.openFileDialog()
 }
 
 export async function rpcReadFile(path: string): Promise<{ data: string }> {
-  return electroview.rpc!.request.readFile({ path })
+  return getElectroview().rpc!.request.readFile({ path })
 }
