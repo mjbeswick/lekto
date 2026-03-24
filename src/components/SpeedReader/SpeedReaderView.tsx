@@ -18,6 +18,9 @@ const SMALL_SCREEN_QUERY = '(max-width: 640px)'
 const MIN_RSVP_FONT_SIZE = 32
 const MAX_RSVP_FONT_SIZE = 80
 const RSVP_FONT_SIZE_STEP = 2
+const TOUCH_DRAG_THRESHOLD = 12
+const TOUCH_WPM_SENSITIVITY = 4
+const TOUCH_FONT_SENSITIVITY = 18
 
 function sameOffsets(a: number[], b: number[]): boolean {
   return a.length === b.length && a.every((value, index) => Math.abs(value - b[index]) < 0.5)
@@ -76,6 +79,13 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   wpmRef.current = wpm
   const fontSizeRef = useRef(rsvpFontSize)
   fontSizeRef.current = rsvpFontSize
+  const touchDragRef = useRef<{
+    startX: number
+    startY: number
+    startWpm: number
+    startFontSize: number
+    mode: 'wpm' | 'font' | null
+  } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const guideFrameRef = useRef<HTMLDivElement>(null)
   const chunkRef = useRef<HTMLDivElement>(null)
@@ -193,6 +203,53 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     }
   }, [])
 
+  const handleReaderTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isSmallScreen || e.touches.length !== 1) return
+
+    const touch = e.touches[0]
+    touchDragRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startWpm: wpmRef.current,
+      startFontSize: fontSizeRef.current,
+      mode: null,
+    }
+  }
+
+  const handleReaderTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isSmallScreen || e.touches.length !== 1 || !touchDragRef.current) return
+
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - touchDragRef.current.startX
+    const deltaY = touchDragRef.current.startY - touch.clientY
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(deltaY)
+
+    if (!touchDragRef.current.mode) {
+      if (absX < TOUCH_DRAG_THRESHOLD && absY < TOUCH_DRAG_THRESHOLD) return
+      touchDragRef.current.mode = absX > absY ? 'font' : 'wpm'
+    }
+
+    e.preventDefault()
+
+    if (touchDragRef.current.mode === 'font') {
+      const steps = Math.round(deltaX / TOUCH_FONT_SENSITIVITY)
+      setRsvpFontSize(clamp(
+        touchDragRef.current.startFontSize + steps * RSVP_FONT_SIZE_STEP,
+        MIN_RSVP_FONT_SIZE,
+        MAX_RSVP_FONT_SIZE
+      ))
+      return
+    }
+
+    const wpmDelta = Math.round(deltaY / TOUCH_WPM_SENSITIVITY)
+    setWpm(touchDragRef.current.startWpm + wpmDelta)
+  }
+
+  const handleReaderTouchEnd = () => {
+    touchDragRef.current = null
+  }
+
   useLayoutEffect(() => {
     setEffectiveChunkLetters(rsvpChunkLetters)
   }, [index, isSmallScreen, rsvpChunkLetters])
@@ -287,7 +344,14 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       </div>
 
       {/* Word display */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-5 sm:gap-6 sm:px-8">
+      <div
+        className="flex-1 flex flex-col items-center justify-center px-4 gap-5 sm:gap-6 sm:px-8"
+        onTouchStart={handleReaderTouchStart}
+        onTouchMove={handleReaderTouchMove}
+        onTouchEnd={handleReaderTouchEnd}
+        onTouchCancel={handleReaderTouchEnd}
+        style={{ touchAction: isSmallScreen ? 'none' : 'auto' }}
+      >
         {extracting ? (
           <div className="flex flex-col items-center gap-3" style={{ color: 'var(--text-muted)' }}>
             <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--reader-accent)', borderTopColor: 'transparent' }} />
