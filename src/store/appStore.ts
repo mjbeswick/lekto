@@ -12,6 +12,7 @@ interface AppState {
   maxWidth: boolean
   removeBookMargins: boolean
   removePageBackground: boolean
+  fullscreenHeaderAutohide: boolean
   scrollPageFill: 'width' | 'height'
   libraryView: 'list' | 'grid'
   defaultWpm: number
@@ -28,6 +29,7 @@ interface AppState {
   setMaxWidth: (v: boolean) => void
   setRemoveBookMargins: (v: boolean) => void
   setRemovePageBackground: (v: boolean) => void
+  setFullscreenHeaderAutohide: (v: boolean) => void
   setScrollPageFill: (v: 'width' | 'height') => void
   setLibraryView: (v: 'list' | 'grid') => void
   setDefaultWpm: (n: number) => void
@@ -49,6 +51,7 @@ export const useAppStore = create<AppState>()(
       maxWidth: true,
       removeBookMargins: false,
       removePageBackground: false,
+      fullscreenHeaderAutohide: false,
       scrollPageFill: 'width',
       libraryView: 'list',
       defaultWpm: 300,
@@ -65,6 +68,7 @@ export const useAppStore = create<AppState>()(
       setMaxWidth: (maxWidth) => set({ maxWidth }),
       setRemoveBookMargins: (removeBookMargins) => set({ removeBookMargins }),
       setRemovePageBackground: (removePageBackground) => set({ removePageBackground }),
+      setFullscreenHeaderAutohide: (fullscreenHeaderAutohide) => set({ fullscreenHeaderAutohide }),
       setScrollPageFill: (scrollPageFill) => set({ scrollPageFill }),
       setLibraryView: (libraryView) => set({ libraryView }),
       setDefaultWpm: (defaultWpm) => set({ defaultWpm }),

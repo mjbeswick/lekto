@@ -47,11 +47,14 @@ export default function ReaderPage() {
   const initialPositionRef = useRef<string | null>(null)
   const hasMarkedReadRef = useRef(false)
   const readTimerRef = useRef<number | null>(null)
+  const headerHideTimerRef = useRef<number | null>(null)
+  const [headerVisible, setHeaderVisible] = useState(true)
 
   const { mode, layout, toggleMode } = useReaderModeStore()
-  const { theme, removePageBackground } = useAppStore()
+  const { theme, removePageBackground, fullscreenHeaderAutohide } = useAppStore()
   const { bookmarks, load: loadBookmarks, addBookmark, removeBookmark } = useBookmarks(bookId ?? '')
   const readerCanvasBg = theme === 'light' && !removePageBackground ? '#d8d8d8' : 'var(--reader-canvas-bg)'
+  const headerOffset = 'calc(4.75rem + var(--safe-top))'
 
   const clearReadTimer = useCallback(() => {
     if (readTimerRef.current !== null) {
@@ -59,6 +62,26 @@ export default function ReaderPage() {
       readTimerRef.current = null
     }
   }, [])
+
+  const clearHeaderHideTimer = useCallback(() => {
+    if (headerHideTimerRef.current !== null) {
+      window.clearTimeout(headerHideTimerRef.current)
+      headerHideTimerRef.current = null
+    }
+  }, [])
+
+  const scheduleHeaderHide = useCallback(() => {
+    clearHeaderHideTimer()
+    if (!fullscreenHeaderAutohide || showPanel) return
+    headerHideTimerRef.current = window.setTimeout(() => {
+      setHeaderVisible(false)
+    }, 2200)
+  }, [clearHeaderHideTimer, fullscreenHeaderAutohide, showPanel])
+
+  const showHeader = useCallback(() => {
+    setHeaderVisible(true)
+    scheduleHeaderHide()
+  }, [scheduleHeaderHide])
 
   const markBookAsRead = useCallback(async () => {
     if (!bookId || hasMarkedReadRef.current) return
@@ -167,6 +190,19 @@ export default function ReaderPage() {
       clearReadTimer()
     }
   }, [READ_THRESHOLD_MS, bookId, clearReadTimer, layout, loadBookmarks, markBookAsRead])
+
+  useEffect(() => {
+    if (!fullscreenHeaderAutohide || showPanel) {
+      clearHeaderHideTimer()
+      setHeaderVisible(true)
+      return
+    }
+    setHeaderVisible(true)
+    scheduleHeaderHide()
+    return clearHeaderHideTimer
+  }, [bookId, clearHeaderHideTimer, fullscreenHeaderAutohide, scheduleHeaderHide, showPanel])
+
+  useEffect(() => clearHeaderHideTimer, [clearHeaderHideTimer])
 
   // Lazy EPUB text extraction — only triggered when speed reader is first activated
   useEffect(() => {
@@ -281,13 +317,33 @@ export default function ReaderPage() {
   const isHtmlFormat = book.format === 'docx' || book.format === 'fb2'
 
   return (
-    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden" style={{ backgroundColor: readerCanvasBg, color: 'var(--reader-fg)' }}>
-      <ReaderToolbar
-        title={book.title}
-        onTogglePanel={() => setShowPanel(true)}
-      />
+    <div className="relative flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden" style={{ backgroundColor: readerCanvasBg, color: 'var(--reader-fg)' }}>
+      {fullscreenHeaderAutohide && !headerVisible && (
+        <button
+          type="button"
+          className="absolute inset-x-0 top-0 z-30 h-12 cursor-default bg-transparent"
+          aria-label="Show reader header"
+          onClick={showHeader}
+          onTouchStart={showHeader}
+          onMouseEnter={showHeader}
+        />
+      )}
 
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div
+        className={`absolute inset-x-0 top-0 z-40 transition-transform duration-200 ${headerVisible ? 'translate-y-0' : '-translate-y-full pointer-events-none'}`}
+        onMouseEnter={showHeader}
+        onMouseLeave={scheduleHeaderHide}
+      >
+        <ReaderToolbar
+          title={book.title}
+          onTogglePanel={() => setShowPanel(true)}
+        />
+      </div>
+
+      <div
+        className="flex-1 min-h-0 overflow-hidden transition-[padding-top] duration-200"
+        style={{ paddingTop: headerVisible ? headerOffset : 0 }}
+      >
         {mode === 'speed' ? (
           <SpeedReaderView text={plainText || stripMarkdown(mdContent)} extracting={extracting} />
         ) : (

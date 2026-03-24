@@ -32,6 +32,7 @@ export default function SettingsPage() {
     maxWidth, setMaxWidth,
     removeBookMargins, setRemoveBookMargins,
     removePageBackground, setRemovePageBackground,
+    fullscreenHeaderAutohide, setFullscreenHeaderAutohide,
     scrollPageFill, setScrollPageFill,
     defaultWpm, setDefaultWpm, wordLengthScaling, setWordLengthScaling,
     rsvpChunkLetters, setRsvpChunkLetters,
@@ -205,6 +206,24 @@ export default function SettingsPage() {
             <span
               className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200"
               style={{ left: 4, transform: removePageBackground ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <div>
+            <p className="text-sm">Fullscreen reader</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Auto-hide the header and reveal it from the top edge</p>
+          </div>
+          <button
+            onClick={() => setFullscreenHeaderAutohide(!fullscreenHeaderAutohide)}
+            className="relative flex-shrink-0 w-12 h-7 rounded-full transition-colors duration-200"
+            style={{ backgroundColor: fullscreenHeaderAutohide ? 'var(--reader-accent)' : 'var(--surface-2)' }}
+            role="switch"
+            aria-checked={fullscreenHeaderAutohide}
+          >
+            <span
+              className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200"
+              style={{ left: 4, transform: fullscreenHeaderAutohide ? 'translateX(20px)' : 'translateX(0)' }}
             />
           </button>
         </div>
