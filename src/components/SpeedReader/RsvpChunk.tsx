@@ -78,12 +78,14 @@ export default function RsvpChunk({ words, fontSize = 52 }: Props) {
         display: 'flex',
         alignItems: 'baseline',
         justifyContent: 'center',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
         gap: '0 0.3em',
         fontFamily: RSVP_FONT,
         fontSize: scaledSize,
         fontWeight: 500,
         letterSpacing: '0.02em',
+        whiteSpace: 'nowrap',
+        maxWidth: '100%',
       }}
       aria-live="off"
     >

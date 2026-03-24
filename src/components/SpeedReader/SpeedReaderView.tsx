@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBackwardStep, faForwardStep } from '@fortawesome/free-solid-svg-icons'
 import { useAppStore } from '../../store/appStore'
@@ -14,6 +14,7 @@ interface Props {
 }
 
 const RSVP_FONT = 'Inter, system-ui, -apple-system, sans-serif'
+const SMALL_SCREEN_QUERY = '(max-width: 640px)'
 
 function sameOffsets(a: number[], b: number[]): boolean {
   return a.length === b.length && a.every((value, index) => Math.abs(value - b[index]) < 0.5)
@@ -34,9 +35,14 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const rsvpChunkLetters = useAppStore(s => s.rsvpChunkLetters)
   const rsvpShowContext = useAppStore(s => s.rsvpShowContext)
   const rsvpFontSize = useAppStore(s => s.rsvpFontSize)
+  const [isSmallScreen, setIsSmallScreen] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia(SMALL_SCREEN_QUERY).matches
+  })
+  const [effectiveChunkLetters, setEffectiveChunkLetters] = useState(rsvpChunkLetters)
   // Capture reading position at mount time — applied when text tokenizes
   const [startFraction] = useState(() => getReadingPosition())
-  const { tokens, index, playing, wpm, play, pause, toggle, setWpm, jumpSentence } = useRsvp(text, defaultWpm, wordLengthScaling, rsvpChunkLetters, startFraction)
+  const { tokens, index, playing, wpm, play, pause, toggle, setWpm, jumpSentence } = useRsvp(text, defaultWpm, wordLengthScaling, effectiveChunkLetters, startFraction)
   const prevWpmRef = useRef(wpm)
   const wpmRef = useRef(wpm)
   wpmRef.current = wpm
@@ -44,6 +50,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const guideFrameRef = useRef<HTMLDivElement>(null)
   const chunkRef = useRef<HTMLDivElement>(null)
   const [orpGuideOffsets, setOrpGuideOffsets] = useState<number[]>([])
+  const showContext = rsvpShowContext && !isSmallScreen
 
 
   // Keep shared position in sync so returning to ebook lands on the right page
@@ -119,15 +126,30 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     }
   }, [pause])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia(SMALL_SCREEN_QUERY)
+    const handleChange = (event: MediaQueryListEvent) => setIsSmallScreen(event.matches)
+
+    setIsSmallScreen(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  useLayoutEffect(() => {
+    setEffectiveChunkLetters(rsvpChunkLetters)
+  }, [index, isSmallScreen, rsvpChunkLetters])
+
   const chunkWords = (() => {
     if (tokens.length === 0) return []
-    if (rsvpChunkLetters <= 1) return [tokens[index]?.word].filter(Boolean) as string[]
+    if (effectiveChunkLetters <= 1) return [tokens[index]?.word].filter(Boolean) as string[]
     let chars = 0, count = 0
     while (index + count < tokens.length) {
       const w = tokens[index + count].word
       chars += w.length + (count > 0 ? 1 : 0)
       count++
-      if (chars >= rsvpChunkLetters) break
+      if (chars >= effectiveChunkLetters) break
     }
     return tokens.slice(index, index + Math.max(1, count)).map(t => t.word)
   })()
@@ -135,6 +157,18 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const progress = tokens.length ? (index + 1) / tokens.length : 0
   const wordsRemaining = Math.max(0, tokens.length - index - 1)
   const timeRemainingS = wpm > 0 ? Math.ceil(wordsRemaining / wpm * 60) : 0
+
+  useLayoutEffect(() => {
+    if (!isSmallScreen || effectiveChunkLetters <= 1) return
+
+    const chunk = chunkRef.current
+    if (!chunk || chunk.clientWidth <= 0) return
+
+    const isOverflowing = chunk.scrollWidth > chunk.clientWidth + 1
+    if (isOverflowing) {
+      setEffectiveChunkLetters(prev => Math.max(1, prev - 1))
+    }
+  }, [chunkGuideKey, effectiveChunkLetters, isSmallScreen, rsvpFontSize, showContext])
 
   useEffect(() => {
     const frame = guideFrameRef.current
@@ -220,8 +254,8 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
                   }}
                 >
                   {/* Previous word */}
-                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: rsvpShowContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
-                    {rsvpShowContext ? (tokens[index - 1]?.word ?? '') : ''}
+                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
+                    {showContext ? (tokens[index - 1]?.word ?? '') : ''}
                   </span>
 
                   {/* Current chunk */}
@@ -230,8 +264,8 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
                   </div>
 
                   {/* Next word */}
-                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: rsvpShowContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
-                    {rsvpShowContext ? (tokens[index + chunkWords.length]?.word ?? '') : ''}
+                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
+                    {showContext ? (tokens[index + chunkWords.length]?.word ?? '') : ''}
                   </span>
                 </div>
               </div>

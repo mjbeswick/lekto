@@ -96,6 +96,10 @@ export function useRsvp(text: string, initialWpm: number, wordLengthScaling = tr
     }, delay)
   }, [clearTimer])
 
+  useEffect(() => {
+    if (playingRef.current) scheduleNext()
+  }, [chunkLetters, scheduleNext, wordLengthScaling])
+
   const play = useCallback(() => {
     if (playingRef.current) return
     playingRef.current = true
