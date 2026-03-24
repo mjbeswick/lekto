@@ -66,7 +66,7 @@ export default function SettingsPage() {
             className="rounded-xl border-2 px-4 py-3 text-left transition-colors"
             style={{
               borderColor: layout === 'scroll' ? 'var(--reader-accent)' : 'var(--border)',
-              color: layout === 'scroll' ? 'var(--reader-accent)' : 'var(--reader-fg)',
+              color: 'var(--reader-fg)',
             }}
           >
             <div className="text-sm font-medium">Scroll</div>
@@ -77,7 +77,7 @@ export default function SettingsPage() {
             className="rounded-xl border-2 px-4 py-3 text-left transition-colors"
             style={{
               borderColor: layout === 'pages' ? 'var(--reader-accent)' : 'var(--border)',
-              color: layout === 'pages' ? 'var(--reader-accent)' : 'var(--reader-fg)',
+              color: 'var(--reader-fg)',
             }}
           >
             <div className="text-sm font-medium">Pages</div>
