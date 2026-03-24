@@ -391,7 +391,7 @@ export default function LibraryPage() {
                       className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[13px] font-semibold sm:text-sm"
                       style={libraryView === 'list'
                         ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
-                        : { color: 'var(--text-muted)' }}
+                        : { backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
                     >
                       <FontAwesomeIcon icon={faList} />
                       List
@@ -401,7 +401,7 @@ export default function LibraryPage() {
                       className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[13px] font-semibold sm:text-sm"
                       style={libraryView === 'grid'
                         ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
-                        : { color: 'var(--text-muted)' }}
+                        : { backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
                     >
                       <FontAwesomeIcon icon={faTableCells} />
                       Grid
