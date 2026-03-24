@@ -7,5 +7,6 @@ export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
     exclude: ['pdfjs-dist'],
+    include: ['electrobun/view'],
   },
 })

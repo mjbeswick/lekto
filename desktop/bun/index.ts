@@ -1,18 +1,5 @@
 import { BrowserWindow, defineElectrobunRPC, Utils } from 'electrobun/bun'
-
-type LektoRPCType = {
-  bun: {
-    requests: {
-      openFileDialog: { params: void; response: { paths: string[] } }
-      readFile: { params: { path: string }; response: { data: string } }
-    }
-    messages: Record<never, never>
-  }
-  webview: {
-    requests: Record<never, never>
-    messages: Record<never, never>
-  }
-}
+import type { LektoRPCType } from '../../src/platform/rpcTypes'
 
 const rpc = defineElectrobunRPC<LektoRPCType>('bun', {
   handlers: {
