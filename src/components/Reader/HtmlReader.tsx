@@ -11,7 +11,7 @@ interface Props {
 export default function HtmlReader({ html, initialOffset = 0, onProgressChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const restoredRef = useRef(false)
-  const { fontSize, fontFamily, lineHeight, paragraphSpacing, maxWidth } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, paragraphSpacing, maxWidth, removeBookMargins } = useAppStore()
 
   // Restore scroll position once after first render
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function HtmlReader({ html, initialOffset = 0, onProgressChange }
   return (
     <div ref={containerRef} className="h-full overflow-y-auto" style={{ fontFamily: ff, fontSize, lineHeight }}>
       <div
-        className={`reader-prose mx-auto px-4 py-6 sm:px-6 sm:py-8 prose prose-base sm:prose-lg prose-orange dark:prose-invert ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}
+        className={`reader-prose mx-auto prose prose-base sm:prose-lg prose-orange dark:prose-invert ${removeBookMargins ? 'px-0 py-0 sm:px-0 sm:py-0' : 'px-4 py-6 sm:px-6 sm:py-8'} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}
         style={proseStyle}
         dangerouslySetInnerHTML={{ __html: html }}
       />

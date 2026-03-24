@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle, useSta
 import * as pdfjsLib from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url'
 import type { TocItem } from './EpubReader'
+import { useAppStore } from '../../store/appStore'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -36,6 +37,7 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
   const totalPagesRef = useRef(0)
   const [pageCount, setPageCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(initialPage)
+  const removeBookMargins = useAppStore(s => s.removeBookMargins)
 
   const renderPage = useCallback(async (pdf: pdfjsLib.PDFDocumentProxy, pageNum: number) => {
     const canvas = layout === 'scroll'
@@ -194,7 +196,7 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
 
   if (layout === 'scroll') {
     return (
-      <div ref={containerRef} className="h-full overflow-y-auto flex flex-col items-center gap-4 py-4 px-2">
+      <div ref={containerRef} className={`flex h-full flex-col items-center overflow-y-auto ${removeBookMargins ? 'gap-0 px-0 py-0' : 'gap-4 px-2 py-4'}`}>
         {Array.from({ length: pageCount || 1 }, (_, i) => (
           <canvas
             key={i}

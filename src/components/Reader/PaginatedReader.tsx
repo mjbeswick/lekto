@@ -60,11 +60,12 @@ function PageColumn({ text, ff, fontSize, lineHeight, paragraphSpacing, contentR
   maxWidth?: boolean
 }) {
   const proseStyle = { '--reader-paragraph-spacing': `${paragraphSpacing}em` } as CSSProperties
+  const { removeBookMargins } = useAppStore()
 
   return (
     <div
       ref={contentRef}
-      className="flex-1 overflow-hidden px-4 py-4 sm:px-8 sm:py-6 flex flex-col"
+      className={`flex flex-1 flex-col overflow-hidden ${removeBookMargins ? 'px-0 py-0 sm:px-0 sm:py-0' : 'px-4 py-4 sm:px-8 sm:py-6'}`}
       style={{ fontFamily: ff, fontSize, lineHeight }}
     >
       <div className={`reader-prose mx-auto w-full prose prose-base sm:prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`} style={proseStyle}>

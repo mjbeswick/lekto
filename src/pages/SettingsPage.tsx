@@ -30,6 +30,7 @@ export default function SettingsPage() {
     fontSize, setFontSize, fontFamily, setFontFamily, lineHeight, setLineHeight,
     paragraphSpacing, setParagraphSpacing,
     maxWidth, setMaxWidth,
+    removeBookMargins, setRemoveBookMargins,
     defaultWpm, setDefaultWpm, wordLengthScaling, setWordLengthScaling,
     rsvpChunkLetters, setRsvpChunkLetters,
     rsvpShowContext, setRsvpShowContext,
@@ -166,6 +167,24 @@ export default function SettingsPage() {
             <span
               className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200"
               style={{ left: 4, transform: maxWidth ? 'translateX(20px)' : 'translateX(0)' }}
+            />
+          </button>
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <div>
+            <p className="text-sm">Remove book margins</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Use the full page width without reader padding</p>
+          </div>
+          <button
+            onClick={() => setRemoveBookMargins(!removeBookMargins)}
+            className="relative flex-shrink-0 w-12 h-7 rounded-full transition-colors duration-200"
+            style={{ backgroundColor: removeBookMargins ? 'var(--reader-accent)' : 'var(--surface-2)' }}
+            role="switch"
+            aria-checked={removeBookMargins}
+          >
+            <span
+              className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200"
+              style={{ left: 4, transform: removeBookMargins ? 'translateX(20px)' : 'translateX(0)' }}
             />
           </button>
         </div>

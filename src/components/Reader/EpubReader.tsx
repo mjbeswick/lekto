@@ -28,18 +28,23 @@ function flattenToc(items: TocItem[]): TocItem[] {
   return items.flatMap(item => [item, ...flattenToc(item.subitems ?? [])])
 }
 
-function applyTypographyTheme(rendition: any, fontSize: number, fontStack: string, lineHeight: number, paragraphSpacing: number, accentColor: string) {
+function applyTypographyTheme(rendition: any, fontSize: number, fontStack: string, lineHeight: number, paragraphSpacing: number, accentColor: string, removeBookMargins: boolean) {
   const paragraphMargin = `${paragraphSpacing}em`
   const listParagraphMargin = `${Math.max(0, paragraphSpacing * 0.65)}em`
+  const outerSpacing = removeBookMargins ? '0 !important' : '16px !important'
 
   rendition.themes?.default({
     html: {
       'font-size': `${fontSize}px !important`,
+      'margin': '0 !important',
+      'padding': '0 !important',
     },
     body: {
       'font-size': `${fontSize}px !important`,
       'font-family': `${fontStack} !important`,
       'line-height': `${lineHeight} !important`,
+      'margin': '0 !important',
+      'padding': outerSpacing,
     },
     p: {
       'margin-top': '0 !important',
@@ -68,7 +73,7 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
   const currentHrefRef = useRef('')
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
   const [isSpread, setIsSpread] = useState(false)
-  const { fontSize, fontFamily, lineHeight, paragraphSpacing, accentColor } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, paragraphSpacing, accentColor, removeBookMargins } = useAppStore()
   const fontStack = getReaderFontStack(fontFamily)
 
   useImperativeHandle(ref, () => ({
@@ -135,7 +140,7 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
       manager,
     })
     renditionRef.current = rendition
-    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor)
+    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins)
 
     rendition.display(initialCfi ?? undefined)
 
@@ -182,8 +187,8 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
 
   useEffect(() => {
     if (!renditionRef.current) return
-    applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor)
-  }, [fontSize, fontStack, lineHeight, paragraphSpacing, accentColor])
+      applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins)
+    }, [fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins])
 
   return (
     <div className="relative w-full h-full">
