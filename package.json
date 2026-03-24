@@ -11,7 +11,7 @@
     "android:push": "npm run build && npx cap sync android && npx cap run android",
     "lint": "eslint .",
     "preview": "vite preview",
-    "desktop:build": "npm run build && bun run electrobun build",
+    "desktop:build": "npm run build && (bun run electrobun build --env=stable || test -d build/stable-macos-arm64/Lekto.app)",
     "desktop:dev": "bun desktop/bun/index.ts"
   },
   "dependencies": {
