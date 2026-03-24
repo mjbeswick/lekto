@@ -36,7 +36,6 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
   const currentPageRef = useRef(initialPage)
   const totalPagesRef = useRef(0)
   const [pageCount, setPageCount] = useState(0)
-  const [currentPage, setCurrentPage] = useState(initialPage)
   const [containerHeight, setContainerHeight] = useState(0)
   const removeBookMargins = useAppStore(s => s.removeBookMargins)
   const scrollPageFill = useAppStore(s => s.scrollPageFill)
@@ -79,7 +78,6 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
     if (!pdfRef.current || totalPagesRef.current < 1) return
     const nextPage = Math.max(1, Math.min(page, totalPagesRef.current))
     currentPageRef.current = nextPage
-    setCurrentPage(nextPage)
 
     if (layout === 'scroll') {
       scrollToPage(nextPage)
@@ -108,7 +106,6 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
       setPageCount(pdf.numPages)
       const startPage = Math.max(1, Math.min(initialPage, pdf.numPages))
       currentPageRef.current = startPage
-      setCurrentPage(startPage)
 
       // Extract TOC from PDF outline
       try {
@@ -171,7 +168,6 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
         }
       })
       currentPageRef.current = bestPage
-      setCurrentPage(bestPage)
       updateProgress(bestPage)
     }
 
@@ -234,9 +230,6 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
           ref={paginatedCanvasRef}
           className="max-w-full max-h-full object-contain"
         />
-      </div>
-      <div className="py-3 text-sm tabular-nums" style={{ color: 'var(--text-muted)' }}>
-        {currentPage} / {pageCount || totalPagesRef.current || 1}
       </div>
     </div>
   )
