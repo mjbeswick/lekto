@@ -420,9 +420,9 @@ export default function LibraryPage() {
                         <article key={book.id} className="relative">
                           <button
                             onClick={() => navigate(`/reader/${book.id}`)}
-                            className="group block w-full overflow-hidden rounded-xl text-left"
+                            className="group block w-full overflow-hidden rounded-xl border text-left"
                             style={{
-                              backgroundColor: 'var(--surface)',
+                              borderColor: 'var(--border)',
                             }}
                           >
                             <div className="flex h-full w-full flex-col" style={{ aspectRatio: '2 / 3' }}>
@@ -449,9 +449,9 @@ export default function LibraryPage() {
                               )}
                               </div>
 
-                              <div className="px-2.5 py-2 text-[10px] sm:text-[11px]"
+                              <div className="border-t px-2.5 py-2 text-[10px] sm:text-[11px]"
                                 style={{
-                                  backgroundColor: 'var(--surface-2)',
+                                  borderColor: 'var(--border)',
                                 }}
                               >
                                 {hasCover && <p className="line-clamp-2 text-[13px] font-semibold leading-snug">{book.title}</p>}
@@ -466,7 +466,7 @@ export default function LibraryPage() {
                               </div>
 
                               {progress > 0 && (
-                                <div className="h-1" style={{ backgroundColor: 'var(--surface-2)' }}>
+                                <div className="h-1 border-t" style={{ borderColor: 'var(--border)' }}>
                                   <div className="h-1 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
                                 </div>
                               )}
@@ -496,8 +496,8 @@ export default function LibraryPage() {
                       return (
                         <article
                           key={book.id}
-                          className="flex items-center gap-3 rounded-xl px-3 py-3 sm:gap-4 sm:px-4"
-                          style={{ backgroundColor: 'var(--surface)' }}
+                          className="flex items-center gap-3 rounded-xl border px-3 py-3 sm:gap-4 sm:px-4"
+                          style={{ borderColor: 'var(--border)' }}
                         >
                           <button
                             onClick={() => navigate(`/reader/${book.id}`)}
