@@ -536,12 +536,25 @@ export default function LibraryPage() {
                               {book.coverUri ? (
                                 <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                               ) : (
-                                <div className="flex h-full w-full items-center justify-center text-[2rem] sm:text-[2.2rem]" style={{ backgroundColor: `${color}18` }}>
-                                  <FileTypeIcon format={book.format} className="text-[2rem] sm:text-[2.2rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                <div
+                                  className="relative flex h-full w-full flex-col justify-between overflow-hidden"
+                                  style={{
+                                    background: `linear-gradient(180deg, ${color}22 0%, ${color}12 55%, rgba(15, 23, 42, 0.9) 100%)`,
+                                  }}
+                                >
+                                  <div className="flex justify-center px-4 pt-6 text-[2rem] sm:text-[2.2rem]" style={{ color }}>
+                                    <FileTypeIcon format={book.format} className="text-[2rem] sm:text-[2.2rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                  </div>
+                                  <div className="px-3 pb-9">
+                                    <p className="line-clamp-3 text-[13px] font-semibold leading-snug text-white sm:text-[14px]">{book.title}</p>
+                                    {book.author && (
+                                      <p className="mt-1 truncate text-[10px] text-white/72 sm:text-[11px]">{book.author}</p>
+                                    )}
+                                  </div>
                                 </div>
                               )}
 
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/66 via-black/16 to-transparent px-2 pb-2 pt-6 text-white">
+                              <div className={`absolute inset-x-0 bottom-0 px-2 pb-2 text-white ${book.coverUri ? 'bg-gradient-to-t from-black/66 via-black/16 to-transparent pt-6' : 'bg-black/58 pt-2'}`}>
                                 <div className="flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-white/80 sm:text-[10px]">
                                   <span>{book.format.toUpperCase()}</span>
                                   <span>{progressLabel(progress)}</span>
@@ -569,7 +582,7 @@ export default function LibraryPage() {
 
                           <div className="px-1 pb-1 pt-2">
                             <button onClick={() => navigate(`/reader/${book.id}`)} className="block w-full text-left">
-                              <p className="line-clamp-2 text-[12px] font-semibold leading-snug sm:text-[13px]">{book.title}</p>
+                              <p className="line-clamp-2 text-[12px] font-semibold leading-snug sm:text-[13px]">{book.coverUri ? book.title : ' '}</p>
                               <p className="mt-0.5 truncate text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
                                 {book.author || 'Unknown author'}
                               </p>
