@@ -17,6 +17,7 @@ import { useReaderModeStore } from '../hooks/useReaderMode'
 import { useAppStore } from '../store/appStore'
 import { readFileContent, readFileAsArrayBuffer } from '../utils/fileStore'
 import { extractEpubText } from '../utils/epubParser'
+import { extractPdfText } from '../utils/pdfParser'
 import { extractDocxText, docxToHtml } from '../utils/docxParser'
 import { extractFb2Text, fb2ToHtml } from '../utils/fb2Parser'
 
@@ -29,6 +30,7 @@ export default function ReaderPage() {
   const [docBuffer, setDocBuffer] = useState<ArrayBuffer | null>(null)
   const [htmlContent, setHtmlContent] = useState('')
   const epubExtractedRef = useRef(false)
+  const pdfExtractedRef = useRef(false)
   const docExtractedRef = useRef(false)
   const [plainText, setPlainText] = useState('')
   const [extracting, setExtracting] = useState(false)
@@ -108,6 +110,9 @@ export default function ReaderPage() {
     currentPositionRef.current = ''
     currentPercentRef.current = 0
     scrollMaxHeightRef.current = 0
+    epubExtractedRef.current = false
+    pdfExtractedRef.current = false
+    docExtractedRef.current = false
     clearReadTimer()
     readTimerRef.current = window.setTimeout(() => {
       void markBookAsRead()
@@ -214,6 +219,18 @@ export default function ReaderPage() {
       .catch(err => console.error('[Lekto] EPUB text extraction failed:', err))
       .finally(() => setExtracting(false))
   }, [mode, epubBuffer])
+
+  // Lazy PDF text extraction — only triggered when speed reader is first activated
+  useEffect(() => {
+    if (mode !== 'speed' || !docBuffer || !book || pdfExtractedRef.current) return
+    if (book.format !== 'pdf') return
+    pdfExtractedRef.current = true
+    setExtracting(true)
+    extractPdfText(docBuffer)
+      .then(text => setPlainText(text))
+      .catch(err => console.error('[Lekto] PDF text extraction failed:', err))
+      .finally(() => setExtracting(false))
+  }, [mode, docBuffer, book])
 
   // Lazy DOCX/FB2 text extraction — only triggered when speed reader is first activated
   useEffect(() => {
