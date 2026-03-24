@@ -18,6 +18,19 @@ export interface Book {
   addedAt: number
   lastOpenedAt?: number
   collectionId?: string
+  sourceType?: 'import' | 'directory'
+  directoryId?: string
+}
+
+export interface DirectorySource {
+  id: string
+  name: string
+  /** Absolute native FS path, or 'web:dir:<id>' on web */
+  path: string
+  collectionId?: string
+  addedAt: number
+  lastScanned: number
+  bookCount: number
 }
 
 export interface ReadingProgress {

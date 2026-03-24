@@ -124,3 +124,63 @@ export async function readFileContent(filePath: string): Promise<string> {
   }
   return new TextDecoder().decode(raw as unknown as ArrayBuffer)
 }
+
+// ─── Directory handle storage (web only) ─────────────────────────────────────
+// FileSystemDirectoryHandle instances are structured-cloneable and can live in IDB.
+
+function getDirHandleStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
+  return getDb().then(db => {
+    // The 'dir-handles' store is created lazily on first access if the current
+    // db version does not yet contain it.  We bump the version in that case.
+    if (db.objectStoreNames.contains('dir-handles')) {
+      return db.transaction('dir-handles', mode).objectStore('dir-handles')
+    }
+    return new Promise((resolve, reject) => {
+      const newVersion = db.version + 1
+      db.close()
+      _db = null
+      const req = indexedDB.open('lekto-files', newVersion)
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains('files'))
+          req.result.createObjectStore('files')
+        if (!req.result.objectStoreNames.contains('dir-handles'))
+          req.result.createObjectStore('dir-handles')
+      }
+      req.onsuccess = () => {
+        _db = req.result
+        _db.onclose = () => { _db = null }
+        resolve(_db.transaction('dir-handles', mode).objectStore('dir-handles'))
+      }
+      req.onerror = () => reject(req.error)
+    })
+  })
+}
+
+export async function storeDirHandle(dirId: string, handle: FileSystemDirectoryHandle): Promise<void> {
+  const store = await getDirHandleStore('readwrite')
+  await new Promise<void>((res, rej) => {
+    const req = store.put(handle, dirId)
+    req.onsuccess = () => res()
+    req.onerror = () => rej(req.error)
+  })
+}
+
+export async function getDirHandle(dirId: string): Promise<FileSystemDirectoryHandle | null> {
+  const store = await getDirHandleStore('readonly')
+  return new Promise((res, rej) => {
+    const req = store.get(dirId)
+    req.onsuccess = () => res((req.result as FileSystemDirectoryHandle) ?? null)
+    req.onerror = () => rej(req.error)
+  })
+}
+
+export async function removeDirHandle(dirId: string): Promise<void> {
+  try {
+    const store = await getDirHandleStore('readwrite')
+    await new Promise<void>((res, rej) => {
+      const req = store.delete(dirId)
+      req.onsuccess = () => res()
+      req.onerror = () => rej(req.error)
+    })
+  } catch { /* ignore */ }
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBars, faBook, faBookOpen, faClock, faEllipsisV, faFolderOpen, faGear, faList, faMinus, faPlus, faTableCells, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faBars, faBook, faBookOpen, faClock, faEllipsisV, faFolder, faFolderOpen, faFolderPlus, faGear, faList, faMinus, faPlus, faTableCells, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FilePicker } from '@capawesome/capacitor-file-picker'
 import { v4 as uuidv4 } from 'uuid'
 import HeaderIconButton from '../components/HeaderIconButton'
@@ -10,6 +10,7 @@ import FileTypeIcon from '../components/FileTypeIcon'
 import { getProgress } from '../db/progress'
 import { useAppStore } from '../store/appStore'
 import { useCollectionStore } from '../store/bookcaseStore'
+import { useDirectoryStore } from '../store/directoryStore'
 import { useLibraryStore } from '../store/libraryStore'
 import type { Book, BookFormat } from '../types'
 import { parseDocxMeta } from '../utils/docxParser'
@@ -71,6 +72,7 @@ export default function LibraryPage() {
   const { books, loading, loadBooks, addBook, updateBook, removeBook } = useLibraryStore()
   const { collections, selectedId, loadCollections } = useCollectionStore()
   const { libraryView, setLibraryView } = useAppStore()
+  const { directories, scanning: dirScanning, loadDirectories, addDirectory, refreshDirectory, removeDirectory } = useDirectoryStore()
   const [importing, setImporting] = useState(false)
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -80,6 +82,7 @@ export default function LibraryPage() {
 
   useEffect(() => { loadBooks() }, [loadBooks])
   useEffect(() => { loadCollections() }, [loadCollections])
+  useEffect(() => { loadDirectories() }, [loadDirectories])
 
   useEffect(() => {
     if (menuOpenId === null) return
@@ -225,6 +228,26 @@ export default function LibraryPage() {
     else                  void handleNativeOpen()
   }
 
+  async function handleAddFolder() {
+    const result = await addDirectory(selectedId ?? undefined)
+    if (!result) return
+    for (const book of result.toAdd) await addBook(book)
+  }
+
+  async function handleRefreshDirectory(id: string) {
+    const dirBooks = books.filter(b => b.directoryId === id)
+    const result = await refreshDirectory(id, dirBooks)
+    if (!result) return
+    for (const book of result.toAdd) await addBook(book)
+    for (const bookId of result.toRemoveIds) await removeBook(bookId)
+  }
+
+  async function handleRemoveDirectory(id: string) {
+    const dirBooks = books.filter(b => b.directoryId === id)
+    const removedIds = await removeDirectory(id, dirBooks)
+    for (const bookId of removedIds) await removeBook(bookId)
+  }
+
   function renderBookMenu(book: Book) {
     return (
       <div
@@ -325,6 +348,16 @@ export default function LibraryPage() {
               >
                 {importing ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FontAwesomeIcon icon={faPlus} />}
                 {books.length === 0 ? 'Import your first book' : 'Add more books'}
+              </button>
+
+              <button
+                onClick={() => void handleAddFolder()}
+                disabled={dirScanning}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-opacity active:opacity-70 disabled:opacity-60 sm:text-sm"
+                style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
+              >
+                {dirScanning ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <FontAwesomeIcon icon={faFolderPlus} />}
+                Add folder
               </button>
 
               {continueBook && books.length > 0 && (
@@ -569,6 +602,59 @@ export default function LibraryPage() {
                   </div>
                 )}
               </>
+            )}
+
+            {directories.length > 0 && (
+              <section className="mt-2">
+                <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
+                  Folder sources
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {directories.map(dir => {
+                    const dirBookCount = books.filter(b => b.directoryId === dir.id).length
+                    return (
+                      <div
+                        key={dir.id}
+                        className="flex items-center gap-3 rounded-xl border px-3 py-3"
+                        style={{ borderColor: 'var(--border)' }}
+                      >
+                        <div
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-base"
+                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--reader-accent)' }}
+                        >
+                          <FontAwesomeIcon icon={faFolder} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">{dir.name}</p>
+                          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                            {dirBookCount} {dirBookCount === 1 ? 'book' : 'books'} &middot; scanned {relativeDate(dir.lastScanned)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => void handleRefreshDirectory(dir.id)}
+                          disabled={dirScanning}
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-opacity active:opacity-60 disabled:opacity-40"
+                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                          title="Refresh directory"
+                        >
+                          {dirScanning
+                            ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            : <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor"><path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.1-3.45L10 6h5V1l-1.35 1.35z"/></svg>
+                          }
+                        </button>
+                        <button
+                          onClick={() => void handleRemoveDirectory(dir.id)}
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-opacity active:opacity-60"
+                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                          title="Remove folder source"
+                        >
+                          <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
             )}
           </div>
         </div>
