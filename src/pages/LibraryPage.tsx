@@ -516,7 +516,7 @@ export default function LibraryPage() {
                 </div>
 
                 {libraryView === 'grid' ? (
-                  <div className="grid grid-cols-2 gap-4 pt-2 sm:grid-cols-3 xl:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {sortedVisibleBooks.map(book => {
                       const progress = progressMap[book.id] ?? 0
                       const color = titleColor(book.title)
@@ -524,25 +524,25 @@ export default function LibraryPage() {
                       return (
                         <article
                           key={book.id}
-                          className="overflow-hidden rounded-[28px] border p-2"
+                          className="overflow-hidden rounded-[24px] border p-1.5"
                           style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)' }}
                         >
                           <div className="relative">
                             <button
                               onClick={() => navigate(`/reader/${book.id}`)}
-                              className="relative block w-full overflow-hidden rounded-[22px] text-left"
+                              className="relative block w-full overflow-hidden rounded-[18px] text-left"
                               style={{ aspectRatio: '2 / 3' }}
                             >
                               {book.coverUri ? (
                                 <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                               ) : (
-                                <div className="flex h-full w-full items-center justify-center text-[2.7rem]" style={{ backgroundColor: `${color}1f` }}>
-                                  <FileTypeIcon format={book.format} className="text-[2.7rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                <div className="flex h-full w-full items-center justify-center text-[2.3rem] sm:text-[2.45rem]" style={{ backgroundColor: `${color}1f` }}>
+                                  <FileTypeIcon format={book.format} className="text-[2.3rem] sm:text-[2.45rem]" title={`${book.format.toUpperCase()} cover icon`} />
                                 </div>
                               )}
 
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-3 pb-3 pt-8 text-white">
-                                <div className="flex items-center justify-between gap-3 text-[11px] font-medium uppercase tracking-[0.12em] text-white/80">
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-2.5 pb-2.5 pt-7 text-white">
+                                <div className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/80 sm:text-[11px]">
                                   <span>{book.format.toUpperCase()}</span>
                                   <span>{progressLabel(progress)}</span>
                                 </div>
@@ -555,10 +555,10 @@ export default function LibraryPage() {
                               )}
                             </button>
 
-                            <div className="absolute right-2 top-2" onClick={e => e.stopPropagation()}>
+                            <div className="absolute right-1.5 top-1.5 sm:right-2 sm:top-2" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                                className="flex h-8 w-8 items-center justify-center rounded-xl text-xs text-white transition-opacity active:opacity-60"
+                                className="flex h-7 w-7 items-center justify-center rounded-xl text-[11px] text-white transition-opacity active:opacity-60 sm:h-8 sm:w-8 sm:text-xs"
                                 style={{ backgroundColor: 'rgba(15, 23, 42, 0.48)', backdropFilter: 'blur(10px)' }}
                               >
                                 <FontAwesomeIcon icon={faEllipsisV} />
@@ -567,13 +567,13 @@ export default function LibraryPage() {
                             </div>
                           </div>
 
-                          <div className="px-1 pb-1 pt-3">
+                          <div className="px-1 pb-1 pt-2.5">
                             <button onClick={() => navigate(`/reader/${book.id}`)} className="block w-full text-left">
-                              <p className="line-clamp-2 text-sm font-semibold leading-snug">{book.title}</p>
-                              <p className="mt-1 truncate text-xs" style={{ color: 'var(--text-muted)' }}>
+                              <p className="line-clamp-2 text-[13px] font-semibold leading-snug sm:text-sm">{book.title}</p>
+                              <p className="mt-1 truncate text-[11px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>
                                 {book.author || 'Unknown author'}
                               </p>
-                              <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                              <p className="mt-1.5 text-[11px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>
                                 {book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}
                               </p>
                             </button>
