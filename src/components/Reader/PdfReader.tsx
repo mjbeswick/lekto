@@ -5,6 +5,11 @@ import type { TocItem } from './EpubReader'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+}
+
 interface Props {
   pdfBuffer: ArrayBuffer
   initialPage?: number
@@ -25,24 +30,17 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
+  const paginatedCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const pdfRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null)
   const currentPageRef = useRef(initialPage)
   const totalPagesRef = useRef(0)
   const [pageCount, setPageCount] = useState(0)
-
-  useImperativeHandle(ref, () => ({
-    goToPage: (page: number) => {
-      scrollToPage(page)
-    },
-  }))
-
-  const scrollToPage = useCallback((page: number) => {
-    const canvas = canvasRefs.current[page - 1]
-    canvas?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-  }, [])
+  const [currentPage, setCurrentPage] = useState(initialPage)
 
   const renderPage = useCallback(async (pdf: pdfjsLib.PDFDocumentProxy, pageNum: number) => {
-    const canvas = canvasRefs.current[pageNum - 1]
+    const canvas = layout === 'scroll'
+      ? canvasRefs.current[pageNum - 1]
+      : paginatedCanvasRef.current
     if (!canvas) return
     const page = await pdf.getPage(pageNum)
     const viewport = page.getViewport({ scale: SCALE })
@@ -50,7 +48,39 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
     canvas.height = viewport.height
     const ctx = canvas.getContext('2d')!
     await page.render({ canvas, canvasContext: ctx, viewport }).promise
+  }, [layout])
+
+  const updateProgress = useCallback((page: number) => {
+    const percent = totalPagesRef.current > 0 ? page / totalPagesRef.current : 0
+    onProgressChange?.(`pdf:${page}`, percent)
+  }, [onProgressChange])
+
+  const scrollToPage = useCallback((page: number) => {
+    const canvas = canvasRefs.current[page - 1]
+    canvas?.scrollIntoView({ block: 'start', behavior: 'smooth' })
   }, [])
+
+  const navigateToPage = useCallback(async (page: number) => {
+    if (!pdfRef.current || totalPagesRef.current < 1) return
+    const nextPage = Math.max(1, Math.min(page, totalPagesRef.current))
+    currentPageRef.current = nextPage
+    setCurrentPage(nextPage)
+
+    if (layout === 'scroll') {
+      scrollToPage(nextPage)
+      updateProgress(nextPage)
+      return
+    }
+
+    await renderPage(pdfRef.current, nextPage)
+    updateProgress(nextPage)
+  }, [layout, renderPage, scrollToPage, updateProgress])
+
+  useImperativeHandle(ref, () => ({
+    goToPage: (page: number) => {
+      void navigateToPage(page)
+    },
+  }), [navigateToPage])
 
   useEffect(() => {
     if (!pdfBuffer?.byteLength) return
@@ -61,6 +91,9 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
       pdfRef.current = pdf
       totalPagesRef.current = pdf.numPages
       setPageCount(pdf.numPages)
+      const startPage = Math.max(1, Math.min(initialPage, pdf.numPages))
+      currentPageRef.current = startPage
+      setCurrentPage(startPage)
 
       // Extract TOC from PDF outline
       try {
@@ -87,16 +120,20 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
         }
         // Restore scroll position
         requestAnimationFrame(() => {
-          if (!cancelled) scrollToPage(initialPage)
+          if (!cancelled) {
+            scrollToPage(startPage)
+            updateProgress(startPage)
+          }
         })
       } else {
         // Paginated: only render current page
-        await renderPage(pdf, currentPageRef.current)
+        await renderPage(pdf, startPage)
+        updateProgress(startPage)
       }
     })
 
     return () => { cancelled = true }
-  }, [pdfBuffer, layout, initialPage, renderPage, scrollToPage, onTocReady]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pdfBuffer, layout, initialPage, renderPage, scrollToPage, onTocReady, updateProgress]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll mode: report progress on scroll
   useEffect(() => {
@@ -119,36 +156,37 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
         }
       })
       currentPageRef.current = bestPage
-      const percent = totalPagesRef.current > 0 ? bestPage / totalPagesRef.current : 0
-      onProgressChange?.(`pdf:${bestPage}`, percent)
+      setCurrentPage(bestPage)
+      updateProgress(bestPage)
     }
 
     el.addEventListener('scroll', handleScroll, { passive: true })
     return () => el.removeEventListener('scroll', handleScroll)
-  }, [layout, onProgressChange])
+  }, [layout, updateProgress])
 
   const goToPrev = useCallback(async () => {
-    if (currentPageRef.current <= 1 || !pdfRef.current) return
-    currentPageRef.current--
-    await renderPage(pdfRef.current, currentPageRef.current)
-    const percent = totalPagesRef.current > 0 ? currentPageRef.current / totalPagesRef.current : 0
-    onProgressChange?.(`pdf:${currentPageRef.current}`, percent)
-  }, [renderPage, onProgressChange])
+    if (currentPageRef.current <= 1) return
+    await navigateToPage(currentPageRef.current - 1)
+  }, [navigateToPage])
 
   const goToNext = useCallback(async () => {
-    if (!pdfRef.current || currentPageRef.current >= totalPagesRef.current) return
-    currentPageRef.current++
-    await renderPage(pdfRef.current, currentPageRef.current)
-    const percent = totalPagesRef.current > 0 ? currentPageRef.current / totalPagesRef.current : 0
-    onProgressChange?.(`pdf:${currentPageRef.current}`, percent)
-  }, [renderPage, onProgressChange])
+    if (currentPageRef.current >= totalPagesRef.current) return
+    await navigateToPage(currentPageRef.current + 1)
+  }, [navigateToPage])
 
   // Keyboard navigation (paginated mode)
   useEffect(() => {
     if (layout !== 'pages') return
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goToNext()
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goToPrev()
+      if (isEditableTarget(e.target)) return
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        void goToNext()
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        void goToPrev()
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -173,25 +211,12 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
     <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
       <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
         <canvas
-          ref={(el) => { canvasRefs.current[0] = el }}
+          ref={paginatedCanvasRef}
           className="max-w-full max-h-full object-contain"
         />
       </div>
-      <div className="flex gap-8 py-3">
-        <button
-          onClick={goToPrev}
-          className="px-4 py-2 rounded-lg text-sm opacity-60 hover:opacity-100 transition-opacity"
-          aria-label="Previous page"
-        >
-          ← Prev
-        </button>
-        <button
-          onClick={goToNext}
-          className="px-4 py-2 rounded-lg text-sm opacity-60 hover:opacity-100 transition-opacity"
-          aria-label="Next page"
-        >
-          Next →
-        </button>
+      <div className="py-3 text-sm tabular-nums" style={{ color: 'var(--text-muted)' }}>
+        {currentPage} / {pageCount || totalPagesRef.current || 1}
       </div>
     </div>
   )
