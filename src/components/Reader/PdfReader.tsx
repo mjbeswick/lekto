@@ -38,6 +38,7 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
   const [pageCount, setPageCount] = useState(0)
   const [containerHeight, setContainerHeight] = useState(0)
   const removeBookMargins = useAppStore(s => s.removeBookMargins)
+  const removePageBackground = useAppStore(s => s.removePageBackground)
   const scrollPageFill = useAppStore(s => s.scrollPageFill)
 
   useEffect(() => {
@@ -61,8 +62,14 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
     canvas.width = viewport.width
     canvas.height = viewport.height
     const ctx = canvas.getContext('2d')!
-    await page.render({ canvas, canvasContext: ctx, viewport }).promise
-  }, [layout])
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    await page.render({
+      canvas,
+      canvasContext: ctx,
+      viewport,
+      background: removePageBackground ? 'rgba(0,0,0,0)' : undefined,
+    }).promise
+  }, [layout, removePageBackground])
 
   const updateProgress = useCallback((page: number) => {
     const percent = totalPagesRef.current > 0 ? page / totalPagesRef.current : 0
