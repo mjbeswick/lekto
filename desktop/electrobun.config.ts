@@ -5,6 +5,15 @@ export default {
     version: '0.0.1',
   },
   build: {
+    mac: {
+      icons: 'desktop/icon.iconset',
+    },
+    linux: {
+      icon: 'desktop/icon.png',
+    },
+    win: {
+      icon: 'desktop/icon.png',
+    },
     bun: {
       entrypoint: 'desktop/bun/index.ts',
     },

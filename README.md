@@ -146,6 +146,9 @@ src/
 # Install dependencies
 npm install
 
+# Regenerate platform icons
+npm run generate:icons
+
 # Start dev server (browser)
 npm run dev
 
@@ -158,6 +161,9 @@ npx cap sync ios && npx cap open ios
 # Android (requires Android Studio)
 npx cap sync android && npx cap open android
 ```
+
+The build icon assets for web, Android, iOS, and desktop are generated from
+scripts/generate-app-icons.mjs.
 
 ---
 
