@@ -538,18 +538,33 @@ export default function LibraryPage() {
                                 <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                               ) : (
                                 <div
-                                  className="relative flex h-full w-full flex-col justify-between overflow-hidden"
+                                  className="relative flex h-full w-full items-start justify-center overflow-hidden"
                                   style={{
-                                    background: `linear-gradient(180deg, ${color}20 0%, ${color}12 42%, rgba(15, 23, 42, 0.92) 100%)`,
+                                    backgroundColor: `${color}18`,
                                   }}
                                 >
-                                  <div className="flex justify-center px-4 pt-5 text-[1.8rem] sm:text-[2rem]" style={{ color }}>
-                                    <FileTypeIcon format={book.format} className="text-[1.8rem] sm:text-[2rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                  <div
+                                    className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] border text-[2.35rem] sm:h-[4.5rem] sm:w-[4.5rem] sm:text-[2.6rem]"
+                                    style={{
+                                      color,
+                                      backgroundColor: `${color}14`,
+                                      borderColor: `${color}30`,
+                                      boxShadow: '0 10px 24px rgba(15, 23, 42, 0.08)',
+                                    }}
+                                  >
+                                    <FileTypeIcon format={book.format} className="text-[2.35rem] sm:text-[2.6rem]" title={`${book.format.toUpperCase()} cover icon`} />
                                   </div>
                                 </div>
                               )}
 
-                              <div className={`absolute inset-x-0 bottom-0 px-3 pb-2.5 text-white ${hasCover ? 'bg-gradient-to-t from-black/78 via-black/34 to-transparent pt-12' : 'bg-gradient-to-t from-black/80 via-black/58 to-transparent pt-14'}`}>
+                              <div
+                                className="absolute inset-x-0 bottom-0 px-3 pb-2.5 pt-3 text-white"
+                                style={{
+                                  backgroundColor: hasCover ? 'rgba(15, 23, 42, 0.82)' : 'rgba(15, 23, 42, 0.88)',
+                                  backdropFilter: hasCover ? 'blur(10px)' : undefined,
+                                  borderTop: hasCover ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.06)',
+                                }}
+                              >
                                 <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-white sm:text-[14px]">{book.title}</p>
                                 <p className="mt-1 truncate text-[10px] text-white/72 sm:text-[11px]">{book.author || 'Unknown author'}</p>
                                 <div className="mt-2 flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-white/80 sm:text-[10px]">
