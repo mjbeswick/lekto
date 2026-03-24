@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faBars, faBook, faBookOpen, faClock, faEllipsisV, faFolderOpen, faGear, faList, faMinus, faPlus, faTableCells, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faBars, faBook, faBookOpen, faClock, faEllipsisV, faFolderOpen, faGear, faList, faMinus, faPlus, faTableCells, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FilePicker } from '@capawesome/capacitor-file-picker'
 import { v4 as uuidv4 } from 'uuid'
 import HeaderIconButton from '../components/HeaderIconButton'
@@ -154,8 +154,6 @@ export default function LibraryPage() {
     const progress = progressMap[book.id] ?? 0
     return progress > 0 && progress < 1
   }).length
-  const completedCount = visibleBooks.filter(book => (progressMap[book.id] ?? 0) >= 1).length
-
   async function handleWebFile(files: FileList | null) {
     if (!files?.length) return
     setImporting(true)
@@ -280,12 +278,12 @@ export default function LibraryPage() {
         <div className="h-full overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-[var(--app-gutter)] pb-8 pt-[calc(0.65rem+var(--safe-top))]">
             <section
-              className="overflow-hidden rounded-[28px] border px-4 py-4 sm:px-5 sm:py-5"
+              className="overflow-hidden rounded-[24px] border px-4 py-3.5 sm:px-5 sm:py-4"
               style={{
                 background: 'linear-gradient(135deg, var(--library-hero-from), var(--library-hero-to))',
                 borderColor: 'var(--library-border-soft)',
-                boxShadow: 'var(--shadow-card)',
-                backdropFilter: 'blur(18px)',
+                boxShadow: 'var(--shadow-soft)',
+                backdropFilter: 'blur(16px)',
               }}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -294,19 +292,25 @@ export default function LibraryPage() {
                     <FontAwesomeIcon icon={faBars} />
                   </HeaderIconButton>
                   <div className="min-w-0 pt-0.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
-                      Library
-                    </p>
-                    <h1 className="truncate text-[clamp(1.55rem,3.2vw,2.6rem)] leading-none" style={{ fontFamily: 'var(--font-display)' }}>
+                    {books.length === 0 && (
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
+                        Library
+                      </p>
+                    )}
+                    <h1 className="truncate text-[clamp(1.3rem,2.8vw,2rem)] leading-none" style={{ fontFamily: 'var(--font-display)' }}>
                       {collectionName}
                     </h1>
-                    <p className="mt-1.5 max-w-xl text-[13px] leading-5 sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-                      {books.length === 0
-                        ? 'Bring your reading stack into one calm, focused space built for long-form reading.'
-                        : selectedId === null
-                          ? `${books.length} books, ${inProgressCount} active reads, and a faster path back to what you were reading.`
-                          : `${visibleBooks.length} books in this collection, arranged for quick return visits and lower visual noise.`}
-                    </p>
+                    {books.length === 0 ? (
+                      <p className="mt-1.5 max-w-xl text-[13px] leading-5 sm:text-sm" style={{ color: 'var(--text-muted)' }}>
+                        Bring your reading stack into one calm, focused space built for long-form reading.
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-[12px] sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                        {selectedId === null
+                          ? `${visibleBooks.length} books${inProgressCount ? `, ${inProgressCount} in progress` : ''}`
+                          : `${visibleBooks.length} books in this collection`}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -322,7 +326,7 @@ export default function LibraryPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2.5">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   onClick={handleOpen}
                   disabled={importing}
@@ -382,77 +386,7 @@ export default function LibraryPage() {
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
-                  <div className="grid gap-2.5 sm:grid-cols-3">
-                    {[
-                      { label: 'Books ready', value: visibleBooks.length, tone: 'rgba(59,130,246,0.12)', color: '#2563eb' },
-                      { label: 'In progress', value: inProgressCount, tone: 'rgba(249,115,22,0.12)', color: '#ea580c' },
-                      { label: 'Finished', value: completedCount, tone: 'rgba(16,185,129,0.12)', color: '#059669' },
-                    ].map(stat => (
-                      <div
-                        key={stat.label}
-                        className="rounded-[20px] border p-3.5"
-                        style={{ backgroundColor: 'var(--library-surface-2)', borderColor: 'var(--library-border-strong)' }}
-                      >
-                        <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: stat.tone, color: stat.color }}>
-                          <span className="text-[13px] font-semibold">{String(stat.value).padStart(2, '0')}</span>
-                        </div>
-                        <p className="text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
-                        <p className="mt-0.5 text-xl" style={{ fontFamily: 'var(--font-display)' }}>{stat.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {continueBook && (
-                    <button
-                      onClick={() => navigate(`/reader/${continueBook.id}`)}
-                      className="group overflow-hidden rounded-[24px] border p-3.5 text-left transition-transform active:scale-[0.99]"
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(15,23,42,0.93), rgba(44,33,19,0.92))',
-                        borderColor: 'var(--library-overlay-border)',
-                        color: '#f8fafc',
-                        boxShadow: 'var(--shadow-soft)',
-                      }}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="relative w-16 flex-shrink-0 overflow-hidden rounded-[16px] border sm:w-[4.5rem]" style={{ aspectRatio: '2 / 3', borderColor: 'var(--library-overlay-border)' }}>
-                          {continueBook.coverUri ? (
-                            <img src={continueBook.coverUri} alt={continueBook.title} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-[1.9rem] sm:text-[2.1rem]" style={{ backgroundColor: `${titleColor(continueBook.title)}33` }}>
-                              <FileTypeIcon format={continueBook.format} className="text-[1.9rem] sm:text-[2.1rem]" title={`${continueBook.format.toUpperCase()} cover icon`} />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Continue reading</p>
-                          <p className="mt-1.5 line-clamp-2 text-[15px] leading-tight sm:text-lg" style={{ fontFamily: 'var(--font-display)' }}>
-                            {continueBook.title}
-                          </p>
-                          <p className="mt-1 truncate text-[12px] text-white/70 sm:text-sm">{continueBook.author || 'Unknown author'}</p>
-                          <div className="mt-3 flex items-center justify-between gap-3 text-[12px] text-white/70 sm:text-sm">
-                            <span>{progressLabel(progressMap[continueBook.id] ?? 0)}</span>
-                            <span>Last opened {relativeDate(continueBook.lastOpenedAt ?? continueBook.addedAt)}</span>
-                          </div>
-                          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-                            <div
-                              className="h-1.5 rounded-full transition-[width]"
-                              style={{ width: `${(progressMap[continueBook.id] ?? 0) * 100}%`, backgroundColor: titleColor(continueBook.title) }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 inline-flex items-center gap-2 text-[13px] font-semibold text-white sm:text-sm">
-                        Open book
-                        <FontAwesomeIcon icon={faArrowRight} className="transition-transform group-hover:translate-x-0.5" />
-                      </div>
-                    </button>
-                  )}
-                </div>
-              )}
+              ) : null}
             </section>
 
             {loading ? (
@@ -481,14 +415,11 @@ export default function LibraryPage() {
                 className="rounded-[28px] border p-3.5 sm:p-4"
                 style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-soft)' }}
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
-                      Shelf view
+                    <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                      {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
                     </p>
-                    <h2 className="mt-0.5 text-lg sm:text-xl" style={{ fontFamily: 'var(--font-display)' }}>
-                      {selectedId === null ? 'Recent and ready to read' : `${collectionName} collection`}
-                    </h2>
                   </div>
 
                   <div className="inline-flex rounded-2xl border p-1" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--library-surface-3)' }}>
@@ -516,43 +447,58 @@ export default function LibraryPage() {
                 </div>
 
                 {libraryView === 'grid' ? (
-                  <div className="grid grid-cols-2 gap-2.5 pt-1.5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                  <div className="grid grid-cols-2 gap-3 pt-1.5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {sortedVisibleBooks.map(book => {
                       const hasCover = Boolean(book.coverUri)
                       const progress = progressMap[book.id] ?? 0
                       const color = titleColor(book.title)
 
                       return (
-                        <article
-                          key={book.id}
-                          className="overflow-hidden rounded-[20px] border"
-                          style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)', boxShadow: 'var(--shadow-tile)' }}
-                        >
-                          <div className="relative">
-                            <button
-                              onClick={() => navigate(`/reader/${book.id}`)}
-                              className="relative block w-full overflow-hidden text-left"
-                              style={{ aspectRatio: '2 / 3' }}
-                            >
+                        <article key={book.id} className="relative">
+                          <button
+                            onClick={() => navigate(`/reader/${book.id}`)}
+                            className="group relative block w-full overflow-hidden rounded-[14px] border text-left"
+                            style={{
+                              aspectRatio: '2 / 3',
+                              backgroundColor: hasCover ? 'var(--library-surface-5)' : `${color}12`,
+                              borderColor: hasCover ? 'rgba(15, 23, 42, 0.08)' : `${color}30`,
+                              boxShadow: '0 12px 22px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(255, 255, 255, 0.4) inset',
+                            }}
+                          >
+                            <div
+                              className="absolute inset-y-0 left-0 z-[1] w-[8px]"
+                              style={{
+                                background: hasCover
+                                  ? 'linear-gradient(180deg, rgba(255,255,255,0.24), rgba(15,23,42,0.12))'
+                                  : `linear-gradient(180deg, ${color}55, ${color}18)`,
+                                boxShadow: '1px 0 0 rgba(255,255,255,0.18) inset',
+                              }}
+                            />
+                            <div className="relative h-full w-full">
                               {hasCover ? (
                                 <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                               ) : (
                                 <div
-                                  className="relative flex h-full w-full items-start justify-center overflow-hidden"
+                                  className="relative flex h-full w-full flex-col overflow-hidden"
                                   style={{
-                                    backgroundColor: `${color}18`,
+                                    backgroundColor: `${color}14`,
                                   }}
                                 >
+                                  <div className="absolute inset-0 opacity-70" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.04) 38%, rgba(15,23,42,0.18) 100%)' }} />
                                   <div
-                                    className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] border text-[2.35rem] sm:h-[4.5rem] sm:w-[4.5rem] sm:text-[2.6rem]"
+                                    className="relative mx-auto mt-6 flex h-16 w-16 items-center justify-center rounded-[18px] border text-[2.1rem] sm:h-[4.25rem] sm:w-[4.25rem] sm:text-[2.35rem]"
                                     style={{
                                       color,
-                                      backgroundColor: `${color}14`,
+                                      backgroundColor: 'rgba(255,255,255,0.32)',
                                       borderColor: `${color}30`,
-                                      boxShadow: '0 10px 24px rgba(15, 23, 42, 0.08)',
+                                      boxShadow: '0 8px 18px rgba(15, 23, 42, 0.08)',
                                     }}
                                   >
-                                    <FileTypeIcon format={book.format} className="text-[2.35rem] sm:text-[2.6rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                    <FileTypeIcon format={book.format} className="text-[2.1rem] sm:text-[2.35rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                  </div>
+                                  <div className="relative mt-6 px-5 text-center">
+                                    <p className="line-clamp-3 text-[14px] font-semibold leading-snug sm:text-[15px]" style={{ color: 'rgba(20, 18, 14, 0.92)' }}>{book.title}</p>
+                                    <p className="mt-2 truncate text-[11px] sm:text-[12px]" style={{ color: 'rgba(20, 18, 14, 0.6)' }}>{book.author || 'Unknown author'}</p>
                                   </div>
                                 </div>
                               )}
@@ -560,13 +506,13 @@ export default function LibraryPage() {
                               <div
                                 className="absolute inset-x-0 bottom-0 px-3 pb-2.5 pt-3 text-white"
                                 style={{
-                                  backgroundColor: hasCover ? 'rgba(15, 23, 42, 0.82)' : 'rgba(15, 23, 42, 0.88)',
+                                  backgroundColor: hasCover ? 'rgba(15, 23, 42, 0.84)' : 'rgba(15, 23, 42, 0.78)',
                                   backdropFilter: hasCover ? 'blur(10px)' : undefined,
                                   borderTop: hasCover ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.06)',
                                 }}
                               >
-                                <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-white sm:text-[14px]">{book.title}</p>
-                                <p className="mt-1 truncate text-[10px] text-white/72 sm:text-[11px]">{book.author || 'Unknown author'}</p>
+                                {hasCover && <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-white sm:text-[14px]">{book.title}</p>}
+                                {hasCover && <p className="mt-1 truncate text-[10px] text-white/72 sm:text-[11px]">{book.author || 'Unknown author'}</p>}
                                 <div className="mt-2 flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-white/80 sm:text-[10px]">
                                   <span>{book.format.toUpperCase()}</span>
                                   <span>{progressLabel(progress)}</span>
@@ -581,18 +527,18 @@ export default function LibraryPage() {
                                   <div className="h-1 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
                                 </div>
                               )}
-                            </button>
-
-                            <div className="absolute right-1.5 top-1.5" onClick={e => e.stopPropagation()}>
-                              <button
-                                onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                                className="flex h-6.5 w-6.5 items-center justify-center rounded-lg text-[10px] text-white transition-opacity active:opacity-60 sm:h-7 sm:w-7 sm:text-[11px]"
-                                style={{ backgroundColor: 'rgba(15, 23, 42, 0.42)', backdropFilter: 'blur(10px)' }}
-                              >
-                                <FontAwesomeIcon icon={faEllipsisV} />
-                              </button>
-                              {menuOpenId === book.id && renderBookMenu(book)}
                             </div>
+                          </button>
+
+                          <div className="absolute right-1.5 top-1.5" onClick={e => e.stopPropagation()}>
+                            <button
+                              onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
+                              className="flex h-6.5 w-6.5 items-center justify-center rounded-lg text-[10px] text-white transition-opacity active:opacity-60 sm:h-7 sm:w-7 sm:text-[11px]"
+                              style={{ backgroundColor: 'rgba(15, 23, 42, 0.42)', backdropFilter: 'blur(10px)' }}
+                            >
+                              <FontAwesomeIcon icon={faEllipsisV} />
+                            </button>
+                            {menuOpenId === book.id && renderBookMenu(book)}
                           </div>
                         </article>
                       )
