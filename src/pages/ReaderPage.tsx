@@ -14,6 +14,7 @@ import SpeedReaderView from '../components/SpeedReader/SpeedReaderView'
 import { stripMarkdown } from '../utils/textTokenizer'
 import { useBookmarks } from '../hooks/useBookmarks'
 import { useReaderModeStore } from '../hooks/useReaderMode'
+import { useAppStore } from '../store/appStore'
 import { readFileContent, readFileAsArrayBuffer } from '../utils/fileStore'
 import { extractEpubText } from '../utils/epubParser'
 import { extractDocxText, docxToHtml } from '../utils/docxParser'
@@ -48,7 +49,9 @@ export default function ReaderPage() {
   const readTimerRef = useRef<number | null>(null)
 
   const { mode, layout, toggleMode } = useReaderModeStore()
+  const { theme, removePageBackground } = useAppStore()
   const { bookmarks, load: loadBookmarks, addBookmark, removeBookmark } = useBookmarks(bookId ?? '')
+  const readerCanvasBg = theme === 'light' && !removePageBackground ? '#d8d8d8' : 'var(--reader-canvas-bg)'
 
   const clearReadTimer = useCallback(() => {
     if (readTimerRef.current !== null) {
@@ -269,7 +272,7 @@ export default function ReaderPage() {
 
   if (!book) {
     return (
-      <div className="flex items-center justify-center min-h-[100dvh]" style={{ backgroundColor: 'var(--reader-canvas-bg)', color: 'var(--reader-fg)' }}>
+      <div className="flex items-center justify-center min-h-[100dvh]" style={{ backgroundColor: readerCanvasBg, color: 'var(--reader-fg)' }}>
         <p style={{ color: 'var(--text-muted)' }}>Loading…</p>
       </div>
     )
@@ -278,7 +281,7 @@ export default function ReaderPage() {
   const isHtmlFormat = book.format === 'docx' || book.format === 'fb2'
 
   return (
-    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden" style={{ backgroundColor: 'var(--reader-canvas-bg)', color: 'var(--reader-fg)' }}>
+    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden" style={{ backgroundColor: readerCanvasBg, color: 'var(--reader-fg)' }}>
       <ReaderToolbar
         title={book.title}
         onTogglePanel={() => setShowPanel(true)}

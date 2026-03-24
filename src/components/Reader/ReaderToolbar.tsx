@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faBars, faBolt, faBook, faGear } from '@fortawesome/free-solid-svg-icons'
 import { useReaderModeStore } from '../../hooks/useReaderMode'
+import { useAppStore } from '../../store/appStore'
 import HeaderIconButton from '../HeaderIconButton'
 
 interface Props {
@@ -12,11 +13,13 @@ interface Props {
 export default function ReaderToolbar({ title, onTogglePanel }: Props) {
   const navigate = useNavigate()
   const { mode, toggleMode } = useReaderModeStore()
+  const { theme, removePageBackground } = useAppStore()
+  const readerCanvasBg = theme === 'light' && !removePageBackground ? '#d8d8d8' : 'var(--reader-canvas-bg)'
 
   return (
     <div
       className="flex items-center justify-between gap-2 px-[var(--app-gutter)] pb-3 pt-3 flex-shrink-0 border-b"
-      style={{ backgroundColor: 'var(--reader-canvas-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + var(--safe-top))' }}
+      style={{ backgroundColor: readerCanvasBg, borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + var(--safe-top))' }}
     >
       <div className="flex items-center gap-2 min-w-0">
         <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library" className="w-11 h-11 rounded-2xl sm:w-10 sm:h-10 sm:rounded-xl">
