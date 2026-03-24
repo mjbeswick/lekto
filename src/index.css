@@ -7,6 +7,7 @@ html, body {
   min-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
+  background-color: var(--reader-bg);
 }
 
 #root {
@@ -139,6 +140,28 @@ textarea {
 .lekto-file-icon {
   flex-shrink: 0;
   vertical-align: middle;
+}
+
+/* Book cover card effect */
+.book-card {
+  border-radius: 2px 4px 4px 2px;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.book-cover-spine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.26) 0px,
+    rgba(0, 0, 0, 0.06) 4px,
+    rgba(255, 255, 255, 0.12) 7px,
+    transparent 14px
+  );
 }
 
 .reader-prose :where(a):not(:where([class~="not-prose"], [class~="not-prose"] *)) {

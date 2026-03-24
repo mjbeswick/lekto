@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBars, faBook, faBookOpen, faClock, faEllipsisV, faFolder, faFolderOpen, faFolderPlus, faGear, faList, faMinus, faPlus, faTableCells, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faBars, faBook, faBookOpen, faEllipsisV, faFolder, faFolderOpen, faFolderPlus, faGear, faList, faMagnifyingGlass, faMinus, faPlus, faTableCells, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FilePicker } from '@capawesome/capacitor-file-picker'
 import { v4 as uuidv4 } from 'uuid'
 import HeaderIconButton from '../components/HeaderIconButton'
 import CollectionDrawer from '../components/BookcaseDrawer'
-import FileTypeIcon from '../components/FileTypeIcon'
 import { getProgress } from '../db/progress'
 import { useAppStore } from '../store/appStore'
 import { useCollectionStore } from '../store/bookcaseStore'
@@ -64,7 +63,7 @@ async function buildBook(id: string, name: string, ext: BookFormat, data: ArrayB
     try { const meta = parseMdMeta(new TextDecoder('utf-8').decode(data)); title = meta.title || title; author = meta.author } catch { /* ignore unreadable metadata */ }
   }
 
-  return { id, title, author, filePath, format: ext, coverUri, addedAt: Date.now() }
+  return { id, title, author, filePath, format: ext, coverUri, addedAt: Date.now(), fileSize: data.byteLength }
 }
 
 export default function LibraryPage() {
@@ -77,6 +76,7 @@ export default function LibraryPage() {
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const enrichingBookIdsRef = useRef(new Set<string>())
 
@@ -150,11 +150,11 @@ export default function LibraryPage() {
     ? 'All Books'
     : (collections.find(collection => collection.id === selectedId)?.name ?? 'All Books')
 
-  const sortedVisibleBooks = [...visibleBooks].sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
-  const continueBook = sortedVisibleBooks.find(book => {
-    const progress = progressMap[book.id] ?? 0
-    return progress > 0 && progress < 1
-  }) ?? sortedVisibleBooks[0]
+  const searchQuery = search.toLowerCase()
+  const filteredBooks = searchQuery
+    ? visibleBooks.filter(b => b.title.toLowerCase().includes(searchQuery) || b.author.toLowerCase().includes(searchQuery))
+    : visibleBooks
+  const sortedVisibleBooks = [...filteredBooks].sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
   async function handleWebFile(files: FileList | null) {
     if (!files?.length) return
     setImporting(true)
@@ -244,8 +244,18 @@ export default function LibraryPage() {
 
   async function handleRemoveDirectory(id: string) {
     const dirBooks = books.filter(b => b.directoryId === id)
-    const removedIds = await removeDirectory(id, dirBooks)
-    for (const bookId of removedIds) await removeBook(bookId)
+    const dir = directories.find(d => d.id === id)
+    const bookCount = dirBooks.length
+    const msg = bookCount > 0
+      ? `Remove "${dir?.name ?? 'this folder'}" and delete its ${bookCount} ${bookCount === 1 ? 'book' : 'books'}?`
+      : `Remove "${dir?.name ?? 'this folder'}"?`
+    if (!window.confirm(msg)) return
+    try {
+      const removedIds = await removeDirectory(id, dirBooks)
+      for (const bookId of removedIds) await removeBook(bookId)
+    } catch (e) {
+      console.error('Failed to remove directory', e)
+    }
   }
 
   function renderBookMenu(book: Book) {
@@ -297,7 +307,7 @@ export default function LibraryPage() {
       <CollectionDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <div
-        className="h-full overflow-hidden"
+        className="h-full overflow-hidden flex flex-col"
         style={{
           backgroundColor: 'var(--reader-bg)',
           color: 'var(--reader-fg)',
@@ -337,7 +347,7 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        <div className="h-full overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
+        <div className="flex-1 min-h-0 overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-[var(--app-gutter)] pb-8 pt-4">
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -360,40 +370,30 @@ export default function LibraryPage() {
                 Add folder
               </button>
 
-              {continueBook && books.length > 0 && (
-                <button
-                  onClick={() => navigate(`/reader/${continueBook.id}`)}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-colors active:opacity-70 sm:text-sm"
-                  style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
-                >
-                  <FontAwesomeIcon icon={faClock} />
-                  Continue reading
-                </button>
-              )}
 
               {books.length > 0 && (
                 <div className="ml-auto flex flex-nowrap items-center gap-4">
                   <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
-                    {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
+                    {filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'}
                   </p>
 
-                  <div className="flex items-center gap-5">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => setLibraryView('list')}
-                      className="inline-flex items-center gap-1.5 border-b-2 pb-1 text-[13px] font-semibold transition-colors sm:text-sm"
+                      className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] font-semibold transition-all active:opacity-60 sm:text-sm"
                       style={libraryView === 'list'
-                        ? { color: 'var(--reader-accent)', borderBottomColor: 'var(--reader-accent)' }
-                        : { color: 'var(--text-muted)', borderBottomColor: 'transparent' }}
+                        ? { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--reader-fg)' }
+                        : { backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                     >
                       <FontAwesomeIcon icon={faList} />
                       List
                     </button>
                     <button
                       onClick={() => setLibraryView('grid')}
-                      className="inline-flex items-center gap-1.5 border-b-2 pb-1 text-[13px] font-semibold transition-colors sm:text-sm"
+                      className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] font-semibold transition-all active:opacity-60 sm:text-sm"
                       style={libraryView === 'grid'
-                        ? { color: 'var(--reader-accent)', borderBottomColor: 'var(--reader-accent)' }
-                        : { color: 'var(--text-muted)', borderBottomColor: 'transparent' }}
+                        ? { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--reader-fg)' }
+                        : { backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                     >
                       <FontAwesomeIcon icon={faTableCells} />
                       Grid
@@ -402,6 +402,87 @@ export default function LibraryPage() {
                 </div>
               )}
             </div>
+
+            {books.length > 0 && (
+              <div className="relative">
+                <FontAwesomeIcon
+                  icon={faMagnifyingGlass}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none"
+                  style={{ color: 'var(--text-muted)' }}
+                />
+                <input
+                  type="search"
+                  placeholder="Search by title or author…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full rounded-xl py-2.5 pl-9 pr-9 text-[13px] outline-none sm:text-sm"
+                  style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full transition-opacity active:opacity-60"
+                    style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                    aria-label="Clear search"
+                  >
+                    <FontAwesomeIcon icon={faXmark} className="text-[10px]" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {directories.length > 0 && (
+              <section className="mt-2">
+                <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
+                  Folder sources
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {directories.map(dir => {
+                    const dirBookCount = books.filter(b => b.directoryId === dir.id).length
+                    return (
+                      <div
+                        key={dir.id}
+                        className="flex items-center gap-3 rounded-xl border px-3 py-3"
+                        style={{ borderColor: 'var(--border)' }}
+                      >
+                        <div
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-base"
+                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--reader-accent)' }}
+                        >
+                          <FontAwesomeIcon icon={faFolder} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">{dir.name}</p>
+                          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                            {dirBookCount} {dirBookCount === 1 ? 'book' : 'books'} &middot; scanned {relativeDate(dir.lastScanned)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => void handleRefreshDirectory(dir.id)}
+                          disabled={dirScanning}
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-opacity active:opacity-60 disabled:opacity-40"
+                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                          title="Refresh directory"
+                        >
+                          {dirScanning
+                            ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            : <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor"><path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.1-3.45L10 6h5V1l-1.35 1.35z"/></svg>
+                          }
+                        </button>
+                        <button
+                          onClick={() => void handleRemoveDirectory(dir.id)}
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-opacity active:opacity-60"
+                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                          title="Remove folder source"
+                        >
+                          <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
 
             {books.length === 0 ? (
               <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
@@ -476,43 +557,28 @@ export default function LibraryPage() {
                         <article key={book.id} className="relative">
                           <button
                             onClick={() => navigate(`/reader/${book.id}`)}
-                            className="group block w-full overflow-hidden rounded-xl border text-left"
-                            style={{
-                              borderColor: 'var(--border)',
-                            }}
+                            className="group book-card block w-full text-left"
                           >
                             <div className="flex h-full w-full flex-col" style={{ aspectRatio: '2 / 3' }}>
-                              <div className="relative flex-1 overflow-hidden" style={{ backgroundColor: hasCover ? 'var(--surface-2)' : `${color}12` }}>
-                              {hasCover ? (
-                                <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
-                              ) : (
-                                <div className="flex h-full w-full flex-col items-center justify-center px-3">
-                                  <div
-                                    className="flex h-16 w-16 items-center justify-center rounded-lg border text-[2rem] sm:h-[4rem] sm:w-[4rem] sm:text-[2.25rem]"
-                                    style={{
-                                      color,
-                                      backgroundColor: 'var(--surface)',
-                                      borderColor: `${color}40`,
-                                    }}
-                                  >
-                                    <FileTypeIcon format={book.format} className="text-[2rem] sm:text-[2.25rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                              <div className="book-cover-spine relative flex-1 overflow-hidden" style={{ backgroundColor: hasCover ? 'var(--surface-2)' : color }}>
+                                {hasCover ? (
+                                  <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="relative z-[2] flex h-full items-center justify-center p-3 text-center">
+                                    <p className="line-clamp-4 text-[12px] font-bold leading-tight text-white">{book.title}</p>
                                   </div>
-                                  <div className="mt-4 text-center">
-                                    <p className="line-clamp-2 text-[13px] font-semibold leading-snug sm:text-[14px]" style={{ color: 'var(--reader-fg)' }}>{book.title}</p>
-                                    <p className="mt-1 truncate text-[11px] sm:text-[12px]" style={{ color: 'var(--text-muted)' }}>{book.author || 'Unknown author'}</p>
-                                  </div>
-                                </div>
-                              )}
+                                )}
                               </div>
 
-                              <div className="border-t px-2.5 py-2 text-[10px] sm:text-[11px]"
+                              <div className="min-h-[76px] border-t px-2.5 py-2 text-[10px] sm:text-[11px]"
                                 style={{
                                   borderColor: 'var(--border)',
                                 }}
                               >
-                                {hasCover && <p className="line-clamp-2 text-[13px] font-semibold leading-snug">{book.title}</p>}
-                                {hasCover && <p className="mt-1 truncate text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>{book.author || 'Unknown author'}</p>}
-                                <div className="mt-1.5 flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] sm:text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                <p className="truncate text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                                  {book.author || 'Unknown author'}
+                                </p>
+                                <div className="mt-1 flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] sm:text-[10px]" style={{ color: 'var(--text-muted)' }}>
                                   <span>{book.format.toUpperCase()}</span>
                                   <span>{progressLabel(progress)}</span>
                                 </div>
@@ -521,11 +587,9 @@ export default function LibraryPage() {
                                 </p>
                               </div>
 
-                              {progress > 0 && (
-                                <div className="h-1 border-t" style={{ borderColor: 'var(--border)' }}>
-                                  <div className="h-1 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
-                                </div>
-                              )}
+                              <div className="h-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                                <div className="h-1 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
+                              </div>
                             </div>
                           </button>
 
@@ -557,13 +621,11 @@ export default function LibraryPage() {
                         >
                           <button
                             onClick={() => navigate(`/reader/${book.id}`)}
-                            className="flex w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg sm:w-16"
-                            style={{ aspectRatio: '2 / 3', backgroundColor: book.coverUri ? 'var(--surface-2)' : `${color}1a` }}
+                            className="book-card book-cover-spine relative flex w-14 flex-shrink-0 sm:w-16"
+                            style={{ aspectRatio: '2 / 3', backgroundColor: book.coverUri ? 'var(--surface-2)' : color }}
                           >
-                            {book.coverUri ? (
+                            {book.coverUri && (
                               <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
-                            ) : (
-                              <FileTypeIcon format={book.format} className="text-[2rem]" title={`${book.format.toUpperCase()} cover icon`} />
                             )}
                           </button>
 
@@ -577,13 +639,12 @@ export default function LibraryPage() {
                             <p className="mt-1 truncate text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
                               {book.author || 'Unknown author'}
                             </p>
-                            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-                              <span>{progressLabel(progress)}</span>
-                              <span>{book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}</span>
-                            </div>
-                            <div className="mt-3 h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--surface-2)' }}>
-                              <div className="h-1.5 rounded-full transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
-                            </div>
+                            <p className="mt-2 text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
+                              {`${Math.round(progress * 100)}%`}
+                              {' · '}
+                              {book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}
+                              {book.fileSize != null && ` · ${Math.round(book.fileSize / 1024)} KB`}
+                            </p>
                           </button>
 
                           <div className="relative flex-shrink-0">
@@ -604,58 +665,6 @@ export default function LibraryPage() {
               </>
             )}
 
-            {directories.length > 0 && (
-              <section className="mt-2">
-                <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
-                  Folder sources
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {directories.map(dir => {
-                    const dirBookCount = books.filter(b => b.directoryId === dir.id).length
-                    return (
-                      <div
-                        key={dir.id}
-                        className="flex items-center gap-3 rounded-xl border px-3 py-3"
-                        style={{ borderColor: 'var(--border)' }}
-                      >
-                        <div
-                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-base"
-                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--reader-accent)' }}
-                        >
-                          <FontAwesomeIcon icon={faFolder} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">{dir.name}</p>
-                          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                            {dirBookCount} {dirBookCount === 1 ? 'book' : 'books'} &middot; scanned {relativeDate(dir.lastScanned)}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => void handleRefreshDirectory(dir.id)}
-                          disabled={dirScanning}
-                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-opacity active:opacity-60 disabled:opacity-40"
-                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
-                          title="Refresh directory"
-                        >
-                          {dirScanning
-                            ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            : <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor"><path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.1-3.45L10 6h5V1l-1.35 1.35z"/></svg>
-                          }
-                        </button>
-                        <button
-                          onClick={() => void handleRemoveDirectory(dir.id)}
-                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-opacity active:opacity-60"
-                          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
-                          title="Remove folder source"
-                        >
-                          <FontAwesomeIcon icon={faTrash} className="text-xs" />
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
           </div>
         </div>
       </div>
