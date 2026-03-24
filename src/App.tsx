@@ -63,7 +63,10 @@ function AppInner() {
   }, [addBook, navigate])
 
   return (
-    <div className={`theme-${theme} ${theme === 'dark' || theme === 'amoled' ? 'dark' : ''} h-full overflow-hidden`} style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+    <div
+      className={`theme-${theme} ${theme === 'dark' || theme === 'amoled' ? 'dark' : ''} h-full overflow-hidden`}
+      style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)', minHeight: '100dvh' }}
+    >
       <Routes>
         <Route path="/" element={<Navigate to="/library" replace />} />
         <Route path="/library" element={<LibraryPage />} />

@@ -5,6 +5,9 @@ import { faArrowLeft, faChevronRight, faFolder, faFolderOpen, faDownload, faBook
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { parseEpubMeta } from '../utils/epubParser'
 import { parseMdMeta } from '../utils/markdownMeta'
+import { parsePdfMeta } from '../utils/pdfParser'
+import { parseDocxMeta } from '../utils/docxParser'
+import { parseFb2Meta } from '../utils/fb2Parser'
 import { useLibraryStore } from '../store/libraryStore'
 import type { Book, BookFormat } from '../types'
 import { v4 as uuidv4 } from 'uuid'
@@ -55,8 +58,9 @@ export default function FileBrowserPage() {
           } as FileEntry
         })
       )
-      // Show dirs first, then only .md and .epub files (hide others)
-      const filtered = all.filter(f => f.isDir || f.name.endsWith('.md') || f.name.endsWith('.epub') || f.name.endsWith('.txt'))
+      const BOOK_EXTS = ['.md', '.epub', '.txt', '.pdf', '.docx', '.fb2', '.fb2.zip']
+      // Show dirs first, then supported book files
+      const filtered = all.filter(f => f.isDir || BOOK_EXTS.some(ext => f.name.toLowerCase().endsWith(ext)))
       filtered.sort((a, b) => {
         if (a.isDir && !b.isDir) return -1
         if (!a.isDir && b.isDir) return 1
@@ -94,8 +98,10 @@ export default function FileBrowserPage() {
   }
 
   async function openFile(entry: FileEntry) {
-    const ext = entry.name.split('.').pop()?.toLowerCase() as BookFormat
-    if (ext !== 'md' && ext !== 'epub' && ext !== 'txt') return
+    const lower = entry.name.toLowerCase()
+    const ext = (lower.endsWith('.fb2.zip') ? 'fb2' : lower.split('.').pop()) as BookFormat
+    const SUPPORTED = ['md', 'epub', 'txt', 'pdf', 'docx', 'fb2']
+    if (!SUPPORTED.includes(ext)) return
     setOpening(entry.path)
     try {
       // Read file data once for metadata, then store URI path
@@ -106,6 +112,14 @@ export default function FileBrowserPage() {
       let title = entry.name.replace(/\.[^.]+$/, '')
       let author = ''
       let coverUri: string | undefined
+
+      const b64ToArrayBuffer = (b64: string) => {
+        const bin = atob(b64)
+        const buf = new ArrayBuffer(bin.length)
+        const view = new Uint8Array(buf)
+        for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i)
+        return buf
+      }
 
       if (ext === 'epub' && data) {
         try {
@@ -121,6 +135,26 @@ export default function FileBrowserPage() {
           title = meta.title || title
           author = meta.author
         } catch (e) { console.warn('md meta', e) }
+      } else if (ext === 'pdf' && data) {
+        try {
+          const meta = await parsePdfMeta(b64ToArrayBuffer(data))
+          title = meta.title || title
+          author = meta.author
+          coverUri = meta.coverBase64
+        } catch (e) { console.warn('pdf meta', e) }
+      } else if (ext === 'docx' && data) {
+        try {
+          const meta = await parseDocxMeta(b64ToArrayBuffer(data))
+          title = meta.title || title
+          author = meta.author
+        } catch (e) { console.warn('docx meta', e) }
+      } else if (ext === 'fb2' && data) {
+        try {
+          const meta = await parseFb2Meta(b64ToArrayBuffer(data))
+          title = meta.title || title
+          author = meta.author
+          coverUri = meta.coverBase64
+        } catch (e) { console.warn('fb2 meta', e) }
       }
 
       const book: Book = {
@@ -141,9 +175,9 @@ export default function FileBrowserPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+    <div className="flex flex-col min-h-[100dvh]" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 pb-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
+      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0" style={{ paddingTop: 'calc(1rem + var(--safe-top))' }}>
         <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library">
           <FontAwesomeIcon icon={faArrowLeft} />
         </HeaderIconButton>
@@ -151,12 +185,12 @@ export default function FileBrowserPage() {
       </div>
 
       {/* Root selector */}
-      <div className="flex gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+      <div className="flex gap-2 overflow-x-auto px-[var(--app-gutter)] py-2 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
         {ROOT_DIRS.map(r => (
           <button
             key={r.name}
             onClick={() => switchRoot(r)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeRoot === r.name ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+            className={`whitespace-nowrap px-3 py-2 rounded-xl text-sm font-medium transition-colors ${activeRoot === r.name ? 'bg-orange-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
           >
             {r.name === 'Downloads'
               ? <><FontAwesomeIcon icon={faDownload} className="mr-1.5" />Downloads</>
@@ -167,7 +201,7 @@ export default function FileBrowserPage() {
 
       {/* Breadcrumbs */}
       {breadcrumbs.length > 1 && (
-        <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+        <div className="flex items-center gap-1 px-[var(--app-gutter)] py-2 overflow-x-auto border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
           {breadcrumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-1 flex-shrink-0">
               {i > 0 && <span className="text-gray-300 text-xs">/</span>}
@@ -195,21 +229,28 @@ export default function FileBrowserPage() {
           entries.map(entry => (
             <button
               key={entry.path}
-              className="w-full flex items-center gap-3 px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 text-left"
+              className="w-full flex items-center gap-3 px-[var(--app-gutter)] py-3.5 border-b border-gray-100 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 text-left"
               onClick={() => entry.isDir ? enterDir(entry) : openFile(entry)}
               disabled={opening === entry.path}
             >
               <span className="text-xl flex-shrink-0 w-6 flex items-center justify-center text-gray-400">
-                <FontAwesomeIcon icon={entry.isDir ? faFolder : entry.name.endsWith('.epub') ? faBookOpen : faFile} />
+                <FontAwesomeIcon icon={entry.isDir ? faFolder : entry.name.toLowerCase().endsWith('.epub') ? faBookOpen : faFile} />
               </span>
               <span className="flex-1 text-sm truncate">{entry.name}</span>
               {opening === entry.path
                 ? <span className="text-xs text-orange-400">Opening…</span>
                 : entry.isDir
                   ? <FontAwesomeIcon icon={faChevronRight} className="text-gray-300 text-sm" />
-                  : <span className={`text-xs px-1.5 py-0.5 rounded font-mono font-semibold ${entry.name.endsWith('.epub') ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                      {entry.name.endsWith('.epub') ? 'EPUB' : 'MD'}
-                    </span>
+                  : (() => {
+                      const n = entry.name.toLowerCase()
+                      const [label, cls] = n.endsWith('.epub') ? ['EPUB', 'bg-blue-100 text-blue-700']
+                        : n.endsWith('.pdf')  ? ['PDF',  'bg-red-100 text-red-700']
+                        : n.endsWith('.docx') ? ['DOCX', 'bg-indigo-100 text-indigo-700']
+                        : n.endsWith('.fb2') || n.endsWith('.fb2.zip') ? ['FB2', 'bg-purple-100 text-purple-700']
+                        : n.endsWith('.txt')  ? ['TXT',  'bg-gray-100 text-gray-600']
+                        : ['MD', 'bg-green-100 text-green-700']
+                      return <span className={`text-xs px-1.5 py-0.5 rounded font-mono font-semibold ${cls}`}>{label}</span>
+                    })()
               }
             </button>
           ))

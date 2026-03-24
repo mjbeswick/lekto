@@ -53,13 +53,20 @@ export default function ContentPanel({
   const [activeTab, setActiveTab] = useState<'contents' | 'bookmarks'>(
     toc.length === 0 ? 'bookmarks' : initialTab,
   )
+  const deleteButtonClassName = 'p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0'
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="flex-1 bg-black bg-opacity-40" onClick={onClose} />
       <div
-        className="w-72 h-full flex flex-col shadow-2xl"
-        style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}
+        className="h-full w-full max-w-[var(--panel-width)] flex flex-col shadow-2xl"
+        style={{
+          backgroundColor: 'var(--reader-bg)',
+          color: 'var(--reader-fg)',
+          paddingTop: 'var(--safe-top)',
+          paddingBottom: 'var(--safe-bottom)',
+          paddingRight: 'max(12px, var(--safe-right))',
+        }}
       >
         {/* Header */}
         <div
@@ -163,7 +170,7 @@ export default function ContentPanel({
                     </div>
                     <button
                       onClick={e => { e.stopPropagation(); onDeleteBookmark(b.id) }}
-                      className="p-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                      className={deleteButtonClassName}
                       style={{ color: 'var(--text-muted)' }}
                     >
                       <FontAwesomeIcon icon={faXmark} />

@@ -4,12 +4,14 @@
 
 html, body {
   height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
 #root {
   height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -21,6 +23,12 @@ html, body {
   --surface-2: #e5e5e5;
   --border: #e5e5e5;
   --text-muted: #737373;
+  --app-gutter: clamp(16px, 4vw, 24px);
+  --panel-width: min(24rem, calc(100vw - 16px));
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
 }
 
 .theme-dark {
@@ -62,4 +70,6 @@ body {
   background-color: var(--reader-bg);
   color: var(--reader-fg);
   transition: background-color 0.2s, color 0.2s;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }

@@ -5,6 +5,9 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useAppStore } from '../../store/appStore'
 import { getReadingPosition, setReadingPosition } from '../../utils/positionSync'
+import { getReaderFontStack } from '../../utils/readerFonts'
+
+const SPREAD_MIN_ASPECT_RATIO = 5 / 4
 
 // Rough chars-per-page estimate based on font size and column count
 function charsPerPage(fontSize: number, columns = 1): number {
@@ -53,10 +56,10 @@ function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark, maxWid
   return (
     <div
       ref={contentRef}
-      className="flex-1 overflow-hidden px-8 py-6 flex flex-col"
+      className="flex-1 overflow-hidden px-4 py-4 sm:px-8 sm:py-6 flex flex-col"
       style={{ fontFamily: ff, fontSize, lineHeight }}
     >
-      <div className={`mx-auto w-full prose prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
+      <div className={`mx-auto w-full prose prose-base sm:prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
       </div>
     </div>
@@ -75,12 +78,10 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
 
   // Detect container size changes
   useEffect(() => {
-    console.log('[PaginatedReader] Mounting with content length:', content.length, 'fontSize:', fontSize)
     const el = wrapperRef.current
     if (!el) return
     const ro = new ResizeObserver(entries => {
       const { width, height } = entries[0].contentRect
-      console.log('[PaginatedReader] Resize:', width, height)
       setContainerWidth(width)
       setContainerHeight(height)
     })
@@ -88,8 +89,8 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
     return () => ro.disconnect()
   }, [])
 
-  // Wide aspect ratio → spread (two-page) mode
-  const isSpread = containerWidth > containerHeight
+  // Only use a two-page spread when the viewport is clearly wider than a portrait page.
+  const isSpread = containerHeight > 0 && containerWidth / containerHeight >= SPREAD_MIN_ASPECT_RATIO
   const columns = isSpread ? 2 : 1
   const pages = splitIntoPages(content, fontSize, columns)
   const totalPages = pages.length
@@ -108,24 +109,6 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       return Math.max(0, Math.min(Math.floor(fraction * totalPages), totalPages - 1))
     }
     return initialPage
-  })
-  
-  console.log('[PaginatedReader] Render state:', { 
-    page, 
-    totalPages, 
-    isSpread, 
-    containerWidth, 
-    containerHeight,
-    pageContentLength: pages[page]?.length 
-  })
-  
-  console.log('[PaginatedReader] Render state:', { 
-    page, 
-    totalPages, 
-    isSpread, 
-    containerWidth, 
-    containerHeight,
-    pageContentLength: pages[page]?.length 
   })
 
   // Clamp & align page when content or spread mode changes
@@ -184,7 +167,7 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
     return () => clearTimeout(t)
   }, [isSpread])
 
-  const ff = fontFamily === 'serif' ? 'Georgia, "Times New Roman", serif' : 'Inter, system-ui, sans-serif'
+  const ff = getReaderFontStack(fontFamily)
 
   // Spread display: current spread covers pages [page, page+1]
   const rightPage = Math.min(page + 1, totalPages - 1)
@@ -195,13 +178,13 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
   return (
     <div
       ref={wrapperRef}
-      className="h-full flex flex-col overflow-hidden select-none relative"
+      className="relative flex h-full min-h-0 flex-col overflow-hidden select-none"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleTap}
     >
       {/* Content area */}
-      <div className="flex-1 overflow-hidden flex">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {isSpread ? (
           <>
             <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
@@ -223,8 +206,8 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       </div>
 
       {/* Page indicator */}
-      <div className="flex-shrink-0 flex items-center justify-center gap-3 py-3 border-t"
-        style={{ borderColor: 'var(--border)' }}>
+      <div className="flex-shrink-0 flex items-center justify-center gap-3 border-t px-4 py-3"
+        style={{ borderColor: 'var(--border)', paddingBottom: 'calc(0.75rem + var(--safe-bottom))' }}>
         <button onClick={() => goTo(page - step)} disabled={page === 0}
           className="disabled:opacity-30 px-2 py-1" style={{ color: 'var(--text-muted)' }}>
           <FontAwesomeIcon icon={faAngleLeft} />
@@ -239,8 +222,8 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       {/* Tap-to-start hint (single-page mode only) */}
       {onWordTap && !isSpread && (
         <div
-          className={`absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium pointer-events-none transition-opacity duration-500 ${tapHint ? 'opacity-70' : 'opacity-0'}`}
-          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+          className={`absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium pointer-events-none transition-opacity duration-500 ${tapHint ? 'opacity-70' : 'opacity-0'}`}
+          style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)', bottom: 'calc(4rem + var(--safe-bottom))' }}
         >
           <FontAwesomeIcon icon={faBolt} className="text-orange-400" />
           Tap center to speed read from here

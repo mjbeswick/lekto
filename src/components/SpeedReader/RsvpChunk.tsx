@@ -27,6 +27,7 @@ function SingleWord({ word, fontSize }: {
         display: 'flex',
         alignItems: 'baseline',
         width: '100%',
+        minWidth: 0,
         fontFamily: RSVP_FONT,
         fontSize,
         fontWeight: 500,
@@ -80,12 +81,14 @@ export default function RsvpChunk({ words, fontSize = 52 }: Props) {
         justifyContent: 'center',
         flexWrap: 'nowrap',
         gap: '0 0.3em',
+        width: '100%',
         fontFamily: RSVP_FONT,
         fontSize: scaledSize,
         fontWeight: 500,
         letterSpacing: '0.02em',
         whiteSpace: 'nowrap',
         maxWidth: '100%',
+        overflow: 'hidden',
       }}
       aria-live="off"
     >

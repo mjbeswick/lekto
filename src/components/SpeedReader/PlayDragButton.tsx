@@ -105,7 +105,7 @@ export default function PlayDragButton({ playing, wpm, onToggle, onPlay, onPause
       onTouchCancel={handleTouchCancel}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
-      className="w-20 h-20 rounded-full flex items-center justify-center transition-colors select-none touch-none"
+      className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-colors select-none touch-none"
       style={{
         backgroundColor: playing ? 'var(--reader-accent)' : 'var(--surface)',
         WebkitUserSelect: 'none',

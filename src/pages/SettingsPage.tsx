@@ -4,6 +4,7 @@ import { faArrowLeft, faSun, faMoon, faCircleHalfStroke, faMobileScreen } from '
 import { useAppStore } from '../store/appStore'
 import type { Theme } from '../types'
 import HeaderIconButton from '../components/HeaderIconButton'
+import { READER_FONTS } from '../utils/readerFonts'
 
 const THEMES: { label: string; value: Theme; icon: any }[] = [
   { label: 'Light',  value: 'light',  icon: faSun },
@@ -21,11 +22,6 @@ const ACCENTS = [
   { label: 'Teal',   value: '#14b8a6' },
 ]
 
-const FONTS = [
-  { label: 'Serif',      value: 'serif' },
-  { label: 'Sans-serif', value: 'sans'  },
-]
-
 export default function SettingsPage() {
   const navigate = useNavigate()
   const {
@@ -39,17 +35,21 @@ export default function SettingsPage() {
   } = useAppStore()
 
   return (
-    <div className="min-h-screen px-5 pb-8" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)', paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}>
-      <div className="flex items-center gap-3 mb-8">
+    <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-5 flex-shrink-0" style={{ paddingTop: 'calc(1.25rem + var(--safe-top))' }}>
         <HeaderIconButton onClick={() => navigate(-1)} title="Back" aria-label="Back">
           <FontAwesomeIcon icon={faArrowLeft} />
         </HeaderIconButton>
         <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 
+      <div
+        className="flex-1 overflow-y-auto px-[var(--app-gutter)] pb-8"
+        style={{ paddingBottom: 'calc(2rem + var(--safe-bottom))', WebkitOverflowScrolling: 'touch' }}
+      >
       <section className="mb-8">
         <h2 className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Theme</h2>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {THEMES.map(t => (
             <button
               key={t.value}
@@ -89,13 +89,14 @@ export default function SettingsPage() {
 
       <section className="mb-8">
         <h2 className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Font</h2>
-        <div className="flex gap-3 mb-4">
-          {FONTS.map(f => (
+        <div className="grid grid-cols-2 gap-3 mb-4 sm:grid-cols-3">
+          {READER_FONTS.map(f => (
             <button
               key={f.value}
               onClick={() => setFontFamily(f.value)}
-              className="flex-1 py-3 rounded-xl text-sm font-medium border-2"
+              className="min-h-14 px-3 py-3 rounded-xl text-sm font-medium border-2 text-center"
               style={{
+                fontFamily: f.previewFamily,
                 borderColor: fontFamily === f.value ? 'var(--reader-accent)' : 'var(--border)',
                 color: fontFamily === f.value ? 'var(--reader-accent)' : 'var(--reader-fg)',
               }}
@@ -104,15 +105,15 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-        <label className="flex items-center justify-between">
+        <label className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm">Font size: {fontSize}px</span>
           <input type="range" min={12} max={28} value={fontSize} onChange={e => setFontSize(Number(e.target.value))}
-            className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </label>
-        <label className="flex items-center justify-between mt-3">
+        <label className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm">Line height: {lineHeight}</span>
           <input type="range" min={1.2} max={2.4} step={0.1} value={lineHeight} onChange={e => setLineHeight(Number(e.target.value))}
-            className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </label>
         <div className="flex items-center justify-between mt-4">
           <div>
@@ -136,10 +137,10 @@ export default function SettingsPage() {
 
       <section>
         <h2 className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Speed Reading</h2>
-        <label className="flex items-center justify-between mb-4">
+        <label className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm">Default WPM: {defaultWpm}</span>
           <input type="range" min={100} max={2000} step={25} value={defaultWpm} onChange={e => setDefaultWpm(Number(e.target.value))}
-            className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </label>
 
         <div className="flex items-center justify-between mb-4">
@@ -180,7 +181,7 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm">Letters per flash: {rsvpChunkLetters <= 1 ? 'Off' : rsvpChunkLetters}</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -190,15 +191,16 @@ export default function SettingsPage() {
           <input
             type="range" min={1} max={25} step={1} value={rsvpChunkLetters}
             onChange={e => setRsvpChunkLetters(Number(e.target.value))}
-            className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </div>
 
-        <label className="flex items-center justify-between mt-4">
+        <label className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm">Speed reader font size: {rsvpFontSize}px</span>
           <input type="range" min={32} max={80} step={2} value={rsvpFontSize} onChange={e => setRsvpFontSize(Number(e.target.value))}
-            className="w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </label>
       </section>
+      </div>
     </div>
   )
 }

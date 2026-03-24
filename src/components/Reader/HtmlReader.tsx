@@ -1,0 +1,49 @@
+import { useEffect, useRef } from 'react'
+import { useAppStore } from '../../store/appStore'
+
+interface Props {
+  html: string
+  initialOffset?: number
+  onProgressChange?: (offset: number, percent: number) => void
+}
+
+export default function HtmlReader({ html, initialOffset = 0, onProgressChange }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const restoredRef = useRef(false)
+  const { fontSize, fontFamily, lineHeight, maxWidth } = useAppStore()
+
+  // Restore scroll position once after first render
+  useEffect(() => {
+    if (restoredRef.current) return
+    const el = containerRef.current
+    if (!el || !html) return
+    restoredRef.current = true
+    requestAnimationFrame(() => {
+      if (el) el.scrollTop = initialOffset
+    })
+  }, [html, initialOffset])
+
+  // Save scroll progress
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const handler = () => {
+      const scrollable = el.scrollHeight - el.clientHeight
+      const percent = scrollable > 0 ? el.scrollTop / scrollable : 1
+      onProgressChange?.(Math.round(el.scrollTop), percent)
+    }
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => el.removeEventListener('scroll', handler)
+  }, [onProgressChange])
+
+  const ff = fontFamily === 'serif' ? 'Georgia, "Times New Roman", serif' : 'Inter, system-ui, sans-serif'
+
+  return (
+    <div ref={containerRef} className="h-full overflow-y-auto" style={{ fontFamily: ff, fontSize, lineHeight }}>
+      <div
+        className={`mx-auto px-4 py-6 sm:px-6 sm:py-8 prose prose-base sm:prose-lg prose-orange dark:prose-invert ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  )
+}

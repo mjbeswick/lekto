@@ -8,11 +8,14 @@ import type { Book, BookFormat } from '../types'
 import { v4 as uuidv4 } from 'uuid'
 import { parseEpubMeta } from '../utils/epubParser'
 import { parseMdMeta } from '../utils/markdownMeta'
+import { parsePdfMeta } from '../utils/pdfParser'
+import { parseDocxMeta } from '../utils/docxParser'
+import { parseFb2Meta } from '../utils/fb2Parser'
 import { isWeb, storeWebFile, webFilePath, b64ToBuffer } from '../utils/fileStore'
 import { getProgress } from '../db/progress'
 import HeaderIconButton from '../components/HeaderIconButton'
 
-const SUPPORTED = ['md', 'epub', 'txt']
+const SUPPORTED = ['md', 'epub', 'txt', 'pdf', 'docx', 'fb2']
 
 // Deterministic accent colour per book title
 const ACCENT_COLORS = ['#f97316','#3b82f6','#8b5cf6','#ef4444','#10b981','#f59e0b','#06b6d4','#ec4899']
@@ -27,6 +30,9 @@ function formatBadge(format: BookFormat) {
     epub: 'bg-blue-100 text-blue-700',
     md:   'bg-green-100 text-green-700',
     txt:  'bg-gray-100 text-gray-600',
+    pdf:  'bg-red-100 text-red-700',
+    docx: 'bg-indigo-100 text-indigo-700',
+    fb2:  'bg-purple-100 text-purple-700',
   }
   return (
     <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-semibold ${styles[format]}`}>
@@ -52,6 +58,12 @@ async function buildBook(id: string, name: string, ext: BookFormat, data: ArrayB
 
   if (ext === 'epub') {
     try { const m = await parseEpubMeta(data); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
+  } else if (ext === 'pdf') {
+    try { const m = await parsePdfMeta(data); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
+  } else if (ext === 'docx') {
+    try { const m = await parseDocxMeta(data); title = m.title || title; author = m.author } catch {}
+  } else if (ext === 'fb2') {
+    try { const m = await parseFb2Meta(data); title = m.title || title; author = m.author; coverUri = m.coverBase64 } catch {}
   } else {
     try { const m = parseMdMeta(new TextDecoder('utf-8').decode(data)); title = m.title || title; author = m.author } catch {}
   }
@@ -83,7 +95,8 @@ export default function LibraryPage() {
     if (!files?.length) return
     setImporting(true)
     for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop()?.toLowerCase() as BookFormat
+      const lower = file.name.toLowerCase()
+      const ext = (lower.endsWith('.fb2.zip') ? 'fb2' : lower.split('.').pop()) as BookFormat
       if (!SUPPORTED.includes(ext)) continue
       try {
         const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
@@ -107,7 +120,8 @@ export default function LibraryPage() {
       const result = await FilePicker.pickFiles({ limit: 0, readData: true })
       for (const file of result.files) {
         if (!file.name || !file.data) continue
-        const ext = file.name.split('.').pop()?.toLowerCase() as BookFormat
+        const lower = file.name.toLowerCase()
+        const ext = (lower.endsWith('.fb2.zip') ? 'fb2' : lower.split('.').pop()) as BookFormat
         if (!SUPPORTED.includes(ext)) continue
         const id = uuidv4()
         const filePath = file.path ?? webFilePath(id)
@@ -127,20 +141,23 @@ export default function LibraryPage() {
 
   return (
     <div className="h-full flex flex-col" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
-      <input ref={fileInputRef} type="file" accept=".md,.epub,.txt" multiple className="hidden"
+      <input ref={fileInputRef} type="file" accept=".md,.epub,.txt,.pdf,.docx,.fb2,.fb2.zip" multiple className="hidden"
         onChange={e => handleWebFile(e.target.files)} />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
-        <h1 className="text-2xl font-bold tracking-tight">Lekto</h1>
+      <div className="flex items-start justify-between gap-3 px-[var(--app-gutter)] pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))' }}>
+        <div className="min-w-0 pt-1">
+          <h1 className="text-2xl font-bold tracking-tight">Lekto</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>Fast reading, tuned for small screens.</p>
+        </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {!isWeb() && (
             <button onClick={() => navigate('/browse')}
-              className="px-3 py-2 rounded-xl text-sm font-semibold transition-opacity active:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-2.5 rounded-2xl text-sm font-semibold transition-opacity active:opacity-50 flex items-center gap-1.5"
               style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}>
               <FontAwesomeIcon icon={faFolderOpen} />
-              Browse
+              <span className="hidden sm:inline">Browse</span>
             </button>
           )}
 
@@ -167,13 +184,13 @@ export default function LibraryPage() {
           </div>
         </div>
       ) : books.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-5 px-10 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center gap-5 px-6 sm:px-10 text-center">
           <div className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl" style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)' }}>
             <FontAwesomeIcon icon={faBook} />
           </div>
           <div>
             <p className="text-lg font-semibold mb-1">Your library is empty</p>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Tap <strong>+ Open</strong> to add a Markdown, EPUB or TXT file</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Tap <strong>+ Open</strong> to add an EPUB, PDF, DOCX, FB2, Markdown or TXT file</p>
           </div>
           <button onClick={handleOpen}
             className="bg-orange-500 text-white px-6 py-3 rounded-2xl text-sm font-semibold transition-opacity active:opacity-70">
@@ -188,7 +205,7 @@ export default function LibraryPage() {
             const pct = progressMap[book.id] ?? 0
             const color = titleColor(book.title)
             return (
-              <div key={book.id} className="flex items-center gap-4 px-5 py-4 border-b transition-colors"
+              <div key={book.id} className="flex items-center gap-3 px-[var(--app-gutter)] py-4 border-b transition-colors sm:gap-4"
                 style={{ borderColor: 'var(--border)' }}>
                 {/* Cover */}
                 <div className="w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"

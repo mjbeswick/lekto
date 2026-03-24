@@ -1,4 +1,4 @@
-export type BookFormat = 'md' | 'epub' | 'txt'
+export type BookFormat = 'md' | 'epub' | 'txt' | 'pdf' | 'docx' | 'fb2'
 export type Theme = 'light' | 'dark' | 'amoled' | 'sepia'
 
 export interface Book {

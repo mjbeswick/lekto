@@ -6,6 +6,8 @@ import type { Book } from '../types'
 import MarkdownReader from '../components/Reader/MarkdownReader'
 import PaginatedReader from '../components/Reader/PaginatedReader'
 import EpubReader, { type EpubReaderHandle, type TocItem } from '../components/Reader/EpubReader'
+import PdfReader, { type PdfReaderHandle } from '../components/Reader/PdfReader'
+import HtmlReader from '../components/Reader/HtmlReader'
 import ContentPanel from '../components/Reader/ContentPanel'
 import ReaderToolbar from '../components/Reader/ReaderToolbar'
 import SpeedReaderView from '../components/SpeedReader/SpeedReaderView'
@@ -14,13 +16,18 @@ import { useBookmarks } from '../hooks/useBookmarks'
 import { useReaderModeStore } from '../hooks/useReaderMode'
 import { readFileContent, readFileAsArrayBuffer } from '../utils/fileStore'
 import { extractEpubText } from '../utils/epubParser'
+import { extractDocxText, docxToHtml } from '../utils/docxParser'
+import { extractFb2Text, fb2ToHtml } from '../utils/fb2Parser'
 
 export default function ReaderPage() {
   const { bookId } = useParams<{ bookId: string }>()
   const [book, setBook] = useState<Book | null>(null)
   const [mdContent, setMdContent] = useState('')
   const [epubBuffer, setEpubBuffer] = useState<ArrayBuffer | null>(null)
+  const [docBuffer, setDocBuffer] = useState<ArrayBuffer | null>(null)
+  const [htmlContent, setHtmlContent] = useState('')
   const epubExtractedRef = useRef(false)
+  const docExtractedRef = useRef(false)
   const [plainText, setPlainText] = useState('')
   const [extracting, setExtracting] = useState(false)
   const [initialOffset, setInitialOffset] = useState(0)
@@ -30,6 +37,7 @@ export default function ReaderPage() {
   const [showPanel, setShowPanel] = useState(false)
   const [toc, setToc] = useState<TocItem[]>([])
   const renditionRef = useRef<EpubReaderHandle | null>(null)
+  const pdfRef = useRef<PdfReaderHandle | null>(null)
   const currentPositionRef = useRef<string>('')
 
   const { mode, layout, toggleMode } = useReaderModeStore()
@@ -50,6 +58,25 @@ export default function ReaderPage() {
         const buffer = await readFileAsArrayBuffer(b.filePath)
         setEpubBuffer(buffer)
         if (saved) setInitialCfi(saved.position)
+      } else if (b.format === 'pdf') {
+        const buffer = await readFileAsArrayBuffer(b.filePath)
+        setDocBuffer(buffer)
+        if (saved?.position.startsWith('pdf:')) {
+          setInitialPage(parseInt(saved.position.slice(4)) || 1)
+        }
+      } else if (b.format === 'docx' || b.format === 'fb2') {
+        const buffer = await readFileAsArrayBuffer(b.filePath)
+        setDocBuffer(buffer)
+        const toHtml = b.format === 'docx' ? docxToHtml : fb2ToHtml
+        const html = await toHtml(buffer).catch(() => '')
+        setHtmlContent(html)
+        if (saved) {
+          if (saved.position.startsWith('page:')) {
+            setInitialPage(parseInt(saved.position.slice(5)) || 0)
+          } else {
+            setInitialOffset(Number(saved.position.replace('scroll:', '')) || 0)
+          }
+        }
       } else {
         const text = await readFileContent(b.filePath)
         setMdContent(text)
@@ -63,7 +90,7 @@ export default function ReaderPage() {
         }
       }
     })()
-  }, [bookId])
+  }, [bookId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lazy EPUB text extraction — only triggered when speed reader is first activated
   useEffect(() => {
@@ -75,6 +102,19 @@ export default function ReaderPage() {
       .catch(err => console.error('[Lekto] EPUB text extraction failed:', err))
       .finally(() => setExtracting(false))
   }, [mode, epubBuffer])
+
+  // Lazy DOCX/FB2 text extraction — only triggered when speed reader is first activated
+  useEffect(() => {
+    if (mode !== 'speed' || !docBuffer || !book || docExtractedRef.current) return
+    if (book.format !== 'docx' && book.format !== 'fb2') return
+    docExtractedRef.current = true
+    setExtracting(true)
+    const extract = book.format === 'docx' ? extractDocxText : extractFb2Text
+    extract(docBuffer)
+      .then(text => setPlainText(text))
+      .catch(err => console.error('[Lekto] text extraction failed:', err))
+      .finally(() => setExtracting(false))
+  }, [mode, docBuffer, book])
 
   const handleScrollProgress = useCallback(async (offset: number, percent: number) => {
     if (!bookId) return
@@ -96,6 +136,12 @@ export default function ReaderPage() {
     await saveProgress({ bookId, position: cfi, percent, updatedAt: Date.now() })
   }, [bookId])
 
+  const handlePdfProgress = useCallback(async (position: string, percent: number) => {
+    if (!bookId) return
+    currentPositionRef.current = position
+    await saveProgress({ bookId, position, percent, updatedAt: Date.now() })
+  }, [bookId])
+
   const handleAddBookmark = useCallback(async () => {
     const pos = currentPositionRef.current
     if (!pos) return
@@ -104,6 +150,8 @@ export default function ReaderPage() {
       label = `Page ${parseInt(pos.slice(5)) + 1}`
     } else if (pos.startsWith('scroll:')) {
       label = `Position ${pos.slice(7)}`
+    } else if (pos.startsWith('pdf:')) {
+      label = `Page ${pos.slice(4)}`
     } else {
       label = `Location ${pos.slice(0, 20)}`
     }
@@ -114,12 +162,14 @@ export default function ReaderPage() {
     if (position.startsWith('page:')) {
       const page = parseInt(position.slice(5)) || 0
       setInitialPage(page)
-      // Convert page to fraction for positionSync (approximation)
       setReaderKey(k => k + 1)
     } else if (position.startsWith('scroll:')) {
       const offset = Number(position.replace('scroll:', '')) || 0
       setInitialOffset(offset)
       setReaderKey(k => k + 1)
+    } else if (position.startsWith('pdf:')) {
+      const page = parseInt(position.slice(4)) || 1
+      pdfRef.current?.goToPage(page)
     } else {
       // EPUB CFI
       renditionRef.current?.display(position)
@@ -128,20 +178,22 @@ export default function ReaderPage() {
 
   if (!book) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+      <div className="flex items-center justify-center min-h-[100dvh]" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
         <p style={{ color: 'var(--text-muted)' }}>Loading…</p>
       </div>
     )
   }
 
+  const isHtmlFormat = book.format === 'docx' || book.format === 'fb2'
+
   return (
-    <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
+    <div className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
       <ReaderToolbar
         title={book.title}
         onTogglePanel={() => setShowPanel(true)}
       />
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {mode === 'speed' ? (
           <SpeedReaderView text={plainText || stripMarkdown(mdContent)} extracting={extracting} />
         ) : (
@@ -171,6 +223,33 @@ export default function ReaderPage() {
                 onProgressChange={handleEpubProgress}
                 onTocReady={setToc}
                 layout={layout}
+              />
+            )}
+            {book.format === 'pdf' && docBuffer && (
+              <PdfReader
+                ref={pdfRef}
+                pdfBuffer={docBuffer}
+                initialPage={initialPage || 1}
+                layout={layout}
+                onProgressChange={handlePdfProgress}
+                onTocReady={setToc}
+              />
+            )}
+            {isHtmlFormat && htmlContent && layout === 'scroll' && (
+              <HtmlReader
+                key={readerKey}
+                html={htmlContent}
+                initialOffset={initialOffset}
+                onProgressChange={handleScrollProgress}
+              />
+            )}
+            {isHtmlFormat && htmlContent && layout === 'pages' && (
+              <PaginatedReader
+                key={readerKey}
+                content={plainText}
+                initialPage={initialPage}
+                onProgressChange={handlePageProgress}
+                onWordTap={toggleMode}
               />
             )}
           </>

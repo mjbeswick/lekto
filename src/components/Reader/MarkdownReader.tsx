@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useAppStore } from '../../store/appStore'
 import HighlightMenu from './HighlightMenu'
+import { getReaderFontStack } from '../../utils/readerFonts'
 
 interface SelectionState {
   x: number
@@ -85,12 +86,12 @@ export default function MarkdownReader({ content, initialOffset = 0, onProgressC
     setSelection(null)
   }
 
-  const ff = fontFamily === 'serif' ? 'Georgia, "Times New Roman", serif' : 'Inter, system-ui, sans-serif'
+  const ff = getReaderFontStack(fontFamily)
 
   return (
     <>
       <div ref={containerRef} className="h-full overflow-y-auto" style={{ fontFamily: ff, fontSize, lineHeight }}>
-        <div className={`mx-auto px-6 py-8 prose prose-lg prose-orange dark:prose-invert ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
+        <div className={`mx-auto px-4 py-6 sm:px-6 sm:py-8 prose prose-base sm:prose-lg prose-orange dark:prose-invert ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
         </div>
       </div>
@@ -107,7 +108,10 @@ export default function MarkdownReader({ content, initialOffset = 0, onProgressC
       )}
 
       {showNoteInput && (
-        <div className="fixed inset-x-4 bottom-8 z-40 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 p-4">
+        <div
+          className="fixed inset-x-3 bottom-4 z-40 rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl dark:border-gray-700 dark:bg-gray-900 sm:inset-x-4"
+          style={{ bottom: 'calc(1rem + var(--safe-bottom))' }}
+        >
           <p className="text-xs text-gray-400 mb-2">Add note</p>
           <textarea
             className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-xl p-3 resize-none outline-none focus:border-orange-400 bg-transparent"

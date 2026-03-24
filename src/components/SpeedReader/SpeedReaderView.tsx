@@ -39,6 +39,10 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     if (typeof window === 'undefined') return false
     return window.matchMedia(SMALL_SCREEN_QUERY).matches
   })
+  const [viewportWidth, setViewportWidth] = useState(() => {
+    if (typeof window === 'undefined') return 390
+    return window.innerWidth
+  })
   const [effectiveChunkLetters, setEffectiveChunkLetters] = useState(rsvpChunkLetters)
   // Capture reading position at mount time — applied when text tokenizes
   const [startFraction] = useState(() => getReadingPosition())
@@ -50,7 +54,12 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const guideFrameRef = useRef<HTMLDivElement>(null)
   const chunkRef = useRef<HTMLDivElement>(null)
   const [orpGuideOffsets, setOrpGuideOffsets] = useState<number[]>([])
-  const showContext = rsvpShowContext && !isSmallScreen
+  const showContext = rsvpShowContext && viewportWidth >= 700
+  const stageWidth = Math.max(220, Math.min(viewportWidth - (isSmallScreen ? 24 : 96), isSmallScreen ? 360 : 720))
+  const laneWidth = Math.min(stageWidth, isSmallScreen ? 320 : 440)
+  const smallScreenFontCap = Math.max(34, Math.min(52, viewportWidth * 0.145))
+  const displayFontSize = isSmallScreen ? Math.min(rsvpFontSize, smallScreenFontCap) : rsvpFontSize
+  const contextFontSize = Math.max(18, Math.round(displayFontSize * (isSmallScreen ? 0.48 : 0.54)))
 
 
   // Keep shared position in sync so returning to ebook lands on the right page
@@ -131,10 +140,16 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
 
     const mediaQuery = window.matchMedia(SMALL_SCREEN_QUERY)
     const handleChange = (event: MediaQueryListEvent) => setIsSmallScreen(event.matches)
+    const handleResize = () => setViewportWidth(window.innerWidth)
 
     setIsSmallScreen(mediaQuery.matches)
+    setViewportWidth(window.innerWidth)
     mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
+    window.addEventListener('resize', handleResize)
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   useLayoutEffect(() => {
@@ -168,7 +183,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     if (isOverflowing) {
       setEffectiveChunkLetters(prev => Math.max(1, prev - 1))
     }
-  }, [chunkGuideKey, effectiveChunkLetters, isSmallScreen, rsvpFontSize, showContext])
+  }, [chunkGuideKey, displayFontSize, effectiveChunkLetters, isSmallScreen, showContext])
 
   useEffect(() => {
     const frame = guideFrameRef.current
@@ -202,7 +217,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       window.removeEventListener('resize', updateGuides)
       resizeObserver?.disconnect()
     }
-  }, [chunkGuideKey, rsvpFontSize])
+  }, [chunkGuideKey, displayFontSize, laneWidth])
 
   return (
     <div
@@ -216,14 +231,14 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       </div>
 
       {/* Stats strip */}
-      <div className="flex-shrink-0 flex justify-between items-center px-6 pt-3 pb-1 text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
+      <div className="flex-shrink-0 flex flex-wrap justify-between items-center gap-x-3 gap-y-1 px-4 pt-3 pb-1 text-xs tabular-nums sm:px-6" style={{ color: 'var(--text-muted)' }}>
         <span>{tokens.length > 0 ? `${(index + 1).toLocaleString()} / ${tokens.length.toLocaleString()}` : '—'}</span>
         <span>{elapsed > 0 ? formatTime(elapsed) : tokens.length > 0 ? `~${formatTime(Math.ceil(tokens.length / wpm * 60))} total` : ''}</span>
         <span>{timeRemainingS > 0 ? `~${formatTime(timeRemainingS)} left` : tokens.length > 0 && index >= tokens.length - 1 ? 'Done ✓' : '—'}</span>
       </div>
 
       {/* Word display */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-5 sm:gap-6 sm:px-8">
         {extracting ? (
           <div className="flex flex-col items-center gap-3" style={{ color: 'var(--text-muted)' }}>
             <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--reader-accent)', borderTopColor: 'transparent' }} />
@@ -231,9 +246,10 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
           </div>
         ) : (
           <>
-            <div ref={guideFrameRef} className="relative w-full mx-auto" style={{ height: '120px' }}>
+            <div ref={guideFrameRef} className="relative mx-auto w-full" style={{ height: isSmallScreen ? '96px' : '120px', maxWidth: `${stageWidth}px` }}>
               {/* Top guide line */}
               <div className="absolute top-3 w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
+              <div className="absolute inset-y-3 left-1/2 w-px -translate-x-1/2" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.12 }} />
 
               {/* Top vertical guides - aligned with ORP characters */}
               {orpGuideOffsets.map((offset, offsetIndex) => (
@@ -245,26 +261,26 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
               ))}
 
               {/* Text container - centered vertically */}
-              <div data-text-container className="absolute inset-0 flex items-center justify-center px-4 sm:px-8" style={{ top: '1.75rem', bottom: '1.75rem' }}>
+              <div data-text-container className="absolute inset-0 flex items-center justify-center px-2 sm:px-6" style={{ top: isSmallScreen ? '1.5rem' : '1.75rem', bottom: isSmallScreen ? '1.5rem' : '1.75rem' }}>
                 <div
                   className="grid items-center w-full"
                   style={{
-                    gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)',
-                    columnGap: '1.5rem',
+                    gridTemplateColumns: `minmax(0, 1fr) minmax(0, ${laneWidth}px) minmax(0, 1fr)`,
+                    columnGap: isSmallScreen ? '0.5rem' : '1rem',
                   }}
                 >
                   {/* Previous word */}
-                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
+                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
                     {showContext ? (tokens[index - 1]?.word ?? '') : ''}
                   </span>
 
                   {/* Current chunk */}
-                  <div ref={chunkRef} data-current-chunk style={{ minWidth: 0 }}>
-                    <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={rsvpFontSize} />
+                  <div ref={chunkRef} data-current-chunk style={{ minWidth: 0, width: '100%' }}>
+                    <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={displayFontSize} />
                   </div>
 
                   {/* Next word */}
-                  <span style={{ fontSize: rsvpFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
+                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
                     {showContext ? (tokens[index + chunkWords.length]?.word ?? '') : ''}
                   </span>
                 </div>
@@ -287,12 +303,12 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       </div>
 
       {/* Controls */}
-      <div className="flex-shrink-0 pb-8 pt-3 flex flex-col items-center gap-5 px-8">
+      <div className="flex-shrink-0 pb-6 pt-3 flex flex-col items-center gap-4 px-4 sm:gap-5 sm:px-8" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
         {/* Controls row */}
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-5 sm:gap-10">
           <button
             onClick={() => jumpSentence(-1)}
-            className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity active:opacity-50"
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-opacity active:opacity-50"
             style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
             aria-label="Previous sentence"
           ><FontAwesomeIcon icon={faBackwardStep} size="lg" /></button>
@@ -301,7 +317,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
 
           <button
             onClick={() => jumpSentence(1)}
-            className="w-12 h-12 rounded-full flex items-center justify-center transition-opacity active:opacity-50"
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-opacity active:opacity-50"
             style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
             aria-label="Next sentence"
           ><FontAwesomeIcon icon={faForwardStep} size="lg" /></button>
@@ -309,7 +325,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       </div>
 
       {/* WPM — bottom right */}
-      <div className="absolute bottom-4 right-4 flex items-baseline gap-1 tabular-nums">
+      <div className="absolute flex items-baseline gap-1 tabular-nums" style={{ right: 'max(1rem, var(--safe-right))', bottom: 'calc(0.75rem + var(--safe-bottom))' }}>
         <span
           className="text-sm font-semibold font-mono transition-colors duration-200"
           style={{ color: playing ? 'var(--reader-accent)' : 'var(--text-muted)' }}
@@ -320,7 +336,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
       </div>
 
       {/* Help icon — bottom left */}
-      <div className={`absolute bottom-4 left-4 transition-opacity duration-200 ${playing ? 'invisible' : ''}`}>
+      <div className={`absolute transition-opacity duration-200 ${playing ? 'invisible' : ''}`} style={{ left: 'max(1rem, var(--safe-left))', bottom: 'calc(0.75rem + var(--safe-bottom))' }}>
         <div className="relative group">
           <button
             className="flex items-center justify-center w-5 h-5 rounded-full text-xs leading-none"
