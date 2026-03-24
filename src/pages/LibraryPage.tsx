@@ -377,11 +377,8 @@ export default function LibraryPage() {
                 <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>Import another file or move books here from the library menu.</p>
               </section>
             ) : (
-              <section
-                className="rounded-xl p-3.5 sm:p-4"
-                style={{ backgroundColor: 'var(--surface)' }}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
                   <div>
                     <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
                       {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
@@ -413,7 +410,7 @@ export default function LibraryPage() {
                 </div>
 
                 {libraryView === 'grid' ? (
-                  <div className="grid grid-cols-2 gap-3 pt-1.5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                  <div className="grid grid-cols-2 gap-3 pt-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {sortedVisibleBooks.map(book => {
                       const hasCover = Boolean(book.coverUri)
                       const progress = progressMap[book.id] ?? 0
@@ -491,7 +488,7 @@ export default function LibraryPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="grid gap-3 pt-2">
+                  <div className="grid gap-3 pt-4">
                     {sortedVisibleBooks.map(book => {
                       const progress = progressMap[book.id] ?? 0
                       const color = titleColor(book.title)
@@ -548,7 +545,7 @@ export default function LibraryPage() {
                     })}
                   </div>
                 )}
-              </section>
+              </>
             )}
           </div>
         </div>
