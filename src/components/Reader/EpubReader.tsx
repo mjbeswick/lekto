@@ -34,6 +34,7 @@ function applyTypographyTheme(
   fontStack: string,
   lineHeight: number,
   paragraphSpacing: number,
+  textColor: string,
   accentColor: string,
   removeBookMargins: boolean,
   pageBackgroundColor: string,
@@ -53,6 +54,7 @@ function applyTypographyTheme(
       'font-size': `${fontSize}px !important`,
       'font-family': `${fontStack} !important`,
       'line-height': `${lineHeight} !important`,
+      'color': `${textColor} !important`,
       'margin': '0 !important',
       'padding': outerSpacing,
       'background-color': `${pageBackgroundColor} !important`,
@@ -67,7 +69,7 @@ function applyTypographyTheme(
     'p:last-child': {
       'margin-bottom': '0 !important',
     },
-    a: {
+    'a[href]': {
       'color': `${accentColor} !important`,
     },
   })
@@ -86,6 +88,7 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
   const [isSpread, setIsSpread] = useState(false)
   const { fontSize, fontFamily, lineHeight, paragraphSpacing, accentColor, removeBookMargins, removePageBackground } = useAppStore()
   const fontStack = getReaderFontStack(fontFamily)
+  const textColor = getComputedStyle(document.documentElement).getPropertyValue('--reader-fg').trim() || '#1f1b14'
   const pageBackgroundColor = removePageBackground
     ? 'transparent'
     : getComputedStyle(document.documentElement).getPropertyValue('--reader-page-bg').trim() || '#ffffff'
@@ -154,7 +157,7 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
       manager,
     })
     renditionRef.current = rendition
-    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins, pageBackgroundColor)
+    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, textColor, accentColor, removeBookMargins, pageBackgroundColor)
 
     rendition.display(initialCfi ?? undefined)
 
@@ -201,8 +204,8 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
 
   useEffect(() => {
     if (!renditionRef.current) return
-      applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins, pageBackgroundColor)
-    }, [fontSize, fontStack, lineHeight, paragraphSpacing, accentColor, removeBookMargins, pageBackgroundColor])
+      applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, textColor, accentColor, removeBookMargins, pageBackgroundColor)
+    }, [fontSize, fontStack, lineHeight, paragraphSpacing, textColor, accentColor, removeBookMargins, pageBackgroundColor])
 
   return (
     <div className="relative w-full h-full">
