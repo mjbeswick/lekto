@@ -10,6 +10,7 @@ interface AppState {
   lineHeight: number
   paragraphSpacing: number
   maxWidth: boolean
+  libraryView: 'list' | 'grid'
   defaultWpm: number
   wordLengthScaling: boolean
   rsvpChunkLetters: number
@@ -22,6 +23,7 @@ interface AppState {
   setLineHeight: (n: number) => void
   setParagraphSpacing: (n: number) => void
   setMaxWidth: (v: boolean) => void
+  setLibraryView: (v: 'list' | 'grid') => void
   setDefaultWpm: (n: number) => void
   setWordLengthScaling: (v: boolean) => void
   setRsvpChunkLetters: (n: number) => void
@@ -39,6 +41,7 @@ export const useAppStore = create<AppState>()(
       lineHeight: 1.7,
       paragraphSpacing: 1,
       maxWidth: true,
+      libraryView: 'list',
       defaultWpm: 300,
       wordLengthScaling: true,
       rsvpChunkLetters: 1,
@@ -51,6 +54,7 @@ export const useAppStore = create<AppState>()(
       setLineHeight: (lineHeight) => set({ lineHeight }),
       setParagraphSpacing: (paragraphSpacing) => set({ paragraphSpacing }),
       setMaxWidth: (maxWidth) => set({ maxWidth }),
+      setLibraryView: (libraryView) => set({ libraryView }),
       setDefaultWpm: (defaultWpm) => set({ defaultWpm }),
       setWordLengthScaling: (wordLengthScaling) => set({ wordLengthScaling }),
       setRsvpChunkLetters: (rsvpChunkLetters) => set({ rsvpChunkLetters }),

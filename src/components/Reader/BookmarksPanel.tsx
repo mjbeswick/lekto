@@ -20,7 +20,7 @@ export default function BookmarksPanel({ bookmarks, onNavigate, onDelete, onClos
       <div className="w-72 h-full overflow-y-auto shadow-2xl flex flex-col" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
         <div className="flex items-center justify-between px-4 py-4 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
           <h2 className="font-semibold">Bookmarks</h2>
-          <button onClick={onClose} className="p-1" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onClose} className="p-1 transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }}>
             <FontAwesomeIcon icon={faXmark} size="lg" />
           </button>
         </div>

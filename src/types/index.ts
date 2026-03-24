@@ -1,6 +1,13 @@
 export type BookFormat = 'md' | 'epub' | 'txt' | 'pdf' | 'docx' | 'fb2'
 export type Theme = 'light' | 'dark' | 'amoled' | 'sepia'
 
+export interface Collection {
+  id: string
+  name: string
+  createdAt: number
+  order: number
+}
+
 export interface Book {
   id: string
   title: string
@@ -10,6 +17,7 @@ export interface Book {
   coverUri?: string
   addedAt: number
   lastOpenedAt?: number
+  collectionId?: string
 }
 
 export interface ReadingProgress {

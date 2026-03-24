@@ -110,12 +110,13 @@ export default function MarkdownReader({ content, initialOffset = 0, onProgressC
 
       {showNoteInput && (
         <div
-          className="fixed inset-x-3 bottom-4 z-40 rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl dark:border-gray-700 dark:bg-gray-900 sm:inset-x-4"
-          style={{ bottom: 'calc(1rem + var(--safe-bottom))' }}
+          className="fixed inset-x-3 z-40 rounded-2xl border p-4 shadow-2xl sm:inset-x-4"
+          style={{ bottom: 'calc(1rem + var(--safe-bottom))', backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}
         >
-          <p className="text-xs text-gray-400 mb-2">Add note</p>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Add note</p>
           <textarea
-            className="w-full text-sm border border-gray-200 dark:border-gray-700 rounded-xl p-3 resize-none outline-none focus:border-orange-400 bg-transparent"
+            className="w-full text-sm rounded-xl p-3 resize-none outline-none bg-transparent border"
+            style={{ borderColor: 'var(--border)', color: 'var(--reader-fg)' }}
             rows={3}
             value={noteText}
             onChange={e => setNoteText(e.target.value)}
@@ -123,8 +124,8 @@ export default function MarkdownReader({ content, initialOffset = 0, onProgressC
             autoFocus
           />
           <div className="flex gap-2 mt-2 justify-end">
-            <button onClick={() => setShowNoteInput(false)} className="text-sm text-gray-400 px-3 py-1">Cancel</button>
-            <button onClick={handleNoteSubmit} className="text-sm bg-orange-500 text-white px-4 py-1 rounded-lg">Save</button>
+            <button onClick={() => setShowNoteInput(false)} className="text-sm px-3 py-1" style={{ color: 'var(--text-muted)' }}>Cancel</button>
+            <button onClick={handleNoteSubmit} className="text-sm text-white px-4 py-1 rounded-xl" style={{ backgroundColor: 'var(--reader-accent)' }}>Save</button>
           </div>
         </div>
       )}

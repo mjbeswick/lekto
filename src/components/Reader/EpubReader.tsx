@@ -28,7 +28,7 @@ function flattenToc(items: TocItem[]): TocItem[] {
   return items.flatMap(item => [item, ...flattenToc(item.subitems ?? [])])
 }
 
-function applyTypographyTheme(rendition: any, fontSize: number, fontStack: string, lineHeight: number, paragraphSpacing: number) {
+function applyTypographyTheme(rendition: any, fontSize: number, fontStack: string, lineHeight: number, paragraphSpacing: number, accentColor: string) {
   const paragraphMargin = `${paragraphSpacing}em`
   const listParagraphMargin = `${Math.max(0, paragraphSpacing * 0.65)}em`
 
@@ -51,6 +51,9 @@ function applyTypographyTheme(rendition: any, fontSize: number, fontStack: strin
     'p:last-child': {
       'margin-bottom': '0 !important',
     },
+    a: {
+      'color': `${accentColor} !important`,
+    },
   })
 }
 
@@ -65,7 +68,7 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
   const currentHrefRef = useRef('')
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null)
   const [isSpread, setIsSpread] = useState(false)
-  const { fontSize, fontFamily, lineHeight, paragraphSpacing } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, paragraphSpacing, accentColor } = useAppStore()
   const fontStack = getReaderFontStack(fontFamily)
 
   useImperativeHandle(ref, () => ({
@@ -132,7 +135,7 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
       manager,
     })
     renditionRef.current = rendition
-    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing)
+    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor)
 
     rendition.display(initialCfi ?? undefined)
 
@@ -179,8 +182,8 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
 
   useEffect(() => {
     if (!renditionRef.current) return
-    applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing)
-  }, [fontSize, fontStack, lineHeight, paragraphSpacing])
+    applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, accentColor)
+  }, [fontSize, fontStack, lineHeight, paragraphSpacing, accentColor])
 
   return (
     <div className="relative w-full h-full">

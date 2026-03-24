@@ -348,20 +348,19 @@ export default function ReaderPage() {
         )}
       </div>
 
-      {showPanel && (
-        <ContentPanel
-          toc={toc}
-          bookmarks={bookmarks}
-          searchText={plainText || undefined}
-          currentHref={currentTocHref}
-          onSelectToc={(href) => { renditionRef.current?.display(href) }}
-          onNavigateBookmark={handleNavigateBookmark}
-          onAddBookmark={handleAddBookmark}
-          onDeleteBookmark={removeBookmark}
-          onSearchResultSelect={handleSearchResultSelect}
-          onClose={() => setShowPanel(false)}
-        />
-      )}
+      <ContentPanel
+        open={showPanel}
+        toc={toc}
+        bookmarks={bookmarks}
+        searchText={plainText || undefined}
+        currentHref={currentTocHref}
+        onSelectToc={(href) => { renditionRef.current?.display(href) }}
+        onNavigateBookmark={handleNavigateBookmark}
+        onAddBookmark={handleAddBookmark}
+        onDeleteBookmark={removeBookmark}
+        onSearchResultSelect={handleSearchResultSelect}
+        onClose={() => setShowPanel(false)}
+      />
     </div>
   )
 }

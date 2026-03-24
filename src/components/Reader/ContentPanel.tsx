@@ -36,6 +36,7 @@ function searchInText(text: string, query: string): SearchResult[] {
 }
 
 interface Props {
+  open: boolean
   toc: TocItem[]
   bookmarks: Bookmark[]
   searchText?: string
@@ -80,6 +81,7 @@ function formatDate(ts: number): string {
 }
 
 export default function ContentPanel({
+  open,
   toc,
   bookmarks,
   searchText,
@@ -108,6 +110,7 @@ export default function ContentPanel({
       active?.scrollIntoView({ block: 'center' })
     })
   }, [activeTab, currentHref])
+
   const deleteButtonClassName = 'p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0'
 
   const searchResults = useMemo(() => {
@@ -116,22 +119,30 @@ export default function ContentPanel({
   }, [searchText, query])
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end">
-      <div className="flex-1 bg-black bg-opacity-40" onClick={onClose} />
+    <>
+      {/* Overlay */}
       <div
-        className="h-full w-full max-w-[var(--panel-width)] flex flex-col shadow-2xl"
+        className={`fixed inset-0 z-40 transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Panel — slides in from left */}
+      <div
+        className={`fixed top-0 left-0 h-full z-50 w-full max-w-[var(--panel-width)] flex flex-col shadow-2xl transition-transform duration-200 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
           backgroundColor: 'var(--reader-bg)',
           color: 'var(--reader-fg)',
-          paddingTop: 'var(--safe-top)',
-          paddingBottom: 'var(--safe-bottom)',
-          paddingRight: 'max(12px, var(--safe-right))',
+          borderRight: '1px solid var(--border)',
+          paddingLeft: 'max(0px, var(--safe-left, 0px))',
         }}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-4 py-4 border-b flex-shrink-0"
-          style={{ borderColor: 'var(--border)' }}
+          className="flex items-center justify-between px-4 flex-shrink-0 border-b"
+          style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))', paddingBottom: '1rem' }}
         >
           {/* Tabs */}
           <div className="flex gap-4">
@@ -171,7 +182,7 @@ export default function ContentPanel({
               Search
             </button>
           </div>
-          <button onClick={onClose} className="p-1" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={onClose} className="p-1 transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }}>
             <FontAwesomeIcon icon={faXmark} size="lg" />
           </button>
         </div>
@@ -199,18 +210,6 @@ export default function ContentPanel({
         {/* Bookmarks tab */}
         {activeTab === 'bookmarks' && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Add bookmark button */}
-            <div className="px-4 py-3 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
-              <button
-                onClick={onAddBookmark}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-opacity active:opacity-70"
-                style={{ backgroundColor: 'var(--reader-accent)', color: '#fff' }}
-              >
-                <FontAwesomeIcon icon={faPlus} />
-                Add Bookmark
-              </button>
-            </div>
-
             {/* Bookmark list */}
             {bookmarks.length === 0 ? (
               <div
@@ -218,7 +217,7 @@ export default function ContentPanel({
                 style={{ color: 'var(--text-muted)' }}
               >
                 <FontAwesomeIcon icon={faBookmark} size="2x" />
-                <p className="text-sm">No bookmarks yet.<br />Tap "Add Bookmark" to save your place.</p>
+                <p className="text-sm">No bookmarks yet.<br />Tap "Add Bookmark" below to save your place.</p>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
@@ -253,6 +252,21 @@ export default function ContentPanel({
                 ))}
               </div>
             )}
+
+            {/* Footer: Add Bookmark */}
+            <div
+              className="flex-shrink-0 p-4 border-t"
+              style={{ borderColor: 'var(--border)', paddingBottom: 'calc(1rem + var(--safe-bottom, 0px))' }}
+            >
+              <button
+                onClick={onAddBookmark}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-semibold transition-opacity active:opacity-70"
+                style={{ backgroundColor: 'var(--reader-accent)', color: '#fff' }}
+              >
+                <FontAwesomeIcon icon={faPlus} />
+                Add Bookmark
+              </button>
+            </div>
           </div>
         )}
 
@@ -261,7 +275,7 @@ export default function ContentPanel({
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="px-4 py-3 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
               <div
-                className="flex items-center gap-2 rounded-lg px-3 py-2 border"
+                className="flex items-center gap-2 rounded-xl px-3 py-2 border"
                 style={{ borderColor: 'var(--border)' }}
               >
                 <FontAwesomeIcon icon={faMagnifyingGlass} size="sm" style={{ color: 'var(--text-muted)' }} />
@@ -311,6 +325,6 @@ export default function ContentPanel({
           </div>
         )}
       </div>
-    </div>
+    </>
   )
 }

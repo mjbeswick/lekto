@@ -29,8 +29,8 @@ export default function HighlightMenu({ x, y, onHighlight, onNote, onClose }: Pr
   return (
     <div
       ref={ref}
-      className="fixed z-30 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 px-3 py-2 flex items-center gap-2"
-      style={{ left: Math.min(x, window.innerWidth - 220), top: Math.max(y - 56, 8) }}
+      className="fixed z-30 rounded-2xl shadow-2xl border px-3 py-2 flex items-center gap-2"
+      style={{ left: Math.min(x, window.innerWidth - 220), top: Math.max(y - 56, 8), backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}
     >
       {COLORS.map(c => (
         <button
@@ -40,8 +40,8 @@ export default function HighlightMenu({ x, y, onHighlight, onNote, onClose }: Pr
           onClick={() => onHighlight(c)}
         />
       ))}
-      <div className="w-px h-6 bg-gray-200 dark:bg-gray-700" />
-      <button onClick={onNote} className="text-xs font-medium text-gray-600 dark:text-gray-300 px-1">Note</button>
+      <div className="w-px h-6" style={{ backgroundColor: 'var(--border)' }} />
+      <button onClick={onNote} className="text-xs font-medium px-1" style={{ color: 'var(--reader-fg)' }}>Note</button>
     </div>
   )
 }

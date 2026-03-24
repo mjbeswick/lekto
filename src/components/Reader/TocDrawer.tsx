@@ -12,7 +12,8 @@ function TocNode({ item, onSelect }: { item: TocItem; onSelect: (href: string) =
   return (
     <li>
       <button
-        className="w-full text-left py-3 px-4 border-b border-gray-100 dark:border-gray-800 text-sm hover:bg-orange-50 dark:hover:bg-gray-800 active:bg-orange-100"
+        className="w-full text-left py-3 px-4 border-b text-sm transition-opacity active:opacity-60"
+        style={{ borderColor: 'var(--border)' }}
         onClick={() => onSelect(item.href)}
       >
         {item.label}
@@ -33,9 +34,9 @@ export default function TocDrawer({ toc, onSelect, onClose }: Props) {
       <div className="flex-1 bg-black bg-opacity-40" onClick={onClose} />
       {/* Drawer */}
       <div className="w-72 h-full overflow-y-auto shadow-2xl" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
-        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <h2 className="font-semibold text-base">Contents</h2>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600"><FontAwesomeIcon icon={faXmark} size="lg" /></button>
+          <button onClick={onClose} className="p-1 transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }}><FontAwesomeIcon icon={faXmark} size="lg" /></button>
         </div>
         <ul>
           {toc.map(item => <TocNode key={item.id} item={item} onSelect={onSelect} />)}
