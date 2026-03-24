@@ -24,6 +24,9 @@ export interface EpubReaderHandle {
   display: (target: string) => void
 }
 
+const EPUB_THEME_NAME = 'lekto-reader'
+const EPUB_BASE_FONT_SIZE = 18
+
 function flattenToc(items: TocItem[]): TocItem[] {
   return items.flatMap(item => [item, ...flattenToc(item.subitems ?? [])])
 }
@@ -39,22 +42,18 @@ function applyTypographyTheme(
   removeBookMargins: boolean,
   pageBackgroundColor: string,
 ) {
+  const fontScale = `${Math.round((fontSize / EPUB_BASE_FONT_SIZE) * 100)}%`
   const paragraphMargin = `${paragraphSpacing}em`
   const listParagraphMargin = `${Math.max(0, paragraphSpacing * 0.65)}em`
   const outerSpacing = removeBookMargins ? '0 !important' : '16px !important'
 
-  rendition.themes?.default({
-    html: {
-      'font-size': `${fontSize}px !important`,
+  rendition.themes?.register(EPUB_THEME_NAME, {
+    ':root': {
       'margin': '0 !important',
       'padding': '0 !important',
       'background-color': `${pageBackgroundColor} !important`,
     },
     body: {
-      'font-size': `${fontSize}px !important`,
-      'font-family': `${fontStack} !important`,
-      'line-height': `${lineHeight} !important`,
-      'color': `${textColor} !important`,
       'margin': '0 !important',
       'padding': outerSpacing,
       'background-color': `${pageBackgroundColor} !important`,
@@ -73,6 +72,13 @@ function applyTypographyTheme(
       'color': `${accentColor} !important`,
     },
   })
+
+  rendition.themes?.select(EPUB_THEME_NAME)
+  rendition.themes?.fontSize(fontScale)
+  rendition.themes?.font(fontStack)
+  rendition.themes?.override('line-height', `${lineHeight}`, true)
+  rendition.themes?.override('color', textColor, true)
+  rendition.themes?.override('background-color', pageBackgroundColor, true)
 }
 
 const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
