@@ -32,6 +32,7 @@ export default function SettingsPage() {
     maxWidth, setMaxWidth,
     removeBookMargins, setRemoveBookMargins,
     removePageBackground, setRemovePageBackground,
+    scrollPageFill, setScrollPageFill,
     defaultWpm, setDefaultWpm, wordLengthScaling, setWordLengthScaling,
     rsvpChunkLetters, setRsvpChunkLetters,
     rsvpShowContext, setRsvpShowContext,
@@ -207,6 +208,34 @@ export default function SettingsPage() {
             />
           </button>
         </div>
+        {layout === 'scroll' && (
+          <div className="mt-4">
+            <p className="text-sm">Scroll page fill</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>For page-based scroll views, fit each page by viewport width or height</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setScrollPageFill('width')}
+                className="rounded-xl border-2 px-4 py-3 text-left transition-colors"
+                style={{
+                  borderColor: scrollPageFill === 'width' ? 'var(--reader-accent)' : 'var(--border)',
+                  color: scrollPageFill === 'width' ? 'var(--reader-accent)' : 'var(--reader-fg)',
+                }}
+              >
+                <div className="text-sm font-medium">Fill Width</div>
+              </button>
+              <button
+                onClick={() => setScrollPageFill('height')}
+                className="rounded-xl border-2 px-4 py-3 text-left transition-colors"
+                style={{
+                  borderColor: scrollPageFill === 'height' ? 'var(--reader-accent)' : 'var(--border)',
+                  color: scrollPageFill === 'height' ? 'var(--reader-accent)' : 'var(--reader-fg)',
+                }}
+              >
+                <div className="text-sm font-medium">Fill Height</div>
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <section>

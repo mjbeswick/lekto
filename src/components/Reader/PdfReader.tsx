@@ -37,7 +37,20 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
   const totalPagesRef = useRef(0)
   const [pageCount, setPageCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(initialPage)
+  const [containerHeight, setContainerHeight] = useState(0)
   const removeBookMargins = useAppStore(s => s.removeBookMargins)
+  const scrollPageFill = useAppStore(s => s.scrollPageFill)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(entries => {
+      const nextHeight = Math.floor(entries[0].contentRect.height)
+      if (nextHeight > 0) setContainerHeight(nextHeight)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [layout])
 
   const renderPage = useCallback(async (pdf: pdfjsLib.PDFDocumentProxy, pageNum: number) => {
     const canvas = layout === 'scroll'
@@ -195,13 +208,18 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
   }, [layout, goToNext, goToPrev])
 
   if (layout === 'scroll') {
+    const viewportHeight = Math.max(160, containerHeight - (removeBookMargins ? 0 : 32))
+
     return (
       <div ref={containerRef} className={`flex h-full flex-col items-center overflow-y-auto ${removeBookMargins ? 'gap-0 px-0 py-0' : 'gap-4 px-2 py-4'}`}>
         {Array.from({ length: pageCount || 1 }, (_, i) => (
           <canvas
             key={i}
             ref={(el) => { canvasRefs.current[i] = el }}
-            className="max-w-full shadow"
+            className="shadow"
+            style={scrollPageFill === 'width'
+              ? { width: '100%', height: 'auto', maxWidth: '100%' }
+              : { width: 'auto', height: `${viewportHeight}px`, maxWidth: 'none' }}
           />
         ))}
       </div>
