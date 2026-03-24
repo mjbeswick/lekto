@@ -15,6 +15,10 @@ interface Props {
 
 const RSVP_FONT = 'Inter, system-ui, -apple-system, sans-serif'
 
+function sameOffsets(a: number[], b: number[]): boolean {
+  return a.length === b.length && a.every((value, index) => Math.abs(value - b[index]) < 0.5)
+}
+
 function formatTime(seconds: number): string {
   if (seconds <= 0) return '0s'
   if (seconds < 60) return `${seconds}s`
@@ -37,6 +41,9 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const wpmRef = useRef(wpm)
   wpmRef.current = wpm
   const containerRef = useRef<HTMLDivElement>(null)
+  const guideFrameRef = useRef<HTMLDivElement>(null)
+  const chunkRef = useRef<HTMLDivElement>(null)
+  const [orpGuideOffsets, setOrpGuideOffsets] = useState<number[]>([])
 
 
   // Keep shared position in sync so returning to ebook lands on the right page
@@ -124,9 +131,44 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     }
     return tokens.slice(index, index + Math.max(1, count)).map(t => t.word)
   })()
+  const chunkGuideKey = chunkWords.join('\u0000')
   const progress = tokens.length ? (index + 1) / tokens.length : 0
   const wordsRemaining = Math.max(0, tokens.length - index - 1)
   const timeRemainingS = wpm > 0 ? Math.ceil(wordsRemaining / wpm * 60) : 0
+
+  useEffect(() => {
+    const frame = guideFrameRef.current
+    const chunk = chunkRef.current
+    if (!frame || !chunk) return
+
+    const updateGuides = () => {
+      const frameRect = frame.getBoundingClientRect()
+      const nextOffsets = Array.from(chunk.querySelectorAll<HTMLElement>('[data-orp-char]'))
+        .map((element) => {
+          const rect = element.getBoundingClientRect()
+          return rect.left + rect.width / 2 - frameRect.left
+        })
+        .filter((offset) => Number.isFinite(offset))
+
+      setOrpGuideOffsets((prev) => sameOffsets(prev, nextOffsets) ? prev : nextOffsets)
+    }
+
+    const frameId = requestAnimationFrame(updateGuides)
+    const resizeObserver = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(() => updateGuides())
+
+    resizeObserver?.observe(frame)
+    resizeObserver?.observe(chunk)
+    chunk.querySelectorAll('[data-orp-char]').forEach((element) => resizeObserver?.observe(element))
+    window.addEventListener('resize', updateGuides)
+
+    return () => {
+      cancelAnimationFrame(frameId)
+      window.removeEventListener('resize', updateGuides)
+      resizeObserver?.disconnect()
+    }
+  }, [chunkGuideKey, rsvpFontSize])
 
   return (
     <div
@@ -155,12 +197,18 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
           </div>
         ) : (
           <>
-            <div className="relative w-full mx-auto" style={{ height: '120px' }}>
+            <div ref={guideFrameRef} className="relative w-full mx-auto" style={{ height: '120px' }}>
               {/* Top guide line */}
               <div className="absolute top-3 w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
 
-              {/* Top vertical line - aligned with ORP character */}
-              <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', top: '0.75rem', height: '0.85rem', width: '1px', backgroundColor: 'var(--reader-accent)', opacity: 0.8 }} />
+              {/* Top vertical guides - aligned with ORP characters */}
+              {orpGuideOffsets.map((offset, offsetIndex) => (
+                <div
+                  key={`top-${offsetIndex}-${offset}`}
+                  className="absolute"
+                  style={{ left: `${offset}px`, transform: 'translateX(-50%)', top: '0.75rem', height: '0.85rem', width: '1px', backgroundColor: 'var(--reader-accent)', opacity: 0.8 }}
+                />
+              ))}
 
               {/* Text container - centered vertically */}
               <div data-text-container className="absolute inset-0 flex items-center justify-center px-4 sm:px-8" style={{ top: '1.75rem', bottom: '1.75rem' }}>
@@ -177,7 +225,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
                   </span>
 
                   {/* Current chunk */}
-                  <div data-current-chunk style={{ minWidth: 0 }}>
+                  <div ref={chunkRef} data-current-chunk style={{ minWidth: 0 }}>
                     <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={rsvpFontSize} />
                   </div>
 
@@ -188,8 +236,14 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
                 </div>
               </div>
 
-              {/* Bottom vertical line - aligned with ORP character */}
-              <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', bottom: '0.75rem', height: '0.85rem', width: '1px', backgroundColor: 'var(--reader-accent)', opacity: 0.8 }} />
+              {/* Bottom vertical guides - aligned with ORP characters */}
+              {orpGuideOffsets.map((offset, offsetIndex) => (
+                <div
+                  key={`bottom-${offsetIndex}-${offset}`}
+                  className="absolute"
+                  style={{ left: `${offset}px`, transform: 'translateX(-50%)', bottom: '0.75rem', height: '0.85rem', width: '1px', backgroundColor: 'var(--reader-accent)', opacity: 0.8 }}
+                />
+              ))}
 
               {/* Bottom guide line */}
               <div className="absolute bottom-3 w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
