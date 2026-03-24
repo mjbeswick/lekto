@@ -278,9 +278,9 @@ export default function LibraryPage() {
         />
 
         <div className="h-full overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-[var(--app-gutter)] pb-8 pt-[calc(0.9rem+var(--safe-top))]">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-[var(--app-gutter)] pb-8 pt-[calc(0.65rem+var(--safe-top))]">
             <section
-              className="overflow-hidden rounded-[32px] border px-5 py-5 sm:px-6 sm:py-6"
+              className="overflow-hidden rounded-[28px] border px-4 py-4 sm:px-5 sm:py-5"
               style={{
                 background: 'linear-gradient(135deg, var(--library-hero-from), var(--library-hero-to))',
                 borderColor: 'var(--library-border-soft)',
@@ -288,19 +288,19 @@ export default function LibraryPage() {
                 backdropFilter: 'blur(18px)',
               }}
             >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex min-w-0 items-start gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-2.5">
                   <HeaderIconButton onClick={() => setDrawerOpen(true)} title="Collections" aria-label="Manage collections">
                     <FontAwesomeIcon icon={faBars} />
                   </HeaderIconButton>
                   <div className="min-w-0 pt-0.5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
                       Library
                     </p>
-                    <h1 className="truncate text-[clamp(1.9rem,4vw,3.4rem)] leading-none" style={{ fontFamily: 'var(--font-display)' }}>
+                    <h1 className="truncate text-[clamp(1.55rem,3.2vw,2.6rem)] leading-none" style={{ fontFamily: 'var(--font-display)' }}>
                       {collectionName}
                     </h1>
-                    <p className="mt-2 max-w-2xl text-sm sm:text-[15px]" style={{ color: 'var(--text-muted)' }}>
+                    <p className="mt-1.5 max-w-xl text-[13px] leading-5 sm:text-sm" style={{ color: 'var(--text-muted)' }}>
                       {books.length === 0
                         ? 'Bring your reading stack into one calm, focused space built for long-form reading.'
                         : selectedId === null
@@ -322,11 +322,11 @@ export default function LibraryPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-2.5">
                 <button
                   onClick={handleOpen}
                   disabled={importing}
-                  className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-[13px] font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60 sm:text-sm"
                   style={{ backgroundColor: 'var(--reader-accent)', boxShadow: 'var(--shadow-soft)' }}
                 >
                   {importing ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FontAwesomeIcon icon={faPlus} />}
@@ -336,7 +336,7 @@ export default function LibraryPage() {
                 {continueBook && books.length > 0 && (
                   <button
                     onClick={() => navigate(`/reader/${continueBook.id}`)}
-                    className="inline-flex items-center gap-2 rounded-2xl border px-5 py-3 text-sm font-semibold transition-colors active:opacity-70"
+                    className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-[13px] font-semibold transition-colors active:opacity-70 sm:text-sm"
                     style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
                   >
                     <FontAwesomeIcon icon={faClock} />
@@ -346,34 +346,34 @@ export default function LibraryPage() {
               </div>
 
               {books.length === 0 ? (
-                <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
                   <div
-                    className="rounded-[28px] border p-5 sm:p-6"
+                    className="rounded-[24px] border p-4 sm:p-5"
                     style={{ backgroundColor: 'var(--library-surface-2)', borderColor: 'var(--library-border-strong)' }}
                   >
-                    <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-3xl text-2xl" style={{ backgroundColor: 'rgba(249, 115, 22, 0.12)', color: 'var(--reader-accent)' }}>
+                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-[22px] text-xl" style={{ backgroundColor: 'rgba(249, 115, 22, 0.12)', color: 'var(--reader-accent)' }}>
                       <FontAwesomeIcon icon={faBook} />
                     </div>
-                    <h2 className="text-xl sm:text-2xl" style={{ fontFamily: 'var(--font-display)' }}>
+                    <h2 className="text-lg sm:text-xl" style={{ fontFamily: 'var(--font-display)' }}>
                       Start with the file you actually want to finish.
                     </h2>
-                    <p className="mt-3 max-w-xl text-sm sm:text-[15px]" style={{ color: 'var(--text-muted)' }}>
+                    <p className="mt-2 max-w-xl text-[13px] leading-5 sm:text-sm" style={{ color: 'var(--text-muted)' }}>
                       The home screen now favors fewer decisions: import, jump back into recent reading, and keep your library visually organized instead of buried in a flat list.
                     </p>
                   </div>
 
                   <div
-                    className="rounded-[28px] border p-5 sm:p-6"
+                    className="rounded-[24px] border p-4 sm:p-5"
                     style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)' }}
                   >
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em]" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-[13px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
                       Supported formats
                     </p>
-                    <div className="mt-4 flex flex-wrap gap-2.5">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {['EPUB', 'PDF', 'DOCX', 'FB2', 'Markdown', 'TXT'].map(format => (
                         <span
                           key={format}
-                          className="rounded-full border px-3 py-1.5 text-sm"
+                          className="rounded-full border px-2.5 py-1 text-[12px]"
                           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--library-surface-3)' }}
                         >
                           {format}
@@ -383,8 +383,8 @@ export default function LibraryPage() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-                  <div className="grid gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+                  <div className="grid gap-2.5 sm:grid-cols-3">
                     {[
                       { label: 'Books ready', value: visibleBooks.length, tone: 'rgba(59,130,246,0.12)', color: '#2563eb' },
                       { label: 'In progress', value: inProgressCount, tone: 'rgba(249,115,22,0.12)', color: '#ea580c' },
@@ -392,14 +392,14 @@ export default function LibraryPage() {
                     ].map(stat => (
                       <div
                         key={stat.label}
-                        className="rounded-[24px] border p-4"
+                        className="rounded-[20px] border p-3.5"
                         style={{ backgroundColor: 'var(--library-surface-2)', borderColor: 'var(--library-border-strong)' }}
                       >
-                        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl" style={{ backgroundColor: stat.tone, color: stat.color }}>
-                          <span className="text-sm font-semibold">{String(stat.value).padStart(2, '0')}</span>
+                        <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: stat.tone, color: stat.color }}>
+                          <span className="text-[13px] font-semibold">{String(stat.value).padStart(2, '0')}</span>
                         </div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
-                        <p className="mt-1 text-2xl" style={{ fontFamily: 'var(--font-display)' }}>{stat.value}</p>
+                        <p className="text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
+                        <p className="mt-0.5 text-xl" style={{ fontFamily: 'var(--font-display)' }}>{stat.value}</p>
                       </div>
                     ))}
                   </div>
@@ -407,7 +407,7 @@ export default function LibraryPage() {
                   {continueBook && (
                     <button
                       onClick={() => navigate(`/reader/${continueBook.id}`)}
-                      className="group overflow-hidden rounded-[28px] border p-4 text-left transition-transform active:scale-[0.99]"
+                      className="group overflow-hidden rounded-[24px] border p-3.5 text-left transition-transform active:scale-[0.99]"
                       style={{
                         background: 'linear-gradient(135deg, rgba(15,23,42,0.93), rgba(44,33,19,0.92))',
                         borderColor: 'var(--library-overlay-border)',
@@ -415,28 +415,28 @@ export default function LibraryPage() {
                         boxShadow: 'var(--shadow-soft)',
                       }}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="relative w-20 flex-shrink-0 overflow-hidden rounded-[20px] border" style={{ aspectRatio: '2 / 3', borderColor: 'var(--library-overlay-border)' }}>
+                      <div className="flex items-start gap-3">
+                        <div className="relative w-16 flex-shrink-0 overflow-hidden rounded-[16px] border sm:w-[4.5rem]" style={{ aspectRatio: '2 / 3', borderColor: 'var(--library-overlay-border)' }}>
                           {continueBook.coverUri ? (
                             <img src={continueBook.coverUri} alt={continueBook.title} className="h-full w-full object-cover" />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-[2.4rem]" style={{ backgroundColor: `${titleColor(continueBook.title)}33` }}>
-                              <FileTypeIcon format={continueBook.format} className="text-[2.25rem]" title={`${continueBook.format.toUpperCase()} cover icon`} />
+                            <div className="flex h-full w-full items-center justify-center text-[1.9rem] sm:text-[2.1rem]" style={{ backgroundColor: `${titleColor(continueBook.title)}33` }}>
+                              <FileTypeIcon format={continueBook.format} className="text-[1.9rem] sm:text-[2.1rem]" title={`${continueBook.format.toUpperCase()} cover icon`} />
                             </div>
                           )}
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Continue reading</p>
-                          <p className="mt-2 line-clamp-2 text-lg leading-tight sm:text-[1.35rem]" style={{ fontFamily: 'var(--font-display)' }}>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Continue reading</p>
+                          <p className="mt-1.5 line-clamp-2 text-[15px] leading-tight sm:text-lg" style={{ fontFamily: 'var(--font-display)' }}>
                             {continueBook.title}
                           </p>
-                          <p className="mt-1 truncate text-sm text-white/70">{continueBook.author || 'Unknown author'}</p>
-                          <div className="mt-4 flex items-center justify-between gap-3 text-sm text-white/70">
+                          <p className="mt-1 truncate text-[12px] text-white/70 sm:text-sm">{continueBook.author || 'Unknown author'}</p>
+                          <div className="mt-3 flex items-center justify-between gap-3 text-[12px] text-white/70 sm:text-sm">
                             <span>{progressLabel(progressMap[continueBook.id] ?? 0)}</span>
                             <span>Last opened {relativeDate(continueBook.lastOpenedAt ?? continueBook.addedAt)}</span>
                           </div>
-                          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
                             <div
                               className="h-1.5 rounded-full transition-[width]"
                               style={{ width: `${(progressMap[continueBook.id] ?? 0) * 100}%`, backgroundColor: titleColor(continueBook.title) }}
@@ -445,7 +445,7 @@ export default function LibraryPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                      <div className="mt-3 inline-flex items-center gap-2 text-[13px] font-semibold text-white sm:text-sm">
                         Open book
                         <FontAwesomeIcon icon={faArrowRight} className="transition-transform group-hover:translate-x-0.5" />
                       </div>
