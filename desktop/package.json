@@ -1,0 +1,8 @@
+{
+  "name": "lekto-desktop",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "electrobun": "^1.12.3"
+  }
+}
