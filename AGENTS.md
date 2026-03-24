@@ -12,3 +12,8 @@
   ```
 
 - The workflow will build the APK, create the GitHub release, and attach `lekto-<version>.apk` as a release asset.
+
+## Commits
+
+- Create a git commit after every repository change you make.
+- Keep commits focused and use clear, non-interactive commit messages.
