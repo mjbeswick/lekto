@@ -13,6 +13,7 @@ import type { Book, BookFormat } from '../types'
 import { v4 as uuidv4 } from 'uuid'
 import HeaderIconButton from '../components/HeaderIconButton'
 import FileTypeIcon from '../components/FileTypeIcon'
+import { useAppStore } from '../store/appStore'
 
 interface FileEntry {
   name: string
@@ -98,6 +99,8 @@ async function parseBookMeta(ext: BookFormat, data: string, fallbackTitle: strin
 export default function FileBrowserPage() {
   const navigate = useNavigate()
   const { books, addBook } = useLibraryStore()
+  const theme = useAppStore(s => s.theme)
+  const headerBg = theme === 'light' ? '#ffffff' : 'var(--surface)'
 
   const [currentDir, setCurrentDir] = useState<Directory>(Directory.Documents)
   const [currentPath, setCurrentPath] = useState('')
@@ -288,7 +291,7 @@ export default function FileBrowserPage() {
   return (
     <div className="flex flex-col min-h-[100dvh]" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-3 border-b flex-shrink-0" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))' }}>
+      <div className="flex items-center gap-3 px-[var(--app-gutter)] pb-3 border-b flex-shrink-0" style={{ backgroundColor: headerBg, borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))' }}>
         <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library">
           <FontAwesomeIcon icon={faArrowLeft} />
         </HeaderIconButton>
