@@ -59,8 +59,13 @@ export default function CollectionDrawer({ open, onClose }: Props) {
 
       {/* Drawer panel */}
       <div
-        className={`fixed top-0 left-0 h-full z-50 w-72 flex flex-col transition-transform duration-200 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)', borderRight: '1px solid var(--border)' }}
+        className={`fixed top-0 left-0 h-full z-50 w-full max-w-[var(--panel-width)] flex flex-col shadow-2xl transition-transform duration-200 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{
+          backgroundColor: 'var(--reader-bg)',
+          color: 'var(--reader-fg)',
+          borderRight: '1px solid var(--border)',
+          paddingLeft: 'max(0px, var(--safe-left, 0px))',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -68,13 +73,13 @@ export default function CollectionDrawer({ open, onClose }: Props) {
           className="flex items-center justify-between px-4 flex-shrink-0 border-b"
           style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))', paddingBottom: '1rem' }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <FontAwesomeIcon icon={faBookOpen} style={{ color: 'var(--text-muted)' }} />
             <span className="font-bold text-base tracking-tight">Collections</span>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-opacity active:opacity-50"
+            className="w-11 h-11 rounded-2xl flex items-center justify-center transition-opacity active:opacity-50 sm:w-10 sm:h-10 sm:rounded-xl"
             style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)' }}
             aria-label="Close drawer"
           >
@@ -83,12 +88,11 @@ export default function CollectionDrawer({ open, onClose }: Props) {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
           {/* All Books */}
           <button
-            className="w-full flex items-center gap-3 px-4 py-3.5 text-left text-sm font-medium border-b transition-opacity active:opacity-70"
+            className="w-full flex items-center gap-3 px-4 py-3.5 text-left text-sm font-medium transition-opacity active:opacity-70"
             style={{
-              borderColor: 'var(--border)',
               backgroundColor: selectedId === null ? 'var(--surface-2)' : undefined,
             }}
             onClick={() => { selectCollection(null); onClose() }}
@@ -106,9 +110,8 @@ export default function CollectionDrawer({ open, onClose }: Props) {
             .map(bc => (
               <div
                 key={bc.id}
-                className="flex items-center gap-2 px-4 py-3 border-b"
+                className="flex items-center gap-2 px-4 py-3.5"
                 style={{
-                  borderColor: 'var(--border)',
                   backgroundColor: selectedId === bc.id ? 'var(--surface-2)' : undefined,
                 }}
               >
@@ -148,7 +151,7 @@ export default function CollectionDrawer({ open, onClose }: Props) {
                 {/* Edit button */}
                 {editingId !== bc.id && (
                   <button
-                    className="flex-shrink-0 p-1 rounded-lg transition-opacity active:opacity-50"
+                    className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-opacity active:opacity-50"
                     style={{ color: 'var(--text-muted)' }}
                     onClick={e => { e.stopPropagation(); startEditing(bc.id, bc.name) }}
                     aria-label={`Rename ${bc.name}`}
@@ -160,7 +163,7 @@ export default function CollectionDrawer({ open, onClose }: Props) {
                 {/* Delete button */}
                 {editingId !== bc.id && (
                   <button
-                    className="flex-shrink-0 p-1 rounded-lg transition-opacity active:opacity-50"
+                    className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-opacity active:opacity-50"
                     style={{ color: 'var(--text-muted)' }}
                     onClick={e => { e.stopPropagation(); handleDelete(bc.id, bc.name) }}
                     aria-label={`Delete ${bc.name}`}

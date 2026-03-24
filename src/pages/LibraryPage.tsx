@@ -62,7 +62,7 @@ async function buildBook(id: string, name: string, ext: BookFormat, data: ArrayB
 export default function LibraryPage() {
   const navigate = useNavigate()
   const { books, loading, loadBooks, addBook, updateBook, removeBook } = useLibraryStore()
-  const { collections, selectedId, loadCollections, selectCollection } = useCollectionStore()
+  const { collections, selectedId, loadCollections } = useCollectionStore()
   const { libraryView, setLibraryView } = useAppStore()
   const [importing, setImporting] = useState(false)
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})

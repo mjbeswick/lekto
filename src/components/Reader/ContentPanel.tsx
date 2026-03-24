@@ -111,7 +111,7 @@ export default function ContentPanel({
     })
   }, [activeTab, currentHref])
 
-  const deleteButtonClassName = 'p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0'
+  const deleteButtonClassName = 'w-8 h-8 rounded-xl flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0'
 
   const searchResults = useMemo(() => {
     if (!searchText) return []
@@ -145,10 +145,10 @@ export default function ContentPanel({
           style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))', paddingBottom: '1rem' }}
         >
           {/* Tabs */}
-          <div className="flex gap-4">
+          <div className="flex gap-5">
             {toc.length > 0 && (
               <button
-                className="text-sm font-semibold pb-0.5 transition-colors"
+                className="text-sm font-semibold pb-1 transition-colors"
                 style={
                   activeTab === 'contents'
                     ? { color: 'var(--reader-accent)', borderBottom: '2px solid var(--reader-accent)' }
@@ -160,7 +160,7 @@ export default function ContentPanel({
               </button>
             )}
             <button
-              className="text-sm font-semibold pb-0.5 transition-colors"
+              className="text-sm font-semibold pb-1 transition-colors"
               style={
                 activeTab === 'bookmarks'
                   ? { color: 'var(--reader-accent)', borderBottom: '2px solid var(--reader-accent)' }
@@ -171,7 +171,7 @@ export default function ContentPanel({
               Bookmarks
             </button>
             <button
-              className="text-sm font-semibold pb-0.5 transition-colors"
+              className="text-sm font-semibold pb-1 transition-colors"
               style={
                 activeTab === 'search'
                   ? { color: 'var(--reader-accent)', borderBottom: '2px solid var(--reader-accent)' }
@@ -182,8 +182,13 @@ export default function ContentPanel({
               Search
             </button>
           </div>
-          <button onClick={onClose} className="p-1 transition-opacity active:opacity-50" style={{ color: 'var(--text-muted)' }}>
-            <FontAwesomeIcon icon={faXmark} size="lg" />
+          <button
+            onClick={onClose}
+            className="w-11 h-11 rounded-2xl flex items-center justify-center transition-opacity active:opacity-50 sm:w-10 sm:h-10 sm:rounded-xl"
+            style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)' }}
+            aria-label="Close panel"
+          >
+            <FontAwesomeIcon icon={faXmark} />
           </button>
         </div>
 
@@ -198,7 +203,7 @@ export default function ContentPanel({
                 No table of contents available.
               </div>
             ) : (
-              <ul>
+              <ul className="divide-y" style={{ borderColor: 'var(--border)' }}>
                 {toc.map(item => (
                   <TocNode key={item.id} item={item} onSelect={href => { onSelectToc(href); onClose() }} currentHref={currentHref} />
                 ))}
@@ -217,7 +222,7 @@ export default function ContentPanel({
                 style={{ color: 'var(--text-muted)' }}
               >
                 <FontAwesomeIcon icon={faBookmark} size="2x" />
-                <p className="text-sm">No bookmarks yet.<br />Tap "Add Bookmark" below to save your place.</p>
+                <p className="text-sm leading-6">No bookmarks yet.<br />Tap "Add Bookmark" below to save your place.</p>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
@@ -226,7 +231,7 @@ export default function ContentPanel({
                     key={b.id}
                     role="button"
                     tabIndex={0}
-                    className="w-full text-left px-4 py-3 flex items-start gap-3 transition-opacity active:opacity-60 group cursor-pointer"
+                    className="w-full text-left px-4 py-3.5 flex items-start gap-3 transition-opacity active:opacity-60 group cursor-pointer"
                     onClick={() => { onNavigateBookmark(b.position); onClose() }}
                     onKeyDown={e => { if (e.key === 'Enter') { onNavigateBookmark(b.position); onClose() } }}
                   >
@@ -245,6 +250,7 @@ export default function ContentPanel({
                       onClick={e => { e.stopPropagation(); onDeleteBookmark(b.id) }}
                       className={deleteButtonClassName}
                       style={{ color: 'var(--text-muted)' }}
+                      aria-label={`Delete bookmark ${b.label}`}
                     >
                       <FontAwesomeIcon icon={faXmark} />
                     </button>
@@ -311,7 +317,7 @@ export default function ContentPanel({
                   {searchResults.map((r, i) => (
                     <button
                       key={i}
-                      className="w-full text-left px-4 py-3 text-sm transition-opacity active:opacity-60"
+                      className="w-full text-left px-4 py-3.5 text-sm transition-opacity active:opacity-60"
                       onClick={() => { onSearchResultSelect?.(r.offset); onClose() }}
                     >
                       <span style={{ color: 'var(--text-muted)' }}>{r.before}</span>
