@@ -15,6 +15,9 @@ interface Props {
 
 const RSVP_FONT = 'Inter, system-ui, -apple-system, sans-serif'
 const SMALL_SCREEN_QUERY = '(max-width: 640px)'
+const MIN_RSVP_FONT_SIZE = 32
+const MAX_RSVP_FONT_SIZE = 80
+const RSVP_FONT_SIZE_STEP = 2
 
 function sameOffsets(a: number[], b: number[]): boolean {
   return a.length === b.length && a.every((value, index) => Math.abs(value - b[index]) < 0.5)
@@ -31,6 +34,10 @@ function formatTime(seconds: number): string {
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
 }
 
 let measureCanvas: HTMLCanvasElement | null = null
@@ -51,6 +58,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const rsvpChunkLetters = useAppStore(s => s.rsvpChunkLetters)
   const rsvpShowContext = useAppStore(s => s.rsvpShowContext)
   const rsvpFontSize = useAppStore(s => s.rsvpFontSize)
+  const setRsvpFontSize = useAppStore(s => s.setRsvpFontSize)
   const [isSmallScreen, setIsSmallScreen] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.matchMedia(SMALL_SCREEN_QUERY).matches
@@ -66,6 +74,8 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const prevWpmRef = useRef(wpm)
   const wpmRef = useRef(wpm)
   wpmRef.current = wpm
+  const fontSizeRef = useRef(rsvpFontSize)
+  fontSizeRef.current = rsvpFontSize
   const containerRef = useRef<HTMLDivElement>(null)
   const guideFrameRef = useRef<HTMLDivElement>(null)
   const chunkRef = useRef<HTMLDivElement>(null)
@@ -116,17 +126,29 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     }
   }, [wpm, setDefaultWpm])
 
-  // Non-passive wheel for WPM adjust
+  // Non-passive wheel: vertical scroll adjusts WPM, horizontal scroll adjusts reticle size.
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
     const handler = (e: WheelEvent) => {
       e.preventDefault()
-      setWpm(wpmRef.current + (e.deltaY > 0 ? -10 : 10))
+
+      const absX = Math.abs(e.deltaX)
+      const absY = Math.abs(e.deltaY)
+
+      if (absX > absY && absX > 0) {
+        const delta = e.deltaX > 0 ? -RSVP_FONT_SIZE_STEP : RSVP_FONT_SIZE_STEP
+        setRsvpFontSize(clamp(fontSizeRef.current + delta, MIN_RSVP_FONT_SIZE, MAX_RSVP_FONT_SIZE))
+        return
+      }
+
+      if (absY > 0) {
+        setWpm(wpmRef.current + (e.deltaY > 0 ? -10 : 10))
+      }
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
-  }, [setWpm])
+  }, [setRsvpFontSize, setWpm])
 
   // Keyboard shortcuts: Space=toggle, arrows=step by word
   useEffect(() => {
@@ -375,7 +397,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
             className="absolute bottom-full left-0 mb-2 px-2.5 py-1.5 rounded text-xs whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
             style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
           >
-            Space · arrows word-by-word · scroll speed
+            Space · arrows word-by-word · vertical scroll speed · horizontal scroll reticle size
           </div>
         </div>
       </div>
