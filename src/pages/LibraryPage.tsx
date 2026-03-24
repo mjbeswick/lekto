@@ -316,29 +316,28 @@ export default function LibraryPage() {
               )}
 
               {books.length > 0 && (
-                <div className="ml-auto flex flex-nowrap items-center gap-3">
+                <div className="ml-auto flex flex-nowrap items-center gap-4">
                   <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
                     {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
                   </p>
 
-                  <div className="inline-flex gap-0 rounded-xl border-2" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center gap-5">
                     <button
                       onClick={() => setLibraryView('list')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-semibold sm:text-sm"
+                      className="inline-flex items-center gap-1.5 border-b-2 pb-1 text-[13px] font-semibold transition-colors sm:text-sm"
                       style={libraryView === 'list'
-                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
-                        : { backgroundColor: 'transparent', color: 'var(--reader-fg)' }}
+                        ? { color: 'var(--reader-accent)', borderBottomColor: 'var(--reader-accent)' }
+                        : { color: 'var(--text-muted)', borderBottomColor: 'transparent' }}
                     >
                       <FontAwesomeIcon icon={faList} />
                       List
                     </button>
-                    <div style={{ width: '1px', backgroundColor: 'var(--border)' }} />
                     <button
                       onClick={() => setLibraryView('grid')}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] font-semibold sm:text-sm"
+                      className="inline-flex items-center gap-1.5 border-b-2 pb-1 text-[13px] font-semibold transition-colors sm:text-sm"
                       style={libraryView === 'grid'
-                        ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
-                        : { backgroundColor: 'transparent', color: 'var(--reader-fg)' }}
+                        ? { color: 'var(--reader-accent)', borderBottomColor: 'var(--reader-accent)' }
+                        : { color: 'var(--text-muted)', borderBottomColor: 'transparent' }}
                     >
                       <FontAwesomeIcon icon={faTableCells} />
                       Grid
@@ -477,7 +476,7 @@ export default function LibraryPage() {
                           <div className="absolute right-1.5 top-1.5" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                              className="flex h-7 w-7 items-center justify-center rounded-md text-[10px] transition-opacity active:opacity-60 sm:text-[11px]"
+                              className="flex h-10 w-10 items-center justify-center rounded-lg transition-opacity active:opacity-60"
                               style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
                             >
                               <FontAwesomeIcon icon={faEllipsisV} />
