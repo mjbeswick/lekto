@@ -69,7 +69,7 @@ async function buildBook(id: string, name: string, ext: BookFormat, data: ArrayB
 export default function LibraryPage() {
   const navigate = useNavigate()
   const { books, loading, loadBooks, addBook, updateBook, removeBook } = useLibraryStore()
-  const { collections, selectedId, loadCollections } = useCollectionStore()
+  const { collections, selectedId, loadCollections, selectCollection } = useCollectionStore()
   const { libraryView, setLibraryView, theme } = useAppStore()
   const { directories, scanning: dirScanning, loadDirectories, addDirectory, refreshDirectory, removeDirectory } = useDirectoryStore()
   const [importing, setImporting] = useState(false)
@@ -149,6 +149,7 @@ export default function LibraryPage() {
   const collectionName = selectedId === null
     ? 'All Books'
     : (collections.find(collection => collection.id === selectedId)?.name ?? 'All Books')
+  const booksOutsideCollection = selectedId === null ? 0 : books.length - visibleBooks.length
   const headerBg = theme === 'light' ? '#ffffff' : 'var(--surface)'
 
   const searchQuery = search.toLowerCase()
@@ -537,14 +538,109 @@ export default function LibraryPage() {
               </section>
             ) : books.length === 0 ? null : visibleBooks.length === 0 ? (
               <section
-                className="rounded-xl px-6 py-10 text-center"
-                style={{ backgroundColor: 'var(--surface)' }}
+                className="relative overflow-hidden rounded-[28px] border px-5 py-6 sm:px-7 sm:py-7"
+                style={{
+                  background: 'linear-gradient(145deg, color-mix(in srgb, var(--surface) 82%, white) 0%, var(--surface) 100%)',
+                  borderColor: 'color-mix(in srgb, var(--border) 78%, transparent)',
+                  boxShadow: 'var(--shadow-soft)',
+                }}
               >
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-xl text-4xl" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}>
-                  <FontAwesomeIcon icon={faBook} />
+                <div
+                  className="pointer-events-none absolute inset-x-0 top-0 h-32"
+                  style={{
+                    background: 'radial-gradient(circle at top, color-mix(in srgb, var(--reader-accent) 16%, transparent) 0%, transparent 68%)',
+                  }}
+                />
+
+                <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:items-center">
+                  <div>
+                    <div className="inline-flex items-center gap-3 rounded-full border px-3 py-2 text-left" style={{ borderColor: 'color-mix(in srgb, var(--border) 70%, transparent)', backgroundColor: 'color-mix(in srgb, var(--surface-2) 68%, transparent)' }}>
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl text-lg" style={{ backgroundColor: 'color-mix(in srgb, var(--reader-accent) 12%, var(--surface-2))', color: 'var(--reader-accent)' }}>
+                        <FontAwesomeIcon icon={faBookOpen} />
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: 'var(--text-muted)' }}>
+                          Collection ready
+                        </p>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--reader-fg)' }}>
+                          {collectionName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <h2 className="mt-5 max-w-2xl text-2xl font-semibold tracking-[-0.03em] sm:text-[2rem]">
+                      This shelf is still empty.
+                    </h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 sm:text-[15px]" style={{ color: 'var(--text-muted)' }}>
+                      Add something new, connect a folder, or pull titles in from the rest of your library so {collectionName} starts feeling like a real working stack.
+                    </p>
+
+                    <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+                      <button
+                        onClick={handleOpen}
+                        disabled={importing}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60 sm:w-auto sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                        style={{ backgroundColor: 'var(--reader-accent)' }}
+                      >
+                        {importing ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FontAwesomeIcon icon={faPlus} />}
+                        Import books here
+                      </button>
+
+                      <button
+                        onClick={() => void handleAddFolder()}
+                        disabled={dirScanning}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-[14px] font-semibold transition-opacity active:opacity-70 disabled:opacity-60 sm:w-auto sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                        style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
+                      >
+                        {dirScanning ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <FontAwesomeIcon icon={faFolderPlus} />}
+                        Add folder source
+                      </button>
+
+                      <button
+                        onClick={() => selectCollection(null)}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-[14px] font-semibold transition-opacity active:opacity-70 sm:w-auto sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                        style={{ borderColor: 'var(--border)', backgroundColor: 'transparent', color: 'var(--text-muted)' }}
+                      >
+                        <FontAwesomeIcon icon={faList} />
+                        Browse all books
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                    <div className="rounded-3xl border p-4 sm:p-5" style={{ borderColor: 'color-mix(in srgb, var(--border) 72%, transparent)', backgroundColor: 'color-mix(in srgb, var(--surface-2) 52%, transparent)' }}>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
+                        Available now
+                      </p>
+                      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em]">
+                        {booksOutsideCollection}
+                      </p>
+                      <p className="mt-2 text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
+                        {booksOutsideCollection === 1 ? 'book is already in your library and can be moved here from its menu.' : 'books are already in your library and can be moved here from their menus.'}
+                      </p>
+                    </div>
+
+                    <div className="rounded-3xl border p-4 sm:p-5" style={{ borderColor: 'color-mix(in srgb, var(--border) 72%, transparent)', backgroundColor: 'color-mix(in srgb, var(--surface) 76%, transparent)' }}>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
+                        Fastest ways to fill it
+                      </p>
+                      <div className="mt-3 space-y-3 text-sm leading-6" style={{ color: 'var(--text-muted)' }}>
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--reader-accent)' }} />
+                          <p>Import a few files directly into this collection.</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--reader-accent)' }} />
+                          <p>Attach a folder and keep the shelf synced with a reading directory.</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1 h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--reader-accent)' }} />
+                          <p>Open all books and move existing titles here from the overflow menu.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-5 text-xl font-semibold">No books in this collection</p>
-                <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>Import another file or move books here from the library menu.</p>
               </section>
             ) : (
               <>
