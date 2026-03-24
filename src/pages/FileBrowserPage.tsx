@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faChevronRight, faFolder, faFolderOpen, faDownload } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronRight, faDownload, faFolder, faFolderOpen, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { parseEpubMeta } from '../utils/epubParser'
 import { parseMdMeta } from '../utils/markdownMeta'
@@ -35,6 +35,8 @@ const ROOT_DIRS: BreadcrumbEntry[] = [
   { name: 'Documents', path: '', directory: Directory.Documents },
   { name: 'Downloads', path: '', directory: Directory.External },
 ]
+const BOOK_EXTS = ['.md', '.epub', '.txt', '.pdf', '.docx', '.fb2', '.fb2.zip']
+const SUPPORTED = ['md', 'epub', 'txt', 'pdf', 'docx', 'fb2']
 
 function getBookFormat(name: string): BookFormat {
   const lower = name.toLowerCase()
@@ -95,7 +97,7 @@ async function parseBookMeta(ext: BookFormat, data: string, fallbackTitle: strin
 
 export default function FileBrowserPage() {
   const navigate = useNavigate()
-  const { addBook } = useLibraryStore()
+  const { books, addBook } = useLibraryStore()
 
   const [currentDir, setCurrentDir] = useState<Directory>(Directory.Documents)
   const [currentPath, setCurrentPath] = useState('')
@@ -104,6 +106,8 @@ export default function FileBrowserPage() {
   const [previewMap, setPreviewMap] = useState<Record<string, FilePreview>>({})
   const [loading, setLoading] = useState(false)
   const [opening, setOpening] = useState<string | null>(null)
+  const [importingFolder, setImportingFolder] = useState(false)
+  const [folderNotice, setFolderNotice] = useState<string | null>(null)
   const [activeRoot, setActiveRoot] = useState<'Documents' | 'Downloads'>('Documents')
 
   async function listDir(path: string, directory: Directory) {
@@ -121,7 +125,6 @@ export default function FileBrowserPage() {
           } as FileEntry
         })
       )
-      const BOOK_EXTS = ['.md', '.epub', '.txt', '.pdf', '.docx', '.fb2', '.fb2.zip']
       // Show dirs first, then supported book files
       const filtered = all.filter(f => f.isDir || BOOK_EXTS.some(ext => f.name.toLowerCase().endsWith(ext)))
       filtered.sort((a, b) => {
@@ -175,48 +178,107 @@ export default function FileBrowserPage() {
   }, [currentDir, entries, previewMap])
 
   function enterDir(entry: FileEntry) {
+    setFolderNotice(null)
     setBreadcrumbs(prev => [...prev, { name: entry.name, path: entry.path, directory: currentDir }])
     setCurrentPath(entry.path)
   }
 
   function navigateBreadcrumb(index: number) {
     const crumb = breadcrumbs[index]
+    setFolderNotice(null)
     setBreadcrumbs(breadcrumbs.slice(0, index + 1))
     setCurrentDir(crumb.directory)
     setCurrentPath(crumb.path)
   }
 
   function switchRoot(root: typeof ROOT_DIRS[0]) {
+    setFolderNotice(null)
     setActiveRoot(root.name as 'Documents' | 'Downloads')
     setCurrentDir(root.directory)
     setCurrentPath('')
     setBreadcrumbs([root])
   }
 
+  async function collectBooksFromDirectory(path: string, directory: Directory): Promise<FileEntry[]> {
+    const result = await Filesystem.readdir({ path: path || '.', directory })
+    const collected: FileEntry[] = []
+
+    for (const file of result.files) {
+      const fullPath = path ? `${path}/${file.name}` : file.name
+      if (file.type === 'directory') {
+        const nested = await collectBooksFromDirectory(fullPath, directory)
+        collected.push(...nested)
+        continue
+      }
+      if (!BOOK_EXTS.some(ext => file.name.toLowerCase().endsWith(ext))) continue
+      collected.push({
+        name: file.name,
+        path: fullPath,
+        uri: file.uri ?? '',
+        isDir: false,
+      })
+    }
+
+    return collected
+  }
+
+  async function importBookEntry(entry: FileEntry): Promise<Book> {
+    const ext = getBookFormat(entry.name)
+    const file = await Filesystem.readFile({ path: entry.path, directory: currentDir })
+    const data = typeof file.data === 'string' ? file.data : ''
+    const uri = (await Filesystem.getUri({ path: entry.path, directory: currentDir })).uri
+    const { title, author, coverUri } = await parseBookMeta(ext, data, entry.name.replace(/\.[^.]+$/, ''))
+
+    return addBook({
+      id: uuidv4(),
+      title,
+      author,
+      filePath: uri,
+      format: ext,
+      coverUri,
+      addedAt: Date.now(),
+    })
+  }
+
+  async function importCurrentFolder() {
+    setImportingFolder(true)
+    setFolderNotice(null)
+    try {
+      const bookEntries = await collectBooksFromDirectory(currentPath, currentDir)
+      if (!bookEntries.length) {
+        setFolderNotice('No supported books found in this folder.')
+        return
+      }
+
+      const knownPaths = new Set(books.map(book => book.filePath))
+      let importedCount = 0
+      for (const entry of bookEntries) {
+        const storedBook = await importBookEntry(entry)
+        if (!knownPaths.has(storedBook.filePath)) {
+          importedCount += 1
+          knownPaths.add(storedBook.filePath)
+        }
+      }
+
+      const folderName = breadcrumbs[breadcrumbs.length - 1]?.name || activeRoot
+      setFolderNotice(importedCount > 0
+        ? `Imported ${importedCount} ${importedCount === 1 ? 'book' : 'books'} from ${folderName}.`
+        : `All books from ${folderName} are already in your library.`)
+    } catch (e) {
+      console.error('importCurrentFolder error', e)
+      setFolderNotice('Could not import this folder.')
+    } finally {
+      setImportingFolder(false)
+    }
+  }
+
   async function openFile(entry: FileEntry) {
     const ext = getBookFormat(entry.name)
-    const SUPPORTED = ['md', 'epub', 'txt', 'pdf', 'docx', 'fb2']
     if (!SUPPORTED.includes(ext)) return
     setOpening(entry.path)
     try {
-      // Read file data once for metadata, then store URI path
-      const file = await Filesystem.readFile({ path: entry.path, directory: currentDir })
-      const data = typeof file.data === 'string' ? file.data : ''
-      const uri = (await Filesystem.getUri({ path: entry.path, directory: currentDir })).uri
-
-      const { title, author, coverUri } = await parseBookMeta(ext, data, entry.name.replace(/\.[^.]+$/, ''))
-
-      const book: Book = {
-        id: uuidv4(),
-        title,
-        author,
-        filePath: uri,   // absolute URI so ReaderPage can read without Directory
-        format: ext,
-        coverUri,
-        addedAt: Date.now(),
-      }
-      await addBook(book)
-      navigate(`/reader/${book.id}`)
+      const storedBook = await importBookEntry(entry)
+      navigate(`/reader/${storedBook.id}`)
     } catch (e) {
       console.error('openFile error', e)
     }
@@ -230,7 +292,23 @@ export default function FileBrowserPage() {
         <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library">
           <FontAwesomeIcon icon={faArrowLeft} />
         </HeaderIconButton>
-        <h1 className="text-lg font-bold">Browse Files</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg font-bold">Browse Files</h1>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Open a file or import the current folder.</p>
+        </div>
+        <button
+          onClick={() => void importCurrentFolder()}
+          disabled={importingFolder || loading}
+          className="inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-50"
+          style={{ backgroundColor: 'var(--reader-accent)' }}
+        >
+          {importingFolder ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
+            <FontAwesomeIcon icon={faPlus} />
+          )}
+          <span className="hidden sm:inline">Import folder</span>
+        </button>
       </div>
 
       {/* Root selector */}
@@ -262,6 +340,12 @@ export default function FileBrowserPage() {
               </button>
             </span>
           ))}
+        </div>
+      )}
+
+      {folderNotice && (
+        <div className="px-[var(--app-gutter)] py-2 text-sm border-b border-gray-100 dark:border-gray-800" style={{ color: 'var(--text-muted)' }}>
+          {folderNotice}
         </div>
       )}
 

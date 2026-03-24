@@ -53,8 +53,8 @@ function AppInner() {
         }
 
         const book: Book = { id: uuidv4(), title, author, filePath: url, format: ext, coverUri, addedAt: Date.now() }
-        await addBook(book)
-        navigate(`/reader/${book.id}`)
+        const storedBook = await addBook(book)
+        navigate(`/reader/${storedBook.id}`)
       } catch (e) {
         console.error('appUrlOpen error', e)
       }

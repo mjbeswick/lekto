@@ -4,6 +4,10 @@ import { removeWebFile } from '../utils/fileStore'
 
 const KEY = 'lekto.books'
 
+function sameStoredPath(left: string, right: string): boolean {
+  return left.trim() === right.trim()
+}
+
 export async function getAllBooks(): Promise<Book[]> {
   const { value } = await Preferences.get({ key: KEY })
   if (!value) return []
@@ -15,10 +19,13 @@ export async function getBook(id: string): Promise<Book | null> {
   return books.find(b => b.id === id) ?? null
 }
 
-export async function insertBook(book: Book): Promise<void> {
+export async function insertBook(book: Book): Promise<Book> {
   const books = await getAllBooks()
+  const existing = books.find(item => sameStoredPath(item.filePath, book.filePath))
+  if (existing) return existing
   books.unshift(book)
   await Preferences.set({ key: KEY, value: JSON.stringify(books) })
+  return book
 }
 
 export async function updateBook(id: string, patch: Partial<Book>): Promise<Book | null> {
