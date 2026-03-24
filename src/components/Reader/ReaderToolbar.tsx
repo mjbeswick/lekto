@@ -11,7 +11,7 @@ interface Props {
 
 export default function ReaderToolbar({ title, onTogglePanel }: Props) {
   const navigate = useNavigate()
-  const { mode, layout, toggleMode, toggleLayout } = useReaderModeStore()
+  const { mode, toggleMode } = useReaderModeStore()
 
   return (
     <div
@@ -31,11 +31,6 @@ export default function ReaderToolbar({ title, onTogglePanel }: Props) {
 
       <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
         <h1 className="max-w-full text-center text-base font-semibold leading-tight sm:text-sm truncate">{title}</h1>
-        {mode === 'ebook' && (
-          <button onClick={toggleLayout} className="rounded-full px-2 py-1 text-xs leading-none" style={{ color: 'var(--text-muted)' }}>
-            {layout === 'scroll' ? '↕ Scroll' : '↔ Pages'}
-          </button>
-        )}
       </div>
 
       <div className="flex gap-2 items-center">

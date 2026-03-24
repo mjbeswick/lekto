@@ -73,3 +73,21 @@ body {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
+
+.lekto-file-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.reader-prose :where(p):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  margin-top: 0;
+  margin-bottom: var(--reader-paragraph-spacing, 1em);
+}
+
+.reader-prose :where(li p):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  margin-bottom: calc(var(--reader-paragraph-spacing, 1em) * 0.65);
+}
+
+.reader-prose > :where(:last-child):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  margin-bottom: 0;
+}

@@ -1,26 +1,65 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faXmark, faBookmark, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faXmark, faBookmark, faPlus, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import type { TocItem } from './EpubReader'
 import type { Bookmark } from '../../types'
+
+interface SearchResult {
+  offset: number
+  before: string
+  match: string
+  after: string
+}
+
+function searchInText(text: string, query: string): SearchResult[] {
+  const q = query.trim()
+  if (q.length < 2) return []
+  const lower = text.toLowerCase()
+  const lq = q.toLowerCase()
+  const CONTEXT = 70
+  const results: SearchResult[] = []
+  let idx = 0
+  while (results.length < 100) {
+    const pos = lower.indexOf(lq, idx)
+    if (pos === -1) break
+    const start = Math.max(0, pos - CONTEXT)
+    const end = Math.min(text.length, pos + lq.length + CONTEXT)
+    results.push({
+      offset: pos,
+      before: (start > 0 ? '…' : '') + text.slice(start, pos),
+      match: text.slice(pos, pos + lq.length),
+      after: text.slice(pos + lq.length, end) + (end < text.length ? '…' : ''),
+    })
+    idx = pos + 1
+  }
+  return results
+}
 
 interface Props {
   toc: TocItem[]
   bookmarks: Bookmark[]
+  searchText?: string
+  currentHref?: string
   onSelectToc: (href: string) => void
   onNavigateBookmark: (position: string) => void
   onAddBookmark: () => void
   onDeleteBookmark: (id: string) => void
+  onSearchResultSelect?: (offset: number) => void
   onClose: () => void
-  initialTab?: 'contents' | 'bookmarks'
+  initialTab?: 'contents' | 'bookmarks' | 'search'
 }
 
-function TocNode({ item, onSelect }: { item: TocItem; onSelect: (href: string) => void }) {
+function TocNode({ item, onSelect, currentHref }: { item: TocItem; onSelect: (href: string) => void; currentHref?: string }) {
+  const isActive = !!currentHref && item.href.split('#')[0] === currentHref.split('#')[0]
   return (
     <li>
       <button
         className="w-full text-left py-3 px-4 border-b text-sm active:opacity-60"
-        style={{ borderColor: 'var(--border)' }}
+        style={{
+          borderColor: 'var(--border)',
+          ...(isActive ? { color: 'var(--reader-accent)', fontWeight: 600 } : {}),
+        }}
+        data-active={isActive || undefined}
         onClick={() => onSelect(item.href)}
       >
         {item.label}
@@ -28,7 +67,7 @@ function TocNode({ item, onSelect }: { item: TocItem; onSelect: (href: string) =
       {item.subitems?.length ? (
         <ul className="pl-4">
           {item.subitems.map(sub => (
-            <TocNode key={sub.id} item={sub} onSelect={onSelect} />
+            <TocNode key={sub.id} item={sub} onSelect={onSelect} currentHref={currentHref} />
           ))}
         </ul>
       ) : null}
@@ -43,17 +82,38 @@ function formatDate(ts: number): string {
 export default function ContentPanel({
   toc,
   bookmarks,
+  searchText,
+  currentHref,
   onSelectToc,
   onNavigateBookmark,
   onAddBookmark,
   onDeleteBookmark,
+  onSearchResultSelect,
   onClose,
   initialTab = 'contents',
 }: Props) {
-  const [activeTab, setActiveTab] = useState<'contents' | 'bookmarks'>(
-    toc.length === 0 ? 'bookmarks' : initialTab,
+  const [activeTab, setActiveTab] = useState<'contents' | 'bookmarks' | 'search'>(
+    initialTab === 'contents' && toc.length === 0 ? 'bookmarks' : initialTab,
   )
+  const [query, setQuery] = useState('')
+  const tocContainerRef = useRef<HTMLDivElement>(null)
+
+  // Scroll the active TOC item into view when the contents tab is shown
+  useEffect(() => {
+    if (activeTab !== 'contents') return
+    const container = tocContainerRef.current
+    if (!container) return
+    requestAnimationFrame(() => {
+      const active = container.querySelector('[data-active]') as HTMLElement | null
+      active?.scrollIntoView({ block: 'center' })
+    })
+  }, [activeTab, currentHref])
   const deleteButtonClassName = 'p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0'
+
+  const searchResults = useMemo(() => {
+    if (!searchText) return []
+    return searchInText(searchText, query)
+  }, [searchText, query])
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
@@ -99,6 +159,17 @@ export default function ContentPanel({
             >
               Bookmarks
             </button>
+            <button
+              className="text-sm font-semibold pb-0.5 transition-colors"
+              style={
+                activeTab === 'search'
+                  ? { color: 'var(--reader-accent)', borderBottom: '2px solid var(--reader-accent)' }
+                  : { color: 'var(--text-muted)', borderBottom: '2px solid transparent' }
+              }
+              onClick={() => setActiveTab('search')}
+            >
+              Search
+            </button>
           </div>
           <button onClick={onClose} className="p-1" style={{ color: 'var(--text-muted)' }}>
             <FontAwesomeIcon icon={faXmark} size="lg" />
@@ -107,7 +178,7 @@ export default function ContentPanel({
 
         {/* Contents tab */}
         {activeTab === 'contents' && (
-          <div className="flex-1 overflow-y-auto">
+          <div ref={tocContainerRef} className="flex-1 overflow-y-auto">
             {toc.length === 0 ? (
               <div
                 className="flex-1 flex items-center justify-center p-6 text-sm text-center"
@@ -118,7 +189,7 @@ export default function ContentPanel({
             ) : (
               <ul>
                 {toc.map(item => (
-                  <TocNode key={item.id} item={item} onSelect={href => { onSelectToc(href); onClose() }} />
+                  <TocNode key={item.id} item={item} onSelect={href => { onSelectToc(href); onClose() }} currentHref={currentHref} />
                 ))}
               </ul>
             )}
@@ -152,10 +223,13 @@ export default function ContentPanel({
             ) : (
               <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
                 {[...bookmarks].reverse().map(b => (
-                  <button
+                  <div
                     key={b.id}
-                    className="w-full text-left px-4 py-3 flex items-start gap-3 transition-opacity active:opacity-60 group"
+                    role="button"
+                    tabIndex={0}
+                    className="w-full text-left px-4 py-3 flex items-start gap-3 transition-opacity active:opacity-60 group cursor-pointer"
                     onClick={() => { onNavigateBookmark(b.position); onClose() }}
+                    onKeyDown={e => { if (e.key === 'Enter') { onNavigateBookmark(b.position); onClose() } }}
                   >
                     <FontAwesomeIcon
                       icon={faBookmark}
@@ -175,8 +249,63 @@ export default function ContentPanel({
                     >
                       <FontAwesomeIcon icon={faXmark} />
                     </button>
-                  </button>
+                  </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Search tab */}
+        {activeTab === 'search' && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-4 py-3 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+              <div
+                className="flex items-center gap-2 rounded-lg px-3 py-2 border"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <FontAwesomeIcon icon={faMagnifyingGlass} size="sm" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  type="search"
+                  placeholder="Search in book…"
+                  autoFocus
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  className="flex-1 bg-transparent text-sm outline-none"
+                  style={{ color: 'var(--reader-fg)' }}
+                />
+              </div>
+            </div>
+            {!searchText ? (
+              <div className="flex-1 flex items-center justify-center p-6 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
+                Search is not available for this format.
+              </div>
+            ) : query.trim().length < 2 ? (
+              <div className="flex-1 flex items-center justify-center p-6 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
+                Type at least 2 characters to search…
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center p-6 text-sm text-center" style={{ color: 'var(--text-muted)' }}>
+                No results found.
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto">
+                <p className="px-4 py-2 text-xs border-b" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                  {searchResults.length === 100 ? '100+ results' : `${searchResults.length} result${searchResults.length === 1 ? '' : 's'}`}
+                </p>
+                <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                  {searchResults.map((r, i) => (
+                    <button
+                      key={i}
+                      className="w-full text-left px-4 py-3 text-sm transition-opacity active:opacity-60"
+                      onClick={() => { onSearchResultSelect?.(r.offset); onClose() }}
+                    >
+                      <span style={{ color: 'var(--text-muted)' }}>{r.before}</span>
+                      <span style={{ color: 'var(--reader-accent)', fontWeight: 600 }}>{r.match}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{r.after}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>

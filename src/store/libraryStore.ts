@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import type { Book } from '../types'
-import { getAllBooks, insertBook, deleteBook } from '../db/books'
+import { getAllBooks, insertBook, deleteBook, updateBook as persistBookUpdate } from '../db/books'
 
 interface LibraryState {
   books: Book[]
   loading: boolean
   loadBooks: () => Promise<void>
   addBook: (book: Book) => Promise<void>
+  updateBook: (id: string, patch: Partial<Book>) => Promise<void>
   removeBook: (id: string) => Promise<void>
 }
 
@@ -21,6 +22,11 @@ export const useLibraryStore = create<LibraryState>((set) => ({
   addBook: async (book) => {
     await insertBook(book)
     set((s) => ({ books: [book, ...s.books] }))
+  },
+  updateBook: async (id, patch) => {
+    const updatedBook = await persistBookUpdate(id, patch)
+    if (!updatedBook) return
+    set((s) => ({ books: s.books.map(book => book.id === id ? updatedBook : book) }))
   },
   removeBook: async (id) => {
     await deleteBook(id)

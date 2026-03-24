@@ -28,6 +28,22 @@ function formatTime(seconds: number): string {
   return s > 0 ? `${m}m ${s}s` : `${m}m`
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+}
+
+let measureCanvas: HTMLCanvasElement | null = null
+
+function canFitContextWord(word: string, fontSize: number, laneWidth: number): boolean {
+  if (!word || typeof document === 'undefined' || laneWidth <= 0) return false
+  measureCanvas ??= document.createElement('canvas')
+  const context = measureCanvas.getContext('2d')
+  if (!context) return false
+  context.font = `500 ${fontSize}px ${RSVP_FONT}`
+  return context.measureText(word).width <= laneWidth
+}
+
 export default function SpeedReaderView({ text, extracting = false }: Props) {
   const defaultWpm = useAppStore(s => s.defaultWpm)
   const setDefaultWpm = useAppStore(s => s.setDefaultWpm)
@@ -46,7 +62,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const [effectiveChunkLetters, setEffectiveChunkLetters] = useState(rsvpChunkLetters)
   // Capture reading position at mount time — applied when text tokenizes
   const [startFraction] = useState(() => getReadingPosition())
-  const { tokens, index, playing, wpm, play, pause, toggle, setWpm, jumpSentence } = useRsvp(text, defaultWpm, wordLengthScaling, effectiveChunkLetters, startFraction)
+  const { tokens, index, playing, wpm, play, pause, toggle, setWpm, stepWord, jumpSentence } = useRsvp(text, defaultWpm, wordLengthScaling, effectiveChunkLetters, startFraction)
   const prevWpmRef = useRef(wpm)
   const wpmRef = useRef(wpm)
   wpmRef.current = wpm
@@ -57,6 +73,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const showContext = rsvpShowContext && viewportWidth >= 700
   const stageWidth = Math.max(220, Math.min(viewportWidth - (isSmallScreen ? 24 : 96), isSmallScreen ? 360 : 720))
   const laneWidth = Math.min(stageWidth, isSmallScreen ? 320 : 440)
+  const sideLaneWidth = Math.max(0, (stageWidth - laneWidth) / 2 - (isSmallScreen ? 8 : 16))
   const smallScreenFontCap = Math.max(34, Math.min(52, viewportWidth * 0.145))
   const displayFontSize = isSmallScreen ? Math.min(rsvpFontSize, smallScreenFontCap) : rsvpFontSize
   const contextFontSize = Math.max(18, Math.round(displayFontSize * (isSmallScreen ? 0.48 : 0.54)))
@@ -111,27 +128,29 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
     return () => el.removeEventListener('wheel', handler)
   }, [setWpm])
 
-  // Keyboard shortcuts: Space=toggle, ←→=sentence, ↑↓=WPM
+  // Keyboard shortcuts: Space=toggle, arrows=step by word
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return
       if (e.code === 'Space') { e.preventDefault(); toggle() }
-      else if (e.code === 'ArrowLeft') { e.preventDefault(); jumpSentence(-1) }
-      else if (e.code === 'ArrowRight') { e.preventDefault(); jumpSentence(1) }
-      else if (e.code === 'ArrowUp') { e.preventDefault(); setWpm(wpmRef.current + 25) }
-      else if (e.code === 'ArrowDown') { e.preventDefault(); setWpm(wpmRef.current - 25) }
+      else if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') { e.preventDefault(); stepWord(-1) }
+      else if (e.code === 'ArrowRight' || e.code === 'ArrowDown') { e.preventDefault(); stepWord(1) }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [toggle, jumpSentence, setWpm])
+  }, [stepWord, toggle])
 
   // Pause when window loses focus
   useEffect(() => {
-    const handler = () => { if (document.hidden) pause() }
-    document.addEventListener('visibilitychange', handler)
-    window.addEventListener('blur', handler)
+    const handleVisibilityChange = () => {
+      if (document.hidden) pause()
+    }
+    const handleBlur = () => pause()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('blur', handleBlur)
     return () => {
-      document.removeEventListener('visibilitychange', handler)
-      window.removeEventListener('blur', handler)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('blur', handleBlur)
     }
   }, [pause])
 
@@ -172,6 +191,14 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const progress = tokens.length ? (index + 1) / tokens.length : 0
   const wordsRemaining = Math.max(0, tokens.length - index - 1)
   const timeRemainingS = wpm > 0 ? Math.ceil(wordsRemaining / wpm * 60) : 0
+  const previousWord = tokens[index - 1]?.word ?? ''
+  const nextWord = tokens[index + chunkWords.length]?.word ?? ''
+  const previousContext = showContext && canFitContextWord(previousWord, contextFontSize, sideLaneWidth)
+    ? `${previousWord} `
+    : ''
+  const nextContext = showContext && canFitContextWord(nextWord, contextFontSize, sideLaneWidth)
+    ? ` ${nextWord}`
+    : ''
 
   useLayoutEffect(() => {
     if (!isSmallScreen || effectiveChunkLetters <= 1) return
@@ -249,7 +276,6 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
             <div ref={guideFrameRef} className="relative mx-auto w-full" style={{ height: isSmallScreen ? '96px' : '120px', maxWidth: `${stageWidth}px` }}>
               {/* Top guide line */}
               <div className="absolute top-3 w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
-              <div className="absolute inset-y-3 left-1/2 w-px -translate-x-1/2" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.12 }} />
 
               {/* Top vertical guides - aligned with ORP characters */}
               {orpGuideOffsets.map((offset, offsetIndex) => (
@@ -270,8 +296,8 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
                   }}
                 >
                   {/* Previous word */}
-                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
-                    {showContext ? (tokens[index - 1]?.word ?? '') : ''}
+                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'pre', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
+                    {previousContext}
                   </span>
 
                   {/* Current chunk */}
@@ -280,8 +306,8 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
                   </div>
 
                   {/* Next word */}
-                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
-                    {showContext ? (tokens[index + chunkWords.length]?.word ?? '') : ''}
+                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'pre', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
+                    {nextContext}
                   </span>
                 </div>
               </div>
@@ -349,7 +375,7 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
             className="absolute bottom-full left-0 mb-2 px-2.5 py-1.5 rounded text-xs whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
             style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
           >
-            Space · ←→ sentence · ↑↓ speed · scroll
+            Space · arrows word-by-word · scroll speed
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowLeft, faChevronRight, faFolder, faFolderOpen, faDownload, faBookOpen, faFile } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronRight, faFolder, faFolderOpen, faDownload } from '@fortawesome/free-solid-svg-icons'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { parseEpubMeta } from '../utils/epubParser'
 import { parseMdMeta } from '../utils/markdownMeta'
@@ -12,12 +12,17 @@ import { useLibraryStore } from '../store/libraryStore'
 import type { Book, BookFormat } from '../types'
 import { v4 as uuidv4 } from 'uuid'
 import HeaderIconButton from '../components/HeaderIconButton'
+import FileTypeIcon from '../components/FileTypeIcon'
 
 interface FileEntry {
   name: string
   path: string
   uri: string
   isDir: boolean
+}
+
+interface FilePreview {
+  coverUri?: string
 }
 
 interface BreadcrumbEntry {
@@ -31,6 +36,63 @@ const ROOT_DIRS: BreadcrumbEntry[] = [
   { name: 'Downloads', path: '', directory: Directory.External },
 ]
 
+function getBookFormat(name: string): BookFormat {
+  const lower = name.toLowerCase()
+  return (lower.endsWith('.fb2.zip') ? 'fb2' : lower.split('.').pop()) as BookFormat
+}
+
+function b64ToArrayBuffer(b64: string) {
+  const bin = atob(b64)
+  const buf = new ArrayBuffer(bin.length)
+  const view = new Uint8Array(buf)
+  for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i)
+  return buf
+}
+
+async function parseBookMeta(ext: BookFormat, data: string, fallbackTitle: string) {
+  let title = fallbackTitle
+  let author = ''
+  let coverUri: string | undefined
+
+  if (ext === 'epub' && data) {
+    try {
+      const meta = await parseEpubMeta(data)
+      title = meta.title || title
+      author = meta.author
+      coverUri = meta.coverBase64
+    } catch (e) { console.warn('epub meta', e) }
+  } else if (ext === 'md' && data) {
+    try {
+      const text = atob(data)
+      const meta = parseMdMeta(text)
+      title = meta.title || title
+      author = meta.author
+    } catch (e) { console.warn('md meta', e) }
+  } else if (ext === 'pdf' && data) {
+    try {
+      const meta = await parsePdfMeta(b64ToArrayBuffer(data))
+      title = meta.title || title
+      author = meta.author
+      coverUri = meta.coverBase64
+    } catch (e) { console.warn('pdf meta', e) }
+  } else if (ext === 'docx' && data) {
+    try {
+      const meta = await parseDocxMeta(b64ToArrayBuffer(data))
+      title = meta.title || title
+      author = meta.author
+    } catch (e) { console.warn('docx meta', e) }
+  } else if (ext === 'fb2' && data) {
+    try {
+      const meta = await parseFb2Meta(b64ToArrayBuffer(data))
+      title = meta.title || title
+      author = meta.author
+      coverUri = meta.coverBase64
+    } catch (e) { console.warn('fb2 meta', e) }
+  }
+
+  return { title, author, coverUri }
+}
+
 export default function FileBrowserPage() {
   const navigate = useNavigate()
   const { addBook } = useLibraryStore()
@@ -39,6 +101,7 @@ export default function FileBrowserPage() {
   const [currentPath, setCurrentPath] = useState('')
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbEntry[]>([ROOT_DIRS[0]])
   const [entries, setEntries] = useState<FileEntry[]>([])
+  const [previewMap, setPreviewMap] = useState<Record<string, FilePreview>>({})
   const [loading, setLoading] = useState(false)
   const [opening, setOpening] = useState<string | null>(null)
   const [activeRoot, setActiveRoot] = useState<'Documents' | 'Downloads'>('Documents')
@@ -78,6 +141,39 @@ export default function FileBrowserPage() {
     listDir(currentPath, currentDir)
   }, [currentPath, currentDir])
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPreviews() {
+      const files = entries.filter(entry => !entry.isDir)
+
+      for (const entry of files) {
+        if (cancelled || previewMap[entry.path]) continue
+
+        const ext = getBookFormat(entry.name)
+        if (ext !== 'epub' && ext !== 'pdf' && ext !== 'fb2') continue
+
+        try {
+          const file = await Filesystem.readFile({ path: entry.path, directory: currentDir })
+          const data = typeof file.data === 'string' ? file.data : ''
+          const meta = await parseBookMeta(ext, data, entry.name.replace(/\.[^.]+$/, ''))
+
+          if (!cancelled && meta.coverUri) {
+            setPreviewMap(prev => (prev[entry.path] ? prev : { ...prev, [entry.path]: { coverUri: meta.coverUri } }))
+          }
+        } catch (e) {
+          console.warn('preview load failed', e)
+        }
+      }
+    }
+
+    void loadPreviews()
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentDir, entries, previewMap])
+
   function enterDir(entry: FileEntry) {
     setBreadcrumbs(prev => [...prev, { name: entry.name, path: entry.path, directory: currentDir }])
     setCurrentPath(entry.path)
@@ -98,8 +194,7 @@ export default function FileBrowserPage() {
   }
 
   async function openFile(entry: FileEntry) {
-    const lower = entry.name.toLowerCase()
-    const ext = (lower.endsWith('.fb2.zip') ? 'fb2' : lower.split('.').pop()) as BookFormat
+    const ext = getBookFormat(entry.name)
     const SUPPORTED = ['md', 'epub', 'txt', 'pdf', 'docx', 'fb2']
     if (!SUPPORTED.includes(ext)) return
     setOpening(entry.path)
@@ -109,53 +204,7 @@ export default function FileBrowserPage() {
       const data = typeof file.data === 'string' ? file.data : ''
       const uri = (await Filesystem.getUri({ path: entry.path, directory: currentDir })).uri
 
-      let title = entry.name.replace(/\.[^.]+$/, '')
-      let author = ''
-      let coverUri: string | undefined
-
-      const b64ToArrayBuffer = (b64: string) => {
-        const bin = atob(b64)
-        const buf = new ArrayBuffer(bin.length)
-        const view = new Uint8Array(buf)
-        for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i)
-        return buf
-      }
-
-      if (ext === 'epub' && data) {
-        try {
-          const meta = await parseEpubMeta(data)
-          title = meta.title || title
-          author = meta.author
-          coverUri = meta.coverBase64
-        } catch (e) { console.warn('epub meta', e) }
-      } else if (ext === 'md' && data) {
-        try {
-          const text = atob(data)
-          const meta = parseMdMeta(text)
-          title = meta.title || title
-          author = meta.author
-        } catch (e) { console.warn('md meta', e) }
-      } else if (ext === 'pdf' && data) {
-        try {
-          const meta = await parsePdfMeta(b64ToArrayBuffer(data))
-          title = meta.title || title
-          author = meta.author
-          coverUri = meta.coverBase64
-        } catch (e) { console.warn('pdf meta', e) }
-      } else if (ext === 'docx' && data) {
-        try {
-          const meta = await parseDocxMeta(b64ToArrayBuffer(data))
-          title = meta.title || title
-          author = meta.author
-        } catch (e) { console.warn('docx meta', e) }
-      } else if (ext === 'fb2' && data) {
-        try {
-          const meta = await parseFb2Meta(b64ToArrayBuffer(data))
-          title = meta.title || title
-          author = meta.author
-          coverUri = meta.coverBase64
-        } catch (e) { console.warn('fb2 meta', e) }
-      }
+      const { title, author, coverUri } = await parseBookMeta(ext, data, entry.name.replace(/\.[^.]+$/, ''))
 
       const book: Book = {
         id: uuidv4(),
@@ -233,24 +282,21 @@ export default function FileBrowserPage() {
               onClick={() => entry.isDir ? enterDir(entry) : openFile(entry)}
               disabled={opening === entry.path}
             >
-              <span className="text-xl flex-shrink-0 w-6 flex items-center justify-center text-gray-400">
-                <FontAwesomeIcon icon={entry.isDir ? faFolder : entry.name.toLowerCase().endsWith('.epub') ? faBookOpen : faFile} />
+              <span className="w-12 h-16 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>
+                {entry.isDir ? (
+                  <FontAwesomeIcon icon={faFolder} className="text-xl text-gray-400" />
+                ) : previewMap[entry.path]?.coverUri ? (
+                  <img src={previewMap[entry.path].coverUri} alt={entry.name} className="w-full h-full object-cover" />
+                ) : (
+                  <FileTypeIcon fileName={entry.name} className="text-[1.7rem] opacity-75" />
+                )}
               </span>
               <span className="flex-1 text-sm truncate">{entry.name}</span>
               {opening === entry.path
                 ? <span className="text-xs text-orange-400">Opening…</span>
                 : entry.isDir
                   ? <FontAwesomeIcon icon={faChevronRight} className="text-gray-300 text-sm" />
-                  : (() => {
-                      const n = entry.name.toLowerCase()
-                      const [label, cls] = n.endsWith('.epub') ? ['EPUB', 'bg-blue-100 text-blue-700']
-                        : n.endsWith('.pdf')  ? ['PDF',  'bg-red-100 text-red-700']
-                        : n.endsWith('.docx') ? ['DOCX', 'bg-indigo-100 text-indigo-700']
-                        : n.endsWith('.fb2') || n.endsWith('.fb2.zip') ? ['FB2', 'bg-purple-100 text-purple-700']
-                        : n.endsWith('.txt')  ? ['TXT',  'bg-gray-100 text-gray-600']
-                        : ['MD', 'bg-green-100 text-green-700']
-                      return <span className={`text-xs px-1.5 py-0.5 rounded font-mono font-semibold ${cls}`}>{label}</span>
-                    })()
+                  : null
               }
             </button>
           ))

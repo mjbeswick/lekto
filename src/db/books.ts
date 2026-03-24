@@ -21,6 +21,19 @@ export async function insertBook(book: Book): Promise<void> {
   await Preferences.set({ key: KEY, value: JSON.stringify(books) })
 }
 
+export async function updateBook(id: string, patch: Partial<Book>): Promise<Book | null> {
+  const books = await getAllBooks()
+  let updatedBook: Book | null = null
+  const updated = books.map(book => {
+    if (book.id !== id) return book
+    updatedBook = { ...book, ...patch }
+    return updatedBook
+  })
+  if (!updatedBook) return null
+  await Preferences.set({ key: KEY, value: JSON.stringify(updated) })
+  return updatedBook
+}
+
 export async function deleteBook(id: string): Promise<void> {
   const books = await getAllBooks()
   await Preferences.set({ key: KEY, value: JSON.stringify(books.filter(b => b.id !== id)) })

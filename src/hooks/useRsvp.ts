@@ -10,6 +10,7 @@ export interface RsvpControls {
   pause: () => void
   toggle: () => void
   setWpm: (wpm: number) => void
+  stepWord: (direction: 1 | -1) => void
   jumpSentence: (direction: 1 | -1) => void
   reset: () => void
 }
@@ -124,6 +125,15 @@ export function useRsvp(text: string, initialWpm: number, wordLengthScaling = tr
     setWpmState(clamped)
   }, [])
 
+  const stepWord = useCallback((direction: 1 | -1) => {
+    pause()
+    setIndex(prev => {
+      const next = Math.max(0, Math.min(prev + direction, tokensRef.current.length - 1))
+      indexRef.current = next
+      return next
+    })
+  }, [pause])
+
   const jumpSentence = useCallback((direction: 1 | -1) => {
     pause()
     setIndex(prev => {
@@ -149,5 +159,5 @@ export function useRsvp(text: string, initialWpm: number, wordLengthScaling = tr
 
   useEffect(() => () => clearTimer(), [clearTimer])
 
-  return { tokens, index, playing, wpm, play, pause, toggle, setWpm, jumpSentence, reset }
+  return { tokens, index, playing, wpm, play, pause, toggle, setWpm, stepWord, jumpSentence, reset }
 }

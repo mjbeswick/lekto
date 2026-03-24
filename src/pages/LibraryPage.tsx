@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faGear, faFolderOpen, faBookOpen, faFile, faTrash, faBook, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faGear, faFolderOpen, faTrash, faBook, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useLibraryStore } from '../store/libraryStore'
 import { FilePicker } from '@capawesome/capacitor-file-picker'
 import type { Book, BookFormat } from '../types'
@@ -11,9 +11,10 @@ import { parseMdMeta } from '../utils/markdownMeta'
 import { parsePdfMeta } from '../utils/pdfParser'
 import { parseDocxMeta } from '../utils/docxParser'
 import { parseFb2Meta } from '../utils/fb2Parser'
-import { isWeb, storeWebFile, webFilePath, b64ToBuffer } from '../utils/fileStore'
+import { isWeb, storeWebFile, webFilePath, b64ToBuffer, readFileAsArrayBuffer } from '../utils/fileStore'
 import { getProgress } from '../db/progress'
 import HeaderIconButton from '../components/HeaderIconButton'
+import FileTypeIcon from '../components/FileTypeIcon'
 
 const SUPPORTED = ['md', 'epub', 'txt', 'pdf', 'docx', 'fb2']
 
@@ -23,22 +24,6 @@ function titleColor(title: string): string {
   let hash = 0
   for (const c of title) hash = (hash * 31 + c.charCodeAt(0)) & 0xfffffff
   return ACCENT_COLORS[hash % ACCENT_COLORS.length]
-}
-
-function formatBadge(format: BookFormat) {
-  const styles: Record<BookFormat, string> = {
-    epub: 'bg-blue-100 text-blue-700',
-    md:   'bg-green-100 text-green-700',
-    txt:  'bg-gray-100 text-gray-600',
-    pdf:  'bg-red-100 text-red-700',
-    docx: 'bg-indigo-100 text-indigo-700',
-    fb2:  'bg-purple-100 text-purple-700',
-  }
-  return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-semibold ${styles[format]}`}>
-      {format.toUpperCase()}
-    </span>
-  )
 }
 
 function relativeDate(ts: number): string {
@@ -73,10 +58,11 @@ async function buildBook(id: string, name: string, ext: BookFormat, data: ArrayB
 
 export default function LibraryPage() {
   const navigate = useNavigate()
-  const { books, loading, loadBooks, addBook, removeBook } = useLibraryStore()
+  const { books, loading, loadBooks, addBook, updateBook, removeBook } = useLibraryStore()
   const [importing, setImporting] = useState(false)
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const enrichingBookIdsRef = useRef(new Set<string>())
 
   useEffect(() => { loadBooks() }, [loadBooks])
 
@@ -90,6 +76,36 @@ export default function LibraryPage() {
       })
     ).then(entries => setProgressMap(Object.fromEntries(entries)))
   }, [books])
+
+  useEffect(() => {
+    const booksNeedingCover = books.filter(book => book.format === 'epub' && !book.coverUri && !enrichingBookIdsRef.current.has(book.id))
+    if (!booksNeedingCover.length) return
+
+    let cancelled = false
+
+    const loadMissingCovers = async () => {
+      for (const book of booksNeedingCover) {
+        enrichingBookIdsRef.current.add(book.id)
+        try {
+          const data = await readFileAsArrayBuffer(book.filePath)
+          const meta = await parseEpubMeta(data)
+          if (!cancelled && meta.coverBase64) {
+            await updateBook(book.id, { coverUri: meta.coverBase64 })
+          }
+        } catch {
+          // Ignore books whose metadata cannot be read; they will keep the fallback icon.
+        } finally {
+          enrichingBookIdsRef.current.delete(book.id)
+        }
+      }
+    }
+
+    void loadMissingCovers()
+
+    return () => {
+      cancelled = true
+    }
+  }, [books, updateBook])
 
   async function handleWebFile(files: FileList | null) {
     if (!files?.length) return
@@ -147,8 +163,7 @@ export default function LibraryPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-[var(--app-gutter)] pb-4 flex-shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingTop: 'calc(1rem + var(--safe-top))' }}>
         <div className="min-w-0 pt-1">
-          <h1 className="text-2xl font-bold tracking-tight">Lekto</h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>Fast reading, tuned for small screens.</p>
+          <h1 className="text-2xl font-bold tracking-tight">My Books</h1>
         </div>
         
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -212,7 +227,7 @@ export default function LibraryPage() {
                   style={{ backgroundColor: book.coverUri ? undefined : color + '22', border: `1.5px solid ${color}33` }}>
                   {book.coverUri
                     ? <img src={book.coverUri} alt={book.title} className="w-full h-full object-cover" />
-                    : <FontAwesomeIcon icon={book.format === 'epub' ? faBookOpen : faFile} style={{ color }} />}
+                    : <FileTypeIcon format={book.format} className="text-[2rem]" title={`${book.format.toUpperCase()} cover icon`} />}
                 </div>
 
                 {/* Info */}
@@ -221,14 +236,13 @@ export default function LibraryPage() {
                   <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     {book.author || 'Unknown author'} · {relativeDate(book.addedAt)}
                   </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    {formatBadge(book.format)}
-                    {pct >= 0 && (
+                  {pct >= 0 && (
+                    <div className="flex items-center gap-2 mt-2">
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                         {Math.floor(pct * 100)}% complete
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                   {/* Progress bar */}
                   {pct > 0 && (
                     <div className="mt-2 h-0.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--surface-2)' }}>

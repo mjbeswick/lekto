@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, type CSSProperties } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAngleLeft, faAngleRight, faBolt } from '@fortawesome/free-solid-svg-icons'
 import ReactMarkdown from 'react-markdown'
@@ -8,6 +8,11 @@ import { getReadingPosition, setReadingPosition } from '../../utils/positionSync
 import { getReaderFontStack } from '../../utils/readerFonts'
 
 const SPREAD_MIN_ASPECT_RATIO = 5 / 4
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+}
 
 // Rough chars-per-page estimate based on font size and column count
 function charsPerPage(fontSize: number, columns = 1): number {
@@ -44,22 +49,25 @@ interface Props {
   onWordTap?: () => void
 }
 
-function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark, maxWidth }: {
+function PageColumn({ text, ff, fontSize, lineHeight, paragraphSpacing, contentRef, isDark, maxWidth }: {
   text: string
   ff: string
   fontSize: number
   lineHeight: number
+  paragraphSpacing: number
   contentRef?: React.Ref<HTMLDivElement>
   isDark?: boolean
   maxWidth?: boolean
 }) {
+  const proseStyle = { '--reader-paragraph-spacing': `${paragraphSpacing}em` } as CSSProperties
+
   return (
     <div
       ref={contentRef}
       className="flex-1 overflow-hidden px-4 py-4 sm:px-8 sm:py-6 flex flex-col"
       style={{ fontFamily: ff, fontSize, lineHeight }}
     >
-      <div className={`mx-auto w-full prose prose-base sm:prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}>
+      <div className={`reader-prose mx-auto w-full prose prose-base sm:prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`} style={proseStyle}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
       </div>
     </div>
@@ -67,7 +75,7 @@ function PageColumn({ text, ff, fontSize, lineHeight, contentRef, isDark, maxWid
 }
 
 export default function PaginatedReader({ content, initialPage = 0, onProgressChange, onWordTap }: Props) {
-  const { fontSize, fontFamily, lineHeight, theme, maxWidth } = useAppStore()
+  const { fontSize, fontFamily, lineHeight, paragraphSpacing, theme, maxWidth } = useAppStore()
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -167,6 +175,22 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
     return () => clearTimeout(t)
   }, [isSpread])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        goTo(page - stepRef.current)
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        goTo(page + stepRef.current)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [goTo, page])
+
   const ff = getReaderFontStack(fontFamily)
 
   // Spread display: current spread covers pages [page, page+1]
@@ -187,10 +211,10 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {isSpread ? (
           <>
-            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
+            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} paragraphSpacing={paragraphSpacing} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
             {/* Book spine */}
             <div className="flex-shrink-0 w-px self-stretch my-8" style={{ backgroundColor: 'var(--border)' }} />
-            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
+            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} paragraphSpacing={paragraphSpacing} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
           </>
         ) : (
           <PageColumn
@@ -199,6 +223,7 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
             ff={ff}
             fontSize={fontSize}
             lineHeight={lineHeight}
+            paragraphSpacing={paragraphSpacing}
             isDark={theme === 'dark' || theme === 'amoled'}
             maxWidth={maxWidth}
           />

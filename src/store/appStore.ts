@@ -8,6 +8,7 @@ interface AppState {
   fontSize: number
   fontFamily: string
   lineHeight: number
+  paragraphSpacing: number
   maxWidth: boolean
   defaultWpm: number
   wordLengthScaling: boolean
@@ -19,6 +20,7 @@ interface AppState {
   setFontSize: (n: number) => void
   setFontFamily: (f: string) => void
   setLineHeight: (n: number) => void
+  setParagraphSpacing: (n: number) => void
   setMaxWidth: (v: boolean) => void
   setDefaultWpm: (n: number) => void
   setWordLengthScaling: (v: boolean) => void
@@ -35,6 +37,7 @@ export const useAppStore = create<AppState>()(
       fontSize: 18,
       fontFamily: 'serif',
       lineHeight: 1.7,
+      paragraphSpacing: 1,
       maxWidth: true,
       defaultWpm: 300,
       wordLengthScaling: true,
@@ -46,6 +49,7 @@ export const useAppStore = create<AppState>()(
       setFontSize: (fontSize) => set({ fontSize }),
       setFontFamily: (fontFamily) => set({ fontFamily }),
       setLineHeight: (lineHeight) => set({ lineHeight }),
+      setParagraphSpacing: (paragraphSpacing) => set({ paragraphSpacing }),
       setMaxWidth: (maxWidth) => set({ maxWidth }),
       setDefaultWpm: (defaultWpm) => set({ defaultWpm }),
       setWordLengthScaling: (wordLengthScaling) => set({ wordLengthScaling }),

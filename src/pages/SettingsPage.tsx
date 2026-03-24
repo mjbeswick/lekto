@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faSun, faMoon, faCircleHalfStroke, faMobileScreen } from '@fortawesome/free-solid-svg-icons'
 import { useAppStore } from '../store/appStore'
+import { useReaderModeStore } from '../hooks/useReaderMode'
 import type { Theme } from '../types'
 import HeaderIconButton from '../components/HeaderIconButton'
 import { READER_FONTS } from '../utils/readerFonts'
@@ -27,12 +28,14 @@ export default function SettingsPage() {
   const {
     theme, setTheme, accentColor, setAccentColor,
     fontSize, setFontSize, fontFamily, setFontFamily, lineHeight, setLineHeight,
+    paragraphSpacing, setParagraphSpacing,
     maxWidth, setMaxWidth,
     defaultWpm, setDefaultWpm, wordLengthScaling, setWordLengthScaling,
     rsvpChunkLetters, setRsvpChunkLetters,
     rsvpShowContext, setRsvpShowContext,
     rsvpFontSize, setRsvpFontSize,
   } = useAppStore()
+  const { layout, setLayout } = useReaderModeStore()
 
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
@@ -47,6 +50,34 @@ export default function SettingsPage() {
         className="flex-1 overflow-y-auto px-[var(--app-gutter)] pb-8"
         style={{ paddingBottom: 'calc(2rem + var(--safe-bottom))', WebkitOverflowScrolling: 'touch' }}
       >
+      <section className="mb-8">
+        <h2 className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Reading layout</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setLayout('scroll')}
+            className="rounded-xl border-2 px-4 py-3 text-left transition-colors"
+            style={{
+              borderColor: layout === 'scroll' ? 'var(--reader-accent)' : 'var(--border)',
+              color: layout === 'scroll' ? 'var(--reader-accent)' : 'var(--reader-fg)',
+            }}
+          >
+            <div className="text-sm font-medium">Scroll</div>
+            <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>Continuous reading for supported books</div>
+          </button>
+          <button
+            onClick={() => setLayout('pages')}
+            className="rounded-xl border-2 px-4 py-3 text-left transition-colors"
+            style={{
+              borderColor: layout === 'pages' ? 'var(--reader-accent)' : 'var(--border)',
+              color: layout === 'pages' ? 'var(--reader-accent)' : 'var(--reader-fg)',
+            }}
+          >
+            <div className="text-sm font-medium">Pages</div>
+            <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>Paginated layout for supported books</div>
+          </button>
+        </div>
+      </section>
+
       <section className="mb-8">
         <h2 className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Theme</h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -113,6 +144,11 @@ export default function SettingsPage() {
         <label className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm">Line height: {lineHeight}</span>
           <input type="range" min={1.2} max={2.4} step={0.1} value={lineHeight} onChange={e => setLineHeight(Number(e.target.value))}
+            className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
+        </label>
+        <label className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm">Paragraph spacing: {paragraphSpacing.toFixed(1)}em</span>
+          <input type="range" min={0} max={2.4} step={0.1} value={paragraphSpacing} onChange={e => setParagraphSpacing(Number(e.target.value))}
             className="w-full sm:w-40" style={{ accentColor: 'var(--reader-accent)' }} />
         </label>
         <div className="flex items-center justify-between mt-4">
