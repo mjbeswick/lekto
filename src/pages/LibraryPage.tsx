@@ -142,8 +142,8 @@ export default function LibraryPage() {
 
   const visibleBooks = selectedId === null ? books : books.filter(book => book.collectionId === selectedId)
   const collectionName = selectedId === null
-    ? 'My Books'
-    : (collections.find(collection => collection.id === selectedId)?.name ?? 'My Books')
+    ? 'All Books'
+    : (collections.find(collection => collection.id === selectedId)?.name ?? 'All Books')
 
   const sortedVisibleBooks = [...visibleBooks].sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))
   const continueBook = sortedVisibleBooks.find(book => {
@@ -378,7 +378,7 @@ export default function LibraryPage() {
               </section>
             ) : (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+                <div className="flex flex-nowrap items-center justify-between gap-3 pb-4">
                   <div>
                     <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
                       {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
