@@ -378,7 +378,7 @@ export default function LibraryPage() {
               </section>
             ) : (
               <>
-                <div className="flex flex-nowrap items-center justify-between gap-3 pb-4">
+                <div className="flex flex-nowrap items-center gap-3 pb-4">
                   <div>
                     <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
                       {visibleBooks.length} {visibleBooks.length === 1 ? 'book' : 'books'}
