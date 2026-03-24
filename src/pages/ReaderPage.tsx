@@ -342,7 +342,7 @@ export default function ReaderPage() {
 
       <div
         className="flex-1 min-h-0 overflow-hidden transition-[padding-top] duration-200"
-        style={{ paddingTop: headerVisible ? headerOffset : 0 }}
+        style={{ paddingTop: fullscreenHeaderAutohide ? 0 : headerOffset }}
       >
         {mode === 'speed' ? (
           <SpeedReaderView text={plainText || stripMarkdown(mdContent)} extracting={extracting} />
