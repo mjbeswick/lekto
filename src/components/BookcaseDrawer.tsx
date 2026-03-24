@@ -63,7 +63,7 @@ export default function CollectionDrawer({ open, onClose }: Props) {
 
       {/* Drawer panel */}
       <div
-        className={`fixed top-0 left-0 h-full z-50 w-full max-w-[var(--panel-width)] flex flex-col shadow-2xl transition-transform duration-200 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 h-full z-50 w-full max-w-[var(--panel-width)] flex flex-col transition-transform duration-200 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
         style={{
           backgroundColor: 'var(--reader-bg)',
           color: 'var(--reader-fg)',
