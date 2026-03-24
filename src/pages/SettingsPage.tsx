@@ -51,7 +51,7 @@ export default function SettingsPage() {
       </div>
 
       <div
-        className="flex-1 overflow-y-auto px-[var(--app-gutter)] pb-8"
+        className="flex-1 overflow-y-auto px-[var(--app-gutter)] pb-8 pt-4"
         style={{ paddingBottom: 'calc(2rem + var(--safe-bottom))', WebkitOverflowScrolling: 'touch' }}
       >
       <section className="mb-8">
