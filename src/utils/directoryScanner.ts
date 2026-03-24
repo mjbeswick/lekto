@@ -47,6 +47,63 @@ async function buildMeta(
   return { title, author, coverUri }
 }
 
+function stableWebDirectoryBookId(sourceId: string, relativePath: string): string {
+  const bytes = new TextEncoder().encode(relativePath)
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+  return `${sourceId}:${hex}`
+}
+
+async function collectNativeFilePaths(rootPath: string): Promise<string[]> {
+  let entries: Array<string | { name: string; type?: string }> = []
+  try {
+    const result = await Filesystem.readdir({ path: rootPath })
+    entries = result.files as Array<string | { name: string; type?: string }>
+  } catch {
+    return []
+  }
+
+  const collected: string[] = []
+
+  for (const entry of entries) {
+    const name = typeof entry === 'string' ? entry : entry.name
+    const type = typeof entry === 'string' ? undefined : entry.type
+    const fullPath = `${rootPath}/${name}`
+
+    if (type === 'directory') {
+      collected.push(...await collectNativeFilePaths(fullPath))
+      continue
+    }
+
+    if (!type || type === 'file') collected.push(fullPath)
+  }
+
+  return collected
+}
+
+async function collectWebFiles(
+  handle: FileSystemDirectoryHandle,
+  prefix = '',
+): Promise<Array<{ relativePath: string; file: File }>> {
+  const collected: Array<{ relativePath: string; file: File }> = []
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for await (const [name, entry] of (handle as any).entries()) {
+    const relativePath = prefix ? `${prefix}/${name as string}` : (name as string)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((entry as any).kind === 'directory') {
+      collected.push(...await collectWebFiles(entry as FileSystemDirectoryHandle, relativePath))
+      continue
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((entry as any).kind !== 'file') continue
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const file: File = await (entry as any).getFile()
+    collected.push({ relativePath, file })
+  }
+
+  return collected
+}
+
 // ─── Native ──────────────────────────────────────────────────────────────────
 
 /**
@@ -84,21 +141,21 @@ export async function pickAndScanNativeDirectory(
 export async function rescanNativeDirectory(
   source: DirectorySource,
 ): Promise<{ source: DirectorySource; books: Book[] } | null> {
-  let entries: { name: string }[]
-  try {
-    const result = await Filesystem.readdir({ path: source.path })
-    entries = result.files.map(f => ({ name: typeof f === 'string' ? f : f.name }))
-  } catch {
-    return null
+  const filePaths = await collectNativeFilePaths(source.path)
+  if (!filePaths.length) {
+    return {
+      source: { ...source, lastScanned: Date.now(), bookCount: 0 },
+      books: [],
+    }
   }
 
   const books: Book[] = []
 
-  for (const entry of entries) {
-    const ext = getExt(entry.name)
+  for (const filePath of filePaths) {
+    const fileName = filePath.split('/').pop() ?? filePath
+    const ext = getExt(fileName)
     if (!ext) continue
-    const filePath = `${source.path}/${entry.name}`
-    const fallbackTitle = entry.name.replace(/\.[^.]+$/, '')
+    const fallbackTitle = fileName.replace(/\.[^.]+$/, '')
 
     let data: ArrayBuffer
     try {
@@ -183,19 +240,16 @@ export async function rescanWebDirectory(
 
   await storeDirHandle(source.id, handle!)
 
+  const discoveredFiles = await collectWebFiles(handle!)
   const books: Book[] = []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for await (const [name, entry] of (handle as any).entries()) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((entry as any).kind !== 'file') continue
-    const ext = getExt(name as string)
+
+  for (const { relativePath, file } of discoveredFiles) {
+    const ext = getExt(relativePath)
     if (!ext) continue
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const file: File = await (entry as any).getFile()
     const buffer = await file.arrayBuffer()
-    const id = uuidv4()
+    const id = stableWebDirectoryBookId(source.id, relativePath)
     await storeWebFile(id, buffer)
-    const fallbackTitle = (name as string).replace(/\.[^.]+$/, '')
+    const fallbackTitle = relativePath.split('/').pop()?.replace(/\.[^.]+$/, '') ?? relativePath
     const meta = await buildMeta(ext, buffer, fallbackTitle)
     books.push({
       id,
