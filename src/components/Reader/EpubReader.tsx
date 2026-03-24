@@ -74,7 +74,7 @@ function applyTypographyTheme(
   })
 
   rendition.themes?.select(EPUB_THEME_NAME)
-  rendition.themes?.fontSize(fontScale)
+  rendition.themes?.override('font-size', fontScale, true)
   rendition.themes?.font(fontStack)
   rendition.themes?.override('line-height', `${lineHeight}`, true)
   rendition.themes?.override('color', textColor, true)
@@ -209,9 +209,16 @@ const EpubReader = forwardRef<EpubReaderHandle, Props>(function EpubReader(
     }, [epubBuffer, dimensions, isSpread, layout, pageBackgroundColor]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!renditionRef.current) return
-      applyTypographyTheme(renditionRef.current, fontSize, fontStack, lineHeight, paragraphSpacing, textColor, accentColor, removeBookMargins, pageBackgroundColor)
-    }, [fontSize, fontStack, lineHeight, paragraphSpacing, textColor, accentColor, removeBookMargins, pageBackgroundColor])
+    const rendition = renditionRef.current
+    if (!rendition) return
+
+    applyTypographyTheme(rendition, fontSize, fontStack, lineHeight, paragraphSpacing, textColor, accentColor, removeBookMargins, pageBackgroundColor)
+
+    if (!dimensions) return
+    requestAnimationFrame(() => {
+      rendition.resize(dimensions.width, dimensions.height)
+    })
+  }, [fontSize, fontStack, lineHeight, paragraphSpacing, textColor, accentColor, removeBookMargins, pageBackgroundColor, dimensions])
 
   return (
     <div className="relative w-full h-full">
