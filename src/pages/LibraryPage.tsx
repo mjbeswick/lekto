@@ -10,6 +10,7 @@ import { parseEpubMeta } from '../utils/epubParser'
 import { parseMdMeta } from '../utils/markdownMeta'
 import { isWeb, storeWebFile, webFilePath, b64ToBuffer } from '../utils/fileStore'
 import { getProgress } from '../db/progress'
+import HeaderIconButton from '../components/HeaderIconButton'
 
 const SUPPORTED = ['md', 'epub', 'txt']
 
@@ -143,23 +144,17 @@ export default function LibraryPage() {
             </button>
           )}
 
-          <button onClick={handleOpen} disabled={importing}
-            className="p-2 w-10 h-10 flex items-center justify-center rounded-xl transition-colors active:opacity-50 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
-            style={{ color: 'var(--text-muted)' }}
-            title="Open file">
+          <HeaderIconButton onClick={handleOpen} disabled={importing} title="Open file" aria-label="Open file" className="disabled:opacity-50">
             {importing ? (
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : (
-              <FontAwesomeIcon icon={faPlus} size="lg" />
+              <FontAwesomeIcon icon={faPlus} />
             )}
-          </button>
+          </HeaderIconButton>
           
-          <button onClick={() => navigate('/settings')} 
-            className="p-2 w-10 h-10 flex items-center justify-center rounded-xl transition-colors active:opacity-50 hover:bg-black/5 dark:hover:bg-white/10" 
-            style={{ color: 'var(--text-muted)' }} 
-            title="Settings">
-            <FontAwesomeIcon icon={faGear} size="lg" />
-          </button>
+          <HeaderIconButton onClick={() => navigate('/settings')} title="Settings" aria-label="Settings">
+            <FontAwesomeIcon icon={faGear} />
+          </HeaderIconButton>
         </div>
       </div>
 

@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronLeft, faSun, faMoon, faCircleHalfStroke, faMobileScreen } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faSun, faMoon, faCircleHalfStroke, faMobileScreen } from '@fortawesome/free-solid-svg-icons'
 import { useAppStore } from '../store/appStore'
 import type { Theme } from '../types'
+import HeaderIconButton from '../components/HeaderIconButton'
 
 const THEMES: { label: string; value: Theme; icon: any }[] = [
   { label: 'Light',  value: 'light',  icon: faSun },
@@ -40,9 +41,9 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen px-5 pb-8" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)', paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}>
       <div className="flex items-center gap-3 mb-8">
-        <button onClick={() => navigate(-1)} className="p-1" style={{ color: 'var(--reader-accent)' }}>
-          <FontAwesomeIcon icon={faChevronLeft} size="lg" />
-        </button>
+        <HeaderIconButton onClick={() => navigate(-1)} title="Back" aria-label="Back">
+          <FontAwesomeIcon icon={faArrowLeft} />
+        </HeaderIconButton>
         <h1 className="text-2xl font-bold">Settings</h1>
       </div>
 

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronLeft, faChevronRight, faFolder, faFolderOpen, faDownload, faBookOpen, faFile } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faChevronRight, faFolder, faFolderOpen, faDownload, faBookOpen, faFile } from '@fortawesome/free-solid-svg-icons'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { parseEpubMeta } from '../utils/epubParser'
 import { parseMdMeta } from '../utils/markdownMeta'
 import { useLibraryStore } from '../store/libraryStore'
 import type { Book, BookFormat } from '../types'
 import { v4 as uuidv4 } from 'uuid'
+import HeaderIconButton from '../components/HeaderIconButton'
 
 interface FileEntry {
   name: string
@@ -143,7 +144,9 @@ export default function FileBrowserPage() {
     <div className="flex flex-col h-screen" style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pb-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
-        <button onClick={() => navigate('/library')} className="text-orange-500 p-1"><FontAwesomeIcon icon={faChevronLeft} size="lg" /></button>
+        <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library">
+          <FontAwesomeIcon icon={faArrowLeft} />
+        </HeaderIconButton>
         <h1 className="text-lg font-bold">Browse Files</h1>
       </div>
 

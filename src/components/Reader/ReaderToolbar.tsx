@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowLeft, faBars, faBolt, faBook, faGear } from '@fortawesome/free-solid-svg-icons'
 import { useReaderModeStore } from '../../hooks/useReaderMode'
+import HeaderIconButton from '../HeaderIconButton'
 
 interface Props {
   title: string
@@ -18,13 +19,13 @@ export default function ReaderToolbar({ title, onTogglePanel }: Props) {
       style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
     >
       <div className="flex items-center gap-1 -ml-1">
-        <button onClick={() => navigate('/library')} className="p-1 w-8 flex items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+        <HeaderIconButton onClick={() => navigate('/library')} title="Back to library" aria-label="Back to library" className="w-8 h-8 rounded-lg">
           <FontAwesomeIcon icon={faArrowLeft} />
-        </button>
+        </HeaderIconButton>
         {onTogglePanel && mode === 'ebook' && (
-          <button onClick={onTogglePanel} className="p-1.5 w-8 flex items-center justify-center" title="Contents & Bookmarks" style={{ color: 'var(--text-muted)' }}>
+          <HeaderIconButton onClick={onTogglePanel} title="Contents and bookmarks" aria-label="Contents and bookmarks" className="w-8 h-8 rounded-lg">
             <FontAwesomeIcon icon={faBars} />
-          </button>
+          </HeaderIconButton>
         )}
       </div>
 
@@ -38,22 +39,23 @@ export default function ReaderToolbar({ title, onTogglePanel }: Props) {
       </div>
 
       <div className="flex gap-1 items-center">
-        <button
+        <HeaderIconButton
           onClick={toggleMode}
-          className="p-1.5 w-8 flex items-center justify-center rounded-lg transition-colors"
-          style={mode === 'speed' ? { backgroundColor: 'var(--reader-accent)', color: '#fff' } : { color: 'var(--text-muted)' }}
+          className="w-8 h-8 rounded-lg"
+          active={mode === 'speed'}
           title={mode === 'ebook' ? 'Switch to Speed Reader' : 'Switch to Ebook Reader'}
+          aria-label={mode === 'ebook' ? 'Switch to Speed Reader' : 'Switch to Ebook Reader'}
         >
           <FontAwesomeIcon icon={mode === 'ebook' ? faBolt : faBook} />
-        </button>
-        <button
+        </HeaderIconButton>
+        <HeaderIconButton
           onClick={() => navigate('/settings')}
-          className="p-1.5 w-8 flex items-center justify-center rounded-lg transition-colors"
-          style={{ color: 'var(--text-muted)' }}
+          className="w-8 h-8 rounded-lg"
           title="Settings"
+          aria-label="Settings"
         >
           <FontAwesomeIcon icon={faGear} />
-        </button>
+        </HeaderIconButton>
       </div>
     </div>
   )
