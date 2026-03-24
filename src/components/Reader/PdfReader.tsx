@@ -6,6 +6,8 @@ import { useAppStore } from '../../store/appStore'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl
 
+const SPREAD_MIN_ASPECT_RATIO = 5 / 4
+
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
@@ -31,11 +33,12 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
-  const paginatedCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const paginatedCanvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
   const pdfRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null)
   const currentPageRef = useRef(initialPage)
   const totalPagesRef = useRef(0)
   const [pageCount, setPageCount] = useState(0)
+  const [containerWidth, setContainerWidth] = useState(0)
   const [containerHeight, setContainerHeight] = useState(0)
   const removeBookMargins = useAppStore(s => s.removeBookMargins)
   const removePageBackground = useAppStore(s => s.removePageBackground)
@@ -45,17 +48,25 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
     const el = containerRef.current
     if (!el) return
     const ro = new ResizeObserver(entries => {
+      const nextWidth = Math.floor(entries[0].contentRect.width)
       const nextHeight = Math.floor(entries[0].contentRect.height)
+      if (nextWidth > 0) setContainerWidth(nextWidth)
       if (nextHeight > 0) setContainerHeight(nextHeight)
     })
     ro.observe(el)
     return () => ro.disconnect()
   }, [layout])
 
-  const renderPage = useCallback(async (pdf: pdfjsLib.PDFDocumentProxy, pageNum: number) => {
+  const isSpread = layout === 'pages'
+    && containerHeight > 0
+    && containerWidth > 0
+    && containerWidth / containerHeight >= SPREAD_MIN_ASPECT_RATIO
+  const step = isSpread ? 2 : 1
+
+  const renderPage = useCallback(async (pdf: pdfjsLib.PDFDocumentProxy, pageNum: number, canvasIndex = 0) => {
     const canvas = layout === 'scroll'
       ? canvasRefs.current[pageNum - 1]
-      : paginatedCanvasRef.current
+      : paginatedCanvasRefs.current[canvasIndex]
     if (!canvas) return
     const page = await pdf.getPage(pageNum)
     const viewport = page.getViewport({ scale: SCALE })
@@ -83,7 +94,8 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
 
   const navigateToPage = useCallback(async (page: number) => {
     if (!pdfRef.current || totalPagesRef.current < 1) return
-    const nextPage = Math.max(1, Math.min(page, totalPagesRef.current))
+    let nextPage = Math.max(1, Math.min(page, totalPagesRef.current))
+    if (isSpread && nextPage % 2 === 0) nextPage = Math.max(1, nextPage - 1)
     currentPageRef.current = nextPage
 
     if (layout === 'scroll') {
@@ -92,9 +104,18 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
       return
     }
 
-    await renderPage(pdfRef.current, nextPage)
+    await renderPage(pdfRef.current, nextPage, 0)
+    if (isSpread && nextPage + 1 <= totalPagesRef.current) {
+      await renderPage(pdfRef.current, nextPage + 1, 1)
+    } else {
+      const extraCanvas = paginatedCanvasRefs.current[1]
+      if (extraCanvas) {
+        extraCanvas.width = 0
+        extraCanvas.height = 0
+      }
+    }
     updateProgress(nextPage)
-  }, [layout, renderPage, scrollToPage, updateProgress])
+  }, [isSpread, layout, renderPage, scrollToPage, updateProgress])
 
   useImperativeHandle(ref, () => ({
     goToPage: (page: number) => {
@@ -112,7 +133,7 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
       totalPagesRef.current = pdf.numPages
       setPageCount(pdf.numPages)
       const startPage = Math.max(1, Math.min(initialPage, pdf.numPages))
-      currentPageRef.current = startPage
+      currentPageRef.current = isSpread && startPage % 2 === 0 ? Math.max(1, startPage - 1) : startPage
 
       // Extract TOC from PDF outline
       try {
@@ -146,13 +167,12 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
         })
       } else {
         // Paginated: only render current page
-        await renderPage(pdf, startPage)
-        updateProgress(startPage)
+        await navigateToPage(currentPageRef.current)
       }
     })
 
     return () => { cancelled = true }
-  }, [pdfBuffer, layout, initialPage, renderPage, scrollToPage, onTocReady, updateProgress]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pdfBuffer, isSpread, layout, initialPage, navigateToPage, renderPage, scrollToPage, onTocReady, updateProgress]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll mode: report progress on scroll
   useEffect(() => {
@@ -184,13 +204,13 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
 
   const goToPrev = useCallback(async () => {
     if (currentPageRef.current <= 1) return
-    await navigateToPage(currentPageRef.current - 1)
-  }, [navigateToPage])
+    await navigateToPage(currentPageRef.current - step)
+  }, [navigateToPage, step])
 
   const goToNext = useCallback(async () => {
     if (currentPageRef.current >= totalPagesRef.current) return
-    await navigateToPage(currentPageRef.current + 1)
-  }, [navigateToPage])
+    await navigateToPage(currentPageRef.current + step)
+  }, [navigateToPage, step])
 
   // Keyboard navigation (paginated mode)
   useEffect(() => {
@@ -231,12 +251,26 @@ const PdfReader = forwardRef<PdfReaderHandle, Props>(function PdfReader(
 
   // Paginated mode
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
+    <div ref={containerRef} className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
       <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
-        <canvas
-          ref={paginatedCanvasRef}
-          className="max-w-full max-h-full object-contain"
-        />
+        {isSpread ? (
+          <div className="flex h-full w-full items-center justify-center overflow-hidden">
+            <canvas
+              ref={(el) => { paginatedCanvasRefs.current[0] = el }}
+              className="max-w-[calc(50%-1px)] max-h-full object-contain"
+            />
+            <div className="my-8 h-auto w-px self-stretch" style={{ backgroundColor: 'var(--border)' }} />
+            <canvas
+              ref={(el) => { paginatedCanvasRefs.current[1] = el }}
+              className="max-w-[calc(50%-1px)] max-h-full object-contain"
+            />
+          </div>
+        ) : (
+          <canvas
+            ref={(el) => { paginatedCanvasRefs.current[0] = el }}
+            className="max-w-full max-h-full object-contain"
+          />
+        )}
       </div>
     </div>
   )
