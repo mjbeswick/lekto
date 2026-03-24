@@ -6,6 +6,7 @@ export default {
   },
   build: {
     mac: {
+      createDmg: false,
       icons: 'desktop/icon.iconset',
     },
     linux: {
