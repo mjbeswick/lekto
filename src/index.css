@@ -28,6 +28,7 @@ html, body {
   --font-reading: 'Merriweather', Georgia, serif;
   --shadow-soft: 0 14px 32px rgba(15, 23, 42, 0.08);
   --shadow-card: 0 28px 60px rgba(15, 23, 42, 0.08);
+  --shadow-tile: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 8px 18px rgba(15, 23, 42, 0.06);
   --library-hero-from: rgba(255, 255, 255, 0.76);
   --library-hero-to: rgba(255, 255, 255, 0.48);
   --library-surface-1: rgba(255, 255, 255, 0.42);
@@ -63,6 +64,7 @@ html, body {
   --library-border-soft: rgba(140, 132, 120, 0.18);
   --library-border-strong: rgba(140, 132, 120, 0.24);
   --library-overlay-border: rgba(255, 255, 255, 0.14);
+  --shadow-tile: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 10px 20px rgba(0, 0, 0, 0.24);
 }
 
 @keyframes rsvpEnter {
@@ -90,6 +92,7 @@ html, body {
   --library-border-soft: rgba(136, 136, 128, 0.18);
   --library-border-strong: rgba(136, 136, 128, 0.26);
   --library-overlay-border: rgba(255, 255, 255, 0.14);
+  --shadow-tile: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 22px rgba(0, 0, 0, 0.28);
 }
 
 .theme-sepia {
@@ -109,6 +112,7 @@ html, body {
   --library-border-soft: rgba(122, 96, 72, 0.16);
   --library-border-strong: rgba(122, 96, 72, 0.22);
   --library-overlay-border: rgba(59, 47, 30, 0.14);
+  --shadow-tile: 0 1px 0 rgba(255, 248, 236, 0.5) inset, 0 8px 16px rgba(59, 47, 30, 0.08);
 }
 
 body {

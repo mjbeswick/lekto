@@ -478,15 +478,15 @@ export default function LibraryPage() {
               </section>
             ) : (
               <section
-                className="rounded-[32px] border p-4 sm:p-5"
-                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-card)' }}
+                className="rounded-[28px] border p-3.5 sm:p-4"
+                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-soft)' }}
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
                       Shelf view
                     </p>
-                    <h2 className="mt-1 text-xl sm:text-2xl" style={{ fontFamily: 'var(--font-display)' }}>
+                    <h2 className="mt-0.5 text-lg sm:text-xl" style={{ fontFamily: 'var(--font-display)' }}>
                       {selectedId === null ? 'Recent and ready to read' : `${collectionName} collection`}
                     </h2>
                   </div>
@@ -494,7 +494,7 @@ export default function LibraryPage() {
                   <div className="inline-flex rounded-2xl border p-1" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--library-surface-3)' }}>
                     <button
                       onClick={() => setLibraryView('list')}
-                      className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold"
+                      className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[13px] font-semibold sm:text-sm"
                       style={libraryView === 'list'
                         ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
                         : { color: 'var(--text-muted)' }}
@@ -504,7 +504,7 @@ export default function LibraryPage() {
                     </button>
                     <button
                       onClick={() => setLibraryView('grid')}
-                      className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold"
+                      className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[13px] font-semibold sm:text-sm"
                       style={libraryView === 'grid'
                         ? { backgroundColor: 'var(--reader-fg)', color: 'var(--reader-bg)' }
                         : { color: 'var(--text-muted)' }}
@@ -516,7 +516,7 @@ export default function LibraryPage() {
                 </div>
 
                 {libraryView === 'grid' ? (
-                  <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                  <div className="grid grid-cols-2 gap-2.5 pt-1.5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {sortedVisibleBooks.map(book => {
                       const progress = progressMap[book.id] ?? 0
                       const color = titleColor(book.title)
@@ -524,42 +524,42 @@ export default function LibraryPage() {
                       return (
                         <article
                           key={book.id}
-                          className="overflow-hidden rounded-[24px] border p-1.5"
-                          style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)' }}
+                          className="overflow-hidden rounded-[22px] border p-1"
+                          style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)', boxShadow: 'var(--shadow-tile)' }}
                         >
                           <div className="relative">
                             <button
                               onClick={() => navigate(`/reader/${book.id}`)}
-                              className="relative block w-full overflow-hidden rounded-[18px] text-left"
+                              className="relative block w-full overflow-hidden rounded-[16px] text-left"
                               style={{ aspectRatio: '2 / 3' }}
                             >
                               {book.coverUri ? (
                                 <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                               ) : (
-                                <div className="flex h-full w-full items-center justify-center text-[2.3rem] sm:text-[2.45rem]" style={{ backgroundColor: `${color}1f` }}>
-                                  <FileTypeIcon format={book.format} className="text-[2.3rem] sm:text-[2.45rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                <div className="flex h-full w-full items-center justify-center text-[2rem] sm:text-[2.2rem]" style={{ backgroundColor: `${color}18` }}>
+                                  <FileTypeIcon format={book.format} className="text-[2rem] sm:text-[2.2rem]" title={`${book.format.toUpperCase()} cover icon`} />
                                 </div>
                               )}
 
-                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-2.5 pb-2.5 pt-7 text-white">
-                                <div className="flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/80 sm:text-[11px]">
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/66 via-black/16 to-transparent px-2 pb-2 pt-6 text-white">
+                                <div className="flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-white/80 sm:text-[10px]">
                                   <span>{book.format.toUpperCase()}</span>
                                   <span>{progressLabel(progress)}</span>
                                 </div>
                               </div>
 
                               {progress > 0 && (
-                                <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/20">
-                                  <div className="h-1.5 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+                                  <div className="h-1 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
                                 </div>
                               )}
                             </button>
 
-                            <div className="absolute right-1.5 top-1.5 sm:right-2 sm:top-2" onClick={e => e.stopPropagation()}>
+                            <div className="absolute right-1.5 top-1.5" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                                className="flex h-7 w-7 items-center justify-center rounded-xl text-[11px] text-white transition-opacity active:opacity-60 sm:h-8 sm:w-8 sm:text-xs"
-                                style={{ backgroundColor: 'rgba(15, 23, 42, 0.48)', backdropFilter: 'blur(10px)' }}
+                                className="flex h-6.5 w-6.5 items-center justify-center rounded-lg text-[10px] text-white transition-opacity active:opacity-60 sm:h-7 sm:w-7 sm:text-[11px]"
+                                style={{ backgroundColor: 'rgba(15, 23, 42, 0.42)', backdropFilter: 'blur(10px)' }}
                               >
                                 <FontAwesomeIcon icon={faEllipsisV} />
                               </button>
@@ -567,13 +567,13 @@ export default function LibraryPage() {
                             </div>
                           </div>
 
-                          <div className="px-1 pb-1 pt-2.5">
+                          <div className="px-1 pb-1 pt-2">
                             <button onClick={() => navigate(`/reader/${book.id}`)} className="block w-full text-left">
-                              <p className="line-clamp-2 text-[13px] font-semibold leading-snug sm:text-sm">{book.title}</p>
-                              <p className="mt-1 truncate text-[11px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>
+                              <p className="line-clamp-2 text-[12px] font-semibold leading-snug sm:text-[13px]">{book.title}</p>
+                              <p className="mt-0.5 truncate text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
                                 {book.author || 'Unknown author'}
                               </p>
-                              <p className="mt-1.5 text-[11px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>
+                              <p className="mt-1 text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
                                 {book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}
                               </p>
                             </button>
