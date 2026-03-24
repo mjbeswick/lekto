@@ -518,47 +518,47 @@ export default function LibraryPage() {
                 {libraryView === 'grid' ? (
                   <div className="grid grid-cols-2 gap-2.5 pt-1.5 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                     {sortedVisibleBooks.map(book => {
+                      const hasCover = Boolean(book.coverUri)
                       const progress = progressMap[book.id] ?? 0
                       const color = titleColor(book.title)
 
                       return (
                         <article
                           key={book.id}
-                          className="overflow-hidden rounded-[22px] border p-1"
+                          className="overflow-hidden rounded-[20px] border"
                           style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)', boxShadow: 'var(--shadow-tile)' }}
                         >
                           <div className="relative">
                             <button
                               onClick={() => navigate(`/reader/${book.id}`)}
-                              className="relative block w-full overflow-hidden rounded-[16px] text-left"
+                              className="relative block w-full overflow-hidden text-left"
                               style={{ aspectRatio: '2 / 3' }}
                             >
-                              {book.coverUri ? (
+                              {hasCover ? (
                                 <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                               ) : (
                                 <div
                                   className="relative flex h-full w-full flex-col justify-between overflow-hidden"
                                   style={{
-                                    background: `linear-gradient(180deg, ${color}22 0%, ${color}12 55%, rgba(15, 23, 42, 0.9) 100%)`,
+                                    background: `linear-gradient(180deg, ${color}20 0%, ${color}12 42%, rgba(15, 23, 42, 0.92) 100%)`,
                                   }}
                                 >
-                                  <div className="flex justify-center px-4 pt-6 text-[2rem] sm:text-[2.2rem]" style={{ color }}>
-                                    <FileTypeIcon format={book.format} className="text-[2rem] sm:text-[2.2rem]" title={`${book.format.toUpperCase()} cover icon`} />
-                                  </div>
-                                  <div className="px-3 pb-9">
-                                    <p className="line-clamp-3 text-[13px] font-semibold leading-snug text-white sm:text-[14px]">{book.title}</p>
-                                    {book.author && (
-                                      <p className="mt-1 truncate text-[10px] text-white/72 sm:text-[11px]">{book.author}</p>
-                                    )}
+                                  <div className="flex justify-center px-4 pt-5 text-[1.8rem] sm:text-[2rem]" style={{ color }}>
+                                    <FileTypeIcon format={book.format} className="text-[1.8rem] sm:text-[2rem]" title={`${book.format.toUpperCase()} cover icon`} />
                                   </div>
                                 </div>
                               )}
 
-                              <div className={`absolute inset-x-0 bottom-0 px-2 pb-2 text-white ${book.coverUri ? 'bg-gradient-to-t from-black/66 via-black/16 to-transparent pt-6' : 'bg-black/58 pt-2'}`}>
-                                <div className="flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-white/80 sm:text-[10px]">
+                              <div className={`absolute inset-x-0 bottom-0 px-3 pb-2.5 text-white ${hasCover ? 'bg-gradient-to-t from-black/78 via-black/34 to-transparent pt-12' : 'bg-gradient-to-t from-black/80 via-black/58 to-transparent pt-14'}`}>
+                                <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-white sm:text-[14px]">{book.title}</p>
+                                <p className="mt-1 truncate text-[10px] text-white/72 sm:text-[11px]">{book.author || 'Unknown author'}</p>
+                                <div className="mt-2 flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-white/80 sm:text-[10px]">
                                   <span>{book.format.toUpperCase()}</span>
                                   <span>{progressLabel(progress)}</span>
                                 </div>
+                                <p className="mt-1 text-[10px] text-white/62 sm:text-[11px]">
+                                  {book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}
+                                </p>
                               </div>
 
                               {progress > 0 && (
@@ -578,18 +578,6 @@ export default function LibraryPage() {
                               </button>
                               {menuOpenId === book.id && renderBookMenu(book)}
                             </div>
-                          </div>
-
-                          <div className="px-1 pb-1 pt-2">
-                            <button onClick={() => navigate(`/reader/${book.id}`)} className="block w-full text-left">
-                              <p className="line-clamp-2 text-[12px] font-semibold leading-snug sm:text-[13px]">{book.coverUri ? book.title : ' '}</p>
-                              <p className="mt-0.5 truncate text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                                {book.author || 'Unknown author'}
-                              </p>
-                              <p className="mt-1 text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                                {book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}
-                              </p>
-                            </button>
                           </div>
                         </article>
                       )
