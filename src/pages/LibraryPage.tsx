@@ -259,11 +259,6 @@ export default function LibraryPage() {
         style={{
           backgroundColor: 'var(--reader-bg)',
           color: 'var(--reader-fg)',
-          backgroundImage: [
-            'radial-gradient(circle at 8% 0%, rgba(249, 115, 22, 0.14), transparent 24%)',
-            'radial-gradient(circle at 90% 12%, rgba(59, 130, 246, 0.12), transparent 22%)',
-            'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0))',
-          ].join(', '),
         }}
       >
         <input
@@ -278,12 +273,10 @@ export default function LibraryPage() {
         <div className="h-full overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-[var(--app-gutter)] pb-8 pt-[calc(0.65rem+var(--safe-top))]">
             <section
-              className="overflow-hidden rounded-[24px] border px-4 py-3.5 sm:px-5 sm:py-4"
+              className="overflow-hidden rounded-xl border px-4 py-3.5 sm:px-5 sm:py-4"
               style={{
-                background: 'linear-gradient(135deg, var(--library-hero-from), var(--library-hero-to))',
-                borderColor: 'var(--library-border-soft)',
-                boxShadow: 'var(--shadow-soft)',
-                backdropFilter: 'blur(16px)',
+                backgroundColor: 'var(--surface)',
+                borderColor: 'var(--border)',
               }}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -297,7 +290,7 @@ export default function LibraryPage() {
                         Library
                       </p>
                     )}
-                    <h1 className="truncate text-[clamp(1.3rem,2.8vw,2rem)] leading-none" style={{ fontFamily: 'var(--font-display)' }}>
+                    <h1 className="truncate text-[clamp(1.3rem,2.8vw,2rem)] font-semibold leading-none">
                       {collectionName}
                     </h1>
                     {books.length === 0 ? (
@@ -330,8 +323,8 @@ export default function LibraryPage() {
                 <button
                   onClick={handleOpen}
                   disabled={importing}
-                  className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-[13px] font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60 sm:text-sm"
-                  style={{ backgroundColor: 'var(--reader-accent)', boxShadow: 'var(--shadow-soft)' }}
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60 sm:text-sm"
+                  style={{ backgroundColor: 'var(--reader-accent)' }}
                 >
                   {importing ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FontAwesomeIcon icon={faPlus} />}
                   {books.length === 0 ? 'Import your first book' : 'Add more books'}
@@ -340,7 +333,7 @@ export default function LibraryPage() {
                 {continueBook && books.length > 0 && (
                   <button
                     onClick={() => navigate(`/reader/${continueBook.id}`)}
-                    className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-[13px] font-semibold transition-colors active:opacity-70 sm:text-sm"
+                    className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition-colors active:opacity-70 sm:text-sm"
                     style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
                   >
                     <FontAwesomeIcon icon={faClock} />
@@ -352,13 +345,13 @@ export default function LibraryPage() {
               {books.length === 0 ? (
                 <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
                   <div
-                    className="rounded-[24px] border p-4 sm:p-5"
-                    style={{ backgroundColor: 'var(--library-surface-2)', borderColor: 'var(--library-border-strong)' }}
+                    className="rounded-xl border p-4 sm:p-5"
+                    style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
                   >
-                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-[22px] text-xl" style={{ backgroundColor: 'rgba(249, 115, 22, 0.12)', color: 'var(--reader-accent)' }}>
+                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl text-xl" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--reader-accent)' }}>
                       <FontAwesomeIcon icon={faBook} />
                     </div>
-                    <h2 className="text-lg sm:text-xl" style={{ fontFamily: 'var(--font-display)' }}>
+                    <h2 className="text-lg font-semibold sm:text-xl">
                       Start with the file you actually want to finish.
                     </h2>
                     <p className="mt-2 max-w-xl text-[13px] leading-5 sm:text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -367,8 +360,8 @@ export default function LibraryPage() {
                   </div>
 
                   <div
-                    className="rounded-[24px] border p-4 sm:p-5"
-                    style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)' }}
+                    className="rounded-xl border p-4 sm:p-5"
+                    style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
                   >
                     <p className="text-[13px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-muted)' }}>
                       Supported formats
@@ -378,7 +371,7 @@ export default function LibraryPage() {
                         <span
                           key={format}
                           className="rounded-full border px-2.5 py-1 text-[12px]"
-                          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--library-surface-3)' }}
+                          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface-2)' }}
                         >
                           {format}
                         </span>
@@ -391,8 +384,8 @@ export default function LibraryPage() {
 
             {loading ? (
               <section
-                className="flex min-h-[280px] items-center justify-center rounded-[32px] border"
-                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-card)' }}
+                className="flex min-h-[280px] items-center justify-center rounded-xl border"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 <div className="flex flex-col items-center gap-3" style={{ color: 'var(--text-muted)' }}>
                   <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
@@ -401,19 +394,19 @@ export default function LibraryPage() {
               </section>
             ) : books.length === 0 ? null : visibleBooks.length === 0 ? (
               <section
-                className="rounded-[32px] border px-6 py-10 text-center"
-                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-card)' }}
+                className="rounded-xl border px-6 py-10 text-center"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
-                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] text-4xl" style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)' }}>
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-xl text-4xl" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}>
                   <FontAwesomeIcon icon={faBook} />
                 </div>
-                <p className="mt-5 text-xl" style={{ fontFamily: 'var(--font-display)' }}>No books in this collection</p>
+                <p className="mt-5 text-xl font-semibold">No books in this collection</p>
                 <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>Import another file or move books here from the library menu.</p>
               </section>
             ) : (
               <section
-                className="rounded-[28px] border p-3.5 sm:p-4"
-                style={{ backgroundColor: 'var(--library-surface-1)', borderColor: 'var(--library-border-soft)', boxShadow: 'var(--shadow-soft)' }}
+                className="rounded-xl border p-3.5 sm:p-4"
+                style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
                   <div>
@@ -422,7 +415,7 @@ export default function LibraryPage() {
                     </p>
                   </div>
 
-                  <div className="inline-flex rounded-2xl border p-1" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--library-surface-3)' }}>
+                  <div className="inline-flex rounded-xl border p-1" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface-2)' }}>
                     <button
                       onClick={() => setLibraryView('list')}
                       className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[13px] font-semibold sm:text-sm"
@@ -457,73 +450,56 @@ export default function LibraryPage() {
                         <article key={book.id} className="relative">
                           <button
                             onClick={() => navigate(`/reader/${book.id}`)}
-                            className="group relative block w-full overflow-hidden rounded-[14px] border text-left"
+                            className="group block w-full overflow-hidden rounded-xl border text-left"
                             style={{
-                              aspectRatio: '2 / 3',
-                              backgroundColor: hasCover ? 'var(--library-surface-5)' : `${color}12`,
-                              borderColor: hasCover ? 'rgba(15, 23, 42, 0.08)' : `${color}30`,
-                              boxShadow: '0 12px 22px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(255, 255, 255, 0.4) inset',
+                              backgroundColor: 'var(--surface)',
+                              borderColor: 'var(--border)',
                             }}
                           >
-                            <div
-                              className="absolute inset-y-0 left-0 z-[1] w-[8px]"
-                              style={{
-                                background: hasCover
-                                  ? 'linear-gradient(180deg, rgba(255,255,255,0.24), rgba(15,23,42,0.12))'
-                                  : `linear-gradient(180deg, ${color}55, ${color}18)`,
-                                boxShadow: '1px 0 0 rgba(255,255,255,0.18) inset',
-                              }}
-                            />
-                            <div className="relative h-full w-full">
+                            <div className="flex h-full w-full flex-col" style={{ aspectRatio: '2 / 3' }}>
+                              <div className="relative flex-1 overflow-hidden" style={{ backgroundColor: hasCover ? 'var(--surface-2)' : `${color}12` }}>
                               {hasCover ? (
                                 <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                               ) : (
-                                <div
-                                  className="relative flex h-full w-full flex-col overflow-hidden"
-                                  style={{
-                                    backgroundColor: `${color}14`,
-                                  }}
-                                >
-                                  <div className="absolute inset-0 opacity-70" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0.04) 38%, rgba(15,23,42,0.18) 100%)' }} />
+                                <div className="flex h-full w-full flex-col items-center justify-center px-3">
                                   <div
-                                    className="relative mx-auto mt-6 flex h-16 w-16 items-center justify-center rounded-[18px] border text-[2.1rem] sm:h-[4.25rem] sm:w-[4.25rem] sm:text-[2.35rem]"
+                                    className="flex h-16 w-16 items-center justify-center rounded-lg border text-[2rem] sm:h-[4rem] sm:w-[4rem] sm:text-[2.25rem]"
                                     style={{
                                       color,
-                                      backgroundColor: 'rgba(255,255,255,0.32)',
-                                      borderColor: `${color}30`,
-                                      boxShadow: '0 8px 18px rgba(15, 23, 42, 0.08)',
+                                      backgroundColor: 'var(--surface)',
+                                      borderColor: `${color}40`,
                                     }}
                                   >
-                                    <FileTypeIcon format={book.format} className="text-[2.1rem] sm:text-[2.35rem]" title={`${book.format.toUpperCase()} cover icon`} />
+                                    <FileTypeIcon format={book.format} className="text-[2rem] sm:text-[2.25rem]" title={`${book.format.toUpperCase()} cover icon`} />
                                   </div>
-                                  <div className="relative mt-6 px-5 text-center">
-                                    <p className="line-clamp-3 text-[14px] font-semibold leading-snug sm:text-[15px]" style={{ color: 'rgba(20, 18, 14, 0.92)' }}>{book.title}</p>
-                                    <p className="mt-2 truncate text-[11px] sm:text-[12px]" style={{ color: 'rgba(20, 18, 14, 0.6)' }}>{book.author || 'Unknown author'}</p>
+                                  <div className="mt-4 text-center">
+                                    <p className="line-clamp-2 text-[13px] font-semibold leading-snug sm:text-[14px]" style={{ color: 'var(--reader-fg)' }}>{book.title}</p>
+                                    <p className="mt-1 truncate text-[11px] sm:text-[12px]" style={{ color: 'var(--text-muted)' }}>{book.author || 'Unknown author'}</p>
                                   </div>
                                 </div>
                               )}
+                              </div>
 
                               <div
-                                className="absolute inset-x-0 bottom-0 px-3 pb-2.5 pt-3 text-white"
+                                className="border-t px-2.5 py-2 text-[10px] sm:text-[11px]"
                                 style={{
-                                  backgroundColor: hasCover ? 'rgba(15, 23, 42, 0.84)' : 'rgba(15, 23, 42, 0.78)',
-                                  backdropFilter: hasCover ? 'blur(10px)' : undefined,
-                                  borderTop: hasCover ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.06)',
+                                  borderColor: 'var(--border)',
+                                  backgroundColor: 'var(--surface)',
                                 }}
                               >
-                                {hasCover && <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-white sm:text-[14px]">{book.title}</p>}
-                                {hasCover && <p className="mt-1 truncate text-[10px] text-white/72 sm:text-[11px]">{book.author || 'Unknown author'}</p>}
-                                <div className="mt-2 flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] text-white/80 sm:text-[10px]">
+                                {hasCover && <p className="line-clamp-2 text-[13px] font-semibold leading-snug">{book.title}</p>}
+                                {hasCover && <p className="mt-1 truncate text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>{book.author || 'Unknown author'}</p>}
+                                <div className="mt-1.5 flex items-center justify-between gap-2 text-[9px] font-medium uppercase tracking-[0.1em] sm:text-[10px]" style={{ color: 'var(--text-muted)' }}>
                                   <span>{book.format.toUpperCase()}</span>
                                   <span>{progressLabel(progress)}</span>
                                 </div>
-                                <p className="mt-1 text-[10px] text-white/62 sm:text-[11px]">
+                                <p className="mt-1 text-[10px] sm:text-[11px]" style={{ color: 'var(--text-muted)' }}>
                                   {book.lastOpenedAt ? `Opened ${relativeDate(book.lastOpenedAt)}` : `Added ${relativeDate(book.addedAt)}`}
                                 </p>
                               </div>
 
                               {progress > 0 && (
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+                                <div className="h-1" style={{ backgroundColor: 'var(--surface-2)' }}>
                                   <div className="h-1 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
                                 </div>
                               )}
@@ -533,8 +509,8 @@ export default function LibraryPage() {
                           <div className="absolute right-1.5 top-1.5" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                              className="flex h-6.5 w-6.5 items-center justify-center rounded-lg text-[10px] text-white transition-opacity active:opacity-60 sm:h-7 sm:w-7 sm:text-[11px]"
-                              style={{ backgroundColor: 'rgba(15, 23, 42, 0.42)', backdropFilter: 'blur(10px)' }}
+                              className="flex h-7 w-7 items-center justify-center rounded-md border text-[10px] transition-opacity active:opacity-60 sm:text-[11px]"
+                              style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                             >
                               <FontAwesomeIcon icon={faEllipsisV} />
                             </button>
@@ -553,13 +529,13 @@ export default function LibraryPage() {
                       return (
                         <article
                           key={book.id}
-                          className="flex items-center gap-3 rounded-[26px] border px-3 py-3 sm:gap-4 sm:px-4"
-                          style={{ backgroundColor: 'var(--library-surface-4)', borderColor: 'var(--library-border-strong)' }}
+                          className="flex items-center gap-3 rounded-xl border px-3 py-3 sm:gap-4 sm:px-4"
+                          style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
                         >
                           <button
                             onClick={() => navigate(`/reader/${book.id}`)}
-                            className="flex w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-[18px] border sm:w-16"
-                            style={{ aspectRatio: '2 / 3', backgroundColor: book.coverUri ? undefined : `${color}1f`, borderColor: `${color}3d` }}
+                            className="flex w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border sm:w-16"
+                            style={{ aspectRatio: '2 / 3', backgroundColor: book.coverUri ? 'var(--surface-2)' : `${color}1a`, borderColor: 'var(--border)' }}
                           >
                             {book.coverUri ? (
                               <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
@@ -590,8 +566,8 @@ export default function LibraryPage() {
                           <div className="relative flex-shrink-0">
                             <button
                               onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                              className="flex h-10 w-10 items-center justify-center rounded-2xl transition-opacity active:opacity-60"
-                              style={{ backgroundColor: 'var(--library-surface-5)', color: 'var(--text-muted)' }}
+                              className="flex h-10 w-10 items-center justify-center rounded-lg border transition-opacity active:opacity-60"
+                              style={{ backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                             >
                               <FontAwesomeIcon icon={faEllipsisV} />
                             </button>
