@@ -59,14 +59,19 @@ function PageColumn({ text, ff, fontSize, lineHeight, paragraphSpacing, contentR
   isDark?: boolean
   maxWidth?: boolean
 }) {
-  const proseStyle = { '--reader-paragraph-spacing': `${paragraphSpacing}em` } as CSSProperties
+  const proseStyle = {
+    '--reader-paragraph-spacing': `${paragraphSpacing}em`,
+    fontFamily: ff,
+    fontSize: `${fontSize}px`,
+    lineHeight,
+  } as CSSProperties
   const { removeBookMargins, removePageBackground } = useAppStore()
 
   return (
     <div
       ref={contentRef}
       className={`flex flex-1 flex-col overflow-hidden ${removeBookMargins ? 'px-0 py-0 sm:px-0 sm:py-0' : 'px-4 pb-4 pt-0 sm:px-8 sm:pb-6 sm:pt-0'}`}
-      style={{ fontFamily: ff, fontSize, lineHeight, backgroundColor: removePageBackground ? 'transparent' : 'var(--reader-page-bg)' }}
+      style={{ backgroundColor: removePageBackground ? 'transparent' : 'var(--reader-page-bg)' }}
     >
       <div className={`reader-prose mx-auto w-full prose prose-base sm:prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`} style={proseStyle}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>

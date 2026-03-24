@@ -87,11 +87,16 @@ export default function MarkdownReader({ content, initialOffset = 0, onProgressC
   }
 
   const ff = getReaderFontStack(fontFamily)
-  const proseStyle = { '--reader-paragraph-spacing': `${paragraphSpacing}em` } as CSSProperties
+  const proseStyle = {
+    '--reader-paragraph-spacing': `${paragraphSpacing}em`,
+    fontFamily: ff,
+    fontSize: `${fontSize}px`,
+    lineHeight,
+  } as CSSProperties
 
   return (
     <>
-      <div ref={containerRef} className="h-full overflow-y-auto" style={{ fontFamily: ff, fontSize, lineHeight }}>
+      <div ref={containerRef} className="h-full overflow-y-auto">
         <div
           className={`mx-auto min-h-full w-full ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`}
           style={{ backgroundColor: removePageBackground ? 'transparent' : 'var(--reader-page-bg)' }}
