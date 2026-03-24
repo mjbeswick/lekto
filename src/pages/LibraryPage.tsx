@@ -323,25 +323,25 @@ export default function LibraryPage() {
         />
 
         <div
-          className="border-b flex-shrink-0 px-[var(--app-gutter)] py-3 flex items-center justify-between gap-3 flex-wrap"
-          style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.75rem + var(--safe-top))' }}
+          className="border-b flex-shrink-0 px-[var(--app-gutter)] py-2.5 flex items-center justify-between gap-3"
+          style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)', paddingTop: 'calc(0.65rem + var(--safe-top))' }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <HeaderIconButton onClick={() => setDrawerOpen(true)} title="Collections" aria-label="Manage collections">
+            <HeaderIconButton onClick={() => setDrawerOpen(true)} title="Collections" aria-label="Manage collections" className="h-10 w-10 rounded-xl text-[15px] sm:h-10 sm:w-10 sm:rounded-xl">
               <FontAwesomeIcon icon={faBars} />
             </HeaderIconButton>
-            <h1 className="max-w-full font-semibold truncate" style={{ fontSize: 'clamp(1rem, 2vw, 1.25rem)' }}>
+            <h1 className="max-w-full truncate text-[15px] font-semibold sm:text-xl">
               {collectionName}
             </h1>
           </div>
 
           <div className="flex items-center gap-2">
             {isCapacitor() && (
-              <HeaderIconButton onClick={() => navigate('/browse')} title="Browse files" aria-label="Browse files">
+              <HeaderIconButton onClick={() => navigate('/browse')} title="Browse files" aria-label="Browse files" className="h-10 w-10 rounded-xl text-[15px] sm:h-10 sm:w-10 sm:rounded-xl">
                 <FontAwesomeIcon icon={faFolderOpen} />
               </HeaderIconButton>
             )}
-            <HeaderIconButton onClick={() => navigate('/settings')} title="Settings" aria-label="Settings">
+            <HeaderIconButton onClick={() => navigate('/settings')} title="Settings" aria-label="Settings" className="h-10 w-10 rounded-xl text-[15px] sm:h-10 sm:w-10 sm:rounded-xl">
               <FontAwesomeIcon icon={faGear} />
             </HeaderIconButton>
           </div>
@@ -349,38 +349,39 @@ export default function LibraryPage() {
 
         <div className="flex-1 min-h-0 overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom))]">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-[var(--app-gutter)] pb-8 pt-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={handleOpen}
-                disabled={importing}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60 sm:text-sm"
-                style={{ backgroundColor: 'var(--reader-accent)' }}
-              >
-                {importing ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FontAwesomeIcon icon={faPlus} />}
-                {books.length === 0 ? 'Import your first book' : 'Add more books'}
-              </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+                <button
+                  onClick={handleOpen}
+                  disabled={importing}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold text-white transition-opacity active:opacity-70 disabled:opacity-60 sm:justify-start sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                  style={{ backgroundColor: 'var(--reader-accent)' }}
+                >
+                  {importing ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <FontAwesomeIcon icon={faPlus} />}
+                  {books.length === 0 ? 'Import books' : 'Add books'}
+                </button>
 
-              <button
-                onClick={() => void handleAddFolder()}
-                disabled={dirScanning}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-opacity active:opacity-70 disabled:opacity-60 sm:text-sm"
-                style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
-              >
-                {dirScanning ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <FontAwesomeIcon icon={faFolderPlus} />}
-                Add folder
-              </button>
-
+                <button
+                  onClick={() => void handleAddFolder()}
+                  disabled={dirScanning}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[14px] font-semibold transition-opacity active:opacity-70 disabled:opacity-60 sm:justify-start sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
+                  style={{ backgroundColor: 'var(--surface)', color: 'var(--reader-fg)' }}
+                >
+                  {dirScanning ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <FontAwesomeIcon icon={faFolderPlus} />}
+                  Add folder
+                </button>
+              </div>
 
               {books.length > 0 && (
-                <div className="ml-auto flex flex-nowrap items-center gap-4">
-                  <p className="text-[12px] font-medium sm:text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                <div className="flex items-center justify-between gap-3 sm:ml-auto sm:justify-end sm:gap-4">
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--text-muted)' }}>
                     {filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'}
                   </p>
 
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                     <button
                       onClick={() => setLibraryView('list')}
-                      className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] font-semibold transition-all active:opacity-60 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition-all active:opacity-60 sm:rounded-xl sm:py-2 sm:text-sm"
                       style={libraryView === 'list'
                         ? { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--reader-fg)' }
                         : { backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
@@ -390,7 +391,7 @@ export default function LibraryPage() {
                     </button>
                     <button
                       onClick={() => setLibraryView('grid')}
-                      className="inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] font-semibold transition-all active:opacity-60 sm:text-sm"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-2xl border px-3 py-2.5 text-[13px] font-semibold transition-all active:opacity-60 sm:rounded-xl sm:py-2 sm:text-sm"
                       style={libraryView === 'grid'
                         ? { backgroundColor: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--reader-fg)' }
                         : { backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
