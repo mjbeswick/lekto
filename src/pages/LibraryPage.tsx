@@ -587,9 +587,6 @@ export default function LibraryPage() {
                                 </p>
                               </div>
 
-                              <div className="h-1 border-t" style={{ borderColor: 'var(--border)' }}>
-                                <div className="h-1 transition-[width]" style={{ width: `${progress * 100}%`, backgroundColor: color }} />
-                              </div>
                             </div>
                           </button>
 
