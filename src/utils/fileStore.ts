@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core'
 import { Filesystem } from '@capacitor/filesystem'
 import { Preferences } from '@capacitor/preferences'
 
-export const isWeb = () => !Capacitor.isNativePlatform()
+const isWeb = () => !Capacitor.isNativePlatform()
 
 // ─── Shared helper ────────────────────────────────────────────────────────────
 export function b64ToBuffer(b64: string): ArrayBuffer {

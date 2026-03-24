@@ -15,7 +15,9 @@ import type { Book, BookFormat } from '../types'
 import { parseDocxMeta } from '../utils/docxParser'
 import { parseEpubMeta } from '../utils/epubParser'
 import { parseFb2Meta } from '../utils/fb2Parser'
-import { b64ToBuffer, isWeb, readFileAsArrayBuffer, storeWebFile, webFilePath } from '../utils/fileStore'
+import { storeWebFile, webFilePath, b64ToBuffer, readFileAsArrayBuffer } from '../utils/fileStore'
+import { isWeb, isElectrobun, isCapacitor } from '../platform'
+import { rpcOpenFileDialog, rpcReadFile } from '../platform/electrobunRpc'
 import { parseMdMeta } from '../utils/markdownMeta'
 import { parsePdfMeta } from '../utils/pdfParser'
 
@@ -197,9 +199,30 @@ export default function LibraryPage() {
     setImporting(false)
   }
 
+  async function handleElectrobunOpen() {
+    setImporting(true)
+    try {
+      const { paths } = await rpcOpenFileDialog()
+      for (const filePath of paths) {
+        const name = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? 'unknown'
+        const lower = name.toLowerCase()
+        const ext = (lower.endsWith('.fb2.zip') ? 'fb2' : lower.split('.').pop()) as BookFormat
+        if (!SUPPORTED.includes(ext)) continue
+        const { data } = await rpcReadFile(filePath)
+        const buffer = b64ToBuffer(data)
+        const id = uuidv4()
+        await storeWebFile(id, buffer)
+        const book = await buildBook(id, name, ext, buffer, webFilePath(id))
+        await addBook({ ...book, collectionId: selectedId ?? undefined })
+      }
+    } catch (e) { console.error('electrobun file open error', e) }
+    setImporting(false)
+  }
+
   function handleOpen() {
-    if (isWeb()) fileInputRef.current?.click()
-    else void handleNativeOpen()
+    if (isElectrobun())   void handleElectrobunOpen()
+    else if (isWeb())     fileInputRef.current?.click()
+    else                  void handleNativeOpen()
   }
 
   function renderBookMenu(book: Book) {
@@ -280,7 +303,7 @@ export default function LibraryPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {!isWeb() && (
+            {isCapacitor() && (
               <HeaderIconButton onClick={() => navigate('/browse')} title="Browse files" aria-label="Browse files">
                 <FontAwesomeIcon icon={faFolderOpen} />
               </HeaderIconButton>
