@@ -565,7 +565,7 @@ export default function LibraryPage() {
                                   <img src={book.coverUri} alt={book.title} className="h-full w-full object-cover" />
                                 ) : (
                                   <div className="relative z-[2] flex h-full items-center justify-center p-3 text-center">
-                                    <p className="line-clamp-4 text-[12px] font-bold leading-tight text-white">{book.title}</p>
+                                    <p className="line-clamp-4 text-[14px] font-bold leading-tight text-white sm:text-[15px]">{book.title}</p>
                                   </div>
                                 )}
                               </div>
@@ -593,10 +593,10 @@ export default function LibraryPage() {
                           <div className="absolute right-1.5 top-1.5" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                              className="flex h-10 w-10 items-center justify-center rounded-lg transition-opacity active:opacity-60"
-                              style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                              className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity active:opacity-60"
+                              style={{ backgroundColor: 'color-mix(in srgb, var(--reader-bg) 72%, transparent)', color: 'color-mix(in srgb, var(--text-muted) 82%, transparent)', opacity: 0.82 }}
                             >
-                              <FontAwesomeIcon icon={faEllipsisV} />
+                              <FontAwesomeIcon icon={faEllipsisV} className="text-xs" />
                             </button>
                             {menuOpenId === book.id && renderBookMenu(book)}
                           </div>
@@ -628,7 +628,7 @@ export default function LibraryPage() {
 
                           <button onClick={() => navigate(`/reader/${book.id}`)} className="min-w-0 flex-1 text-left">
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                              <p className="truncate text-sm font-semibold sm:text-[15px]">{book.title}</p>
+                              <p className="truncate text-[15px] font-semibold sm:text-base">{book.title}</p>
                               <span className="rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ backgroundColor: `${color}1a`, color }}>
                                 {book.format}
                               </span>
@@ -647,10 +647,10 @@ export default function LibraryPage() {
                           <div className="relative flex-shrink-0">
                             <button
                               onClick={e => { e.stopPropagation(); setMenuOpenId(menuOpenId === book.id ? null : book.id) }}
-                              className="flex h-10 w-10 items-center justify-center rounded-lg transition-opacity active:opacity-60"
-                              style={{ backgroundColor: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                              className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity active:opacity-60"
+                              style={{ backgroundColor: 'color-mix(in srgb, var(--surface-2) 70%, transparent)', color: 'color-mix(in srgb, var(--text-muted) 82%, transparent)', opacity: 0.82 }}
                             >
-                              <FontAwesomeIcon icon={faEllipsisV} />
+                              <FontAwesomeIcon icon={faEllipsisV} className="text-xs" />
                             </button>
                             {menuOpenId === book.id && renderBookMenu(book)}
                           </div>
