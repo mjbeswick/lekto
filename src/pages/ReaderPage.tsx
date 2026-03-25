@@ -17,7 +17,7 @@ export default function ReaderPage() {
   const { bookId } = useParams<{ bookId: string }>()
   const READ_THRESHOLD_MS = 30_000
 
-  const { mode, layout, toggleMode } = useReaderModeStore()
+  const { mode, layout, toggleMode, ttsOpen, setTtsOpen } = useReaderModeStore()
   const {
     theme,
     removePageBackground,
@@ -235,18 +235,6 @@ export default function ReaderPage() {
       >
         {mode === 'speed' ? (
           <SpeedReaderView text={plainText} extracting={false} />
-        ) : mode === 'tts' ? (
-          <TtsReaderView
-            text={plainText}
-            extracting={false}
-            rate={ttsRate}
-            pitch={ttsPitch}
-            voiceUri={ttsVoiceURI}
-            onRateChange={setTtsRate}
-            onPitchChange={setTtsPitch}
-            onVoiceChange={(voiceUri) => setTtsVoiceURI(voiceUri ?? '')}
-            onProgress={(progress) => setReadingPosition(progress.fraction)}
-          />
         ) : content ? (
           layout === 'scroll' ? (
             <ScrollReader
@@ -265,6 +253,21 @@ export default function ReaderPage() {
             />
           )
         ) : null}
+
+        {ttsOpen && (
+          <TtsReaderView
+            text={plainText}
+            extracting={false}
+            rate={ttsRate}
+            pitch={ttsPitch}
+            voiceUri={ttsVoiceURI}
+            onRateChange={setTtsRate}
+            onPitchChange={setTtsPitch}
+            onVoiceChange={(voiceUri) => setTtsVoiceURI(voiceUri ?? '')}
+            onProgress={(progress) => setReadingPosition(progress.fraction)}
+            onClose={() => setTtsOpen(false)}
+          />
+        )}
       </div>
 
       <ContentPanel

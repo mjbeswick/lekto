@@ -12,7 +12,7 @@ interface Props {
 
 export default function ReaderToolbar({ title, onTogglePanel }: Props) {
   const navigate = useNavigate()
-  const { mode, setMode } = useReaderModeStore()
+  const { mode, setMode, ttsOpen, setTtsOpen } = useReaderModeStore()
   const theme = useAppStore(s => s.theme)
   const headerBg = theme === 'light' ? '#ffffff' : 'var(--surface)'
 
@@ -38,13 +38,13 @@ export default function ReaderToolbar({ title, onTogglePanel }: Props) {
 
       <div className="flex gap-2 items-center">
         <HeaderIconButton
-          onClick={() => setMode(mode === 'tts' ? 'ebook' : 'tts')}
+          onClick={() => setTtsOpen(!ttsOpen)}
           className="w-11 h-11 rounded-2xl sm:w-10 sm:h-10 sm:rounded-xl"
-          active={mode === 'tts'}
-          title={mode === 'tts' ? 'Switch to Ebook Reader' : 'Switch to Text-to-Speech'}
-          aria-label={mode === 'tts' ? 'Switch to Ebook Reader' : 'Switch to Text-to-Speech'}
+          active={ttsOpen}
+          title={ttsOpen ? 'Close Text-to-Speech' : 'Text-to-Speech'}
+          aria-label={ttsOpen ? 'Close Text-to-Speech' : 'Text-to-Speech'}
         >
-          <FontAwesomeIcon icon={mode === 'tts' ? faBook : faVolumeHigh} />
+          <FontAwesomeIcon icon={faVolumeHigh} />
         </HeaderIconButton>
         <HeaderIconButton
           onClick={() => setMode(mode === 'speed' ? 'ebook' : 'speed')}

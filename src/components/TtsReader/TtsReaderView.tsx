@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faBackwardStep,
@@ -9,6 +8,7 @@ import {
   faRotateLeft,
   faStop,
   faVolumeHigh,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { useTts, type TtsProgress } from '../../hooks/useTts'
 
@@ -22,6 +22,7 @@ interface Props {
   onPitchChange?: (pitch: number) => void
   onVoiceChange?: (voiceUri?: string) => void
   onProgress?: (progress: TtsProgress) => void
+  onClose?: () => void
   className?: string
 }
 
@@ -48,23 +49,17 @@ export default function TtsReaderView({
   onPitchChange,
   onVoiceChange,
   onProgress,
+  onClose,
   className,
 }: Props) {
   const tts = useTts({ text, rate, pitch, voiceUri, onProgress })
 
   const currentSentence = tts.currentSentence?.text || 'Add text to start listening.'
   const isActionDisabled = extracting || !tts.supported || tts.sentences.length === 0
-  const selectedVoice = useMemo(() => {
-    if (!voiceUri) return tts.selectedVoice
-    return tts.voices.find(voice => voice.voiceURI === voiceUri) ?? tts.selectedVoice
-  }, [tts.selectedVoice, tts.voices, voiceUri])
-  const displayedVoiceName = selectedVoice
-    ? `${selectedVoice.name}${selectedVoice.lang ? ` · ${selectedVoice.lang}` : ''}`
-    : 'Default voice'
 
   return (
     <div
-      className={`flex h-full min-h-0 flex-col overflow-hidden ${className ?? ''}`}
+      className={`fixed inset-0 z-50 flex flex-col overflow-hidden ${className ?? ''}`}
       style={{ backgroundColor: 'var(--reader-bg)', color: 'var(--reader-fg)' }}
     >
       <div className="h-1 flex-shrink-0" style={{ backgroundColor: 'var(--surface-2)' }}>
@@ -74,28 +69,31 @@ export default function TtsReaderView({
         />
       </div>
 
-      <div className="flex flex-1 min-h-0 flex-col gap-5 overflow-hidden px-[var(--app-gutter)] py-4 sm:py-6">
+      <div className="flex flex-1 min-h-0 flex-col gap-5 overflow-y-auto px-[var(--app-gutter)] py-4 sm:py-6" style={{ paddingTop: 'calc(1rem + var(--safe-top))' }}>
         <section className="rounded-3xl border p-4 sm:p-6" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em]" style={{ color: 'var(--text-muted)' }}>Text to Speech</p>
-              <h2 className="mt-1 text-lg font-semibold sm:text-xl">Speak the current text aloud</h2>
+              <div className="mt-1 flex items-center gap-2 text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                <span>{tts.status.toUpperCase()}</span>
+                <span>·</span>
+                <span>{formatProgress(tts.progress.fraction)}</span>
+              </div>
             </div>
-            <div className="text-right text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
-              <div>{tts.status.toUpperCase()}</div>
-              <div>{formatProgress(tts.progress.fraction)}</div>
-            </div>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border transition-opacity active:opacity-60"
+                style={{ borderColor: 'var(--border)' }}
+                aria-label="Close TTS"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            )}
           </div>
 
-          <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            {extracting
-              ? 'Extracting text for speech playback.'
-              : tts.supported
-              ? `Using ${displayedVoiceName}. ${tts.progress.isFinished ? 'Playback finished.' : 'Playback follows sentence boundaries and tracks the active word when the browser exposes boundary events.'}`
-              : 'Speech synthesis is not available in this browser.'}
-          </p>
-
-          <div className="mt-5 rounded-2xl border p-4" style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}>
+          <div className="mt-4 rounded-2xl border p-4" style={{ backgroundColor: 'var(--reader-bg)', borderColor: 'var(--border)' }}>
             <p className="text-[0.7rem] uppercase tracking-[0.35em]" style={{ color: 'var(--text-muted)' }}>Current sentence</p>
             <p className="mt-3 text-lg leading-relaxed sm:text-xl">{extracting ? 'Extracting text…' : currentSentence}</p>
             <div className="mt-4 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
