@@ -43,16 +43,6 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
 
-let measureCanvas: HTMLCanvasElement | null = null
-
-function canFitContextWord(word: string, fontSize: number, laneWidth: number): boolean {
-  if (!word || typeof document === 'undefined' || laneWidth <= 0) return false
-  measureCanvas ??= document.createElement('canvas')
-  const context = measureCanvas.getContext('2d')
-  if (!context) return false
-  context.font = `500 ${fontSize}px ${RSVP_FONT}`
-  return context.measureText(word).width <= laneWidth
-}
 
 export default function SpeedReaderView({ text, extracting = false }: Props) {
   const defaultWpm = useAppStore(s => s.defaultWpm)
@@ -93,7 +83,6 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const showContext = rsvpShowContext && viewportWidth >= 700
   const stageWidth = Math.max(220, Math.min(viewportWidth - (isSmallScreen ? 24 : 96), isSmallScreen ? 360 : 720))
   const laneWidth = Math.min(stageWidth, isSmallScreen ? 320 : 440)
-  const sideLaneWidth = Math.max(0, (stageWidth - laneWidth) / 2 - (isSmallScreen ? 8 : 16))
   const smallScreenFontCap = Math.max(34, Math.min(52, viewportWidth * 0.145))
   const displayFontSize = isSmallScreen ? Math.min(rsvpFontSize, smallScreenFontCap) : rsvpFontSize
   const contextFontSize = Math.max(18, Math.round(displayFontSize * (isSmallScreen ? 0.48 : 0.54)))
@@ -270,14 +259,15 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
   const progress = tokens.length ? (index + 1) / tokens.length : 0
   const wordsRemaining = Math.max(0, tokens.length - index - 1)
   const timeRemainingS = wpm > 0 ? Math.ceil(wordsRemaining / wpm * 60) : 0
-  const previousWord = tokens[index - 1]?.word ?? ''
-  const nextWord = tokens[index + chunkWords.length]?.word ?? ''
-  const previousContext = showContext && canFitContextWord(previousWord, contextFontSize, sideLaneWidth)
-    ? `${previousWord} `
-    : ''
-  const nextContext = showContext && canFitContextWord(nextWord, contextFontSize, sideLaneWidth)
-    ? ` ${nextWord}`
-    : ''
+  const sentenceContext = (() => {
+    if (!showContext || tokens.length === 0) return null
+    let start = index
+    while (start > 0 && !tokens[start - 1].isSentenceEnd) start--
+    let end = index + chunkWords.length - 1
+    while (end < tokens.length - 1 && !tokens[end].isSentenceEnd) end++
+    const words = tokens.slice(start, end + 1).map(t => t.word)
+    return { words, currentStart: index - start, currentEnd: index + chunkWords.length - start }
+  })()
 
   useLayoutEffect(() => {
     if (!isSmallScreen || effectiveChunkLetters <= 1) return
@@ -373,28 +363,9 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
               ))}
 
               {/* Text container - centered vertically */}
-              <div data-text-container className="absolute inset-0 flex items-center justify-center px-2 sm:px-6" style={{ top: isSmallScreen ? '1.5rem' : '1.75rem', bottom: isSmallScreen ? '1.5rem' : '1.75rem' }}>
-                <div
-                  className="grid items-center w-full"
-                  style={{
-                    gridTemplateColumns: `minmax(0, 1fr) minmax(0, ${laneWidth}px) minmax(0, 1fr)`,
-                    columnGap: isSmallScreen ? '0.5rem' : '1rem',
-                  }}
-                >
-                  {/* Previous word */}
-                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'pre', textAlign: 'right', pointerEvents: 'none', userSelect: 'none' }}>
-                    {previousContext}
-                  </span>
-
-                  {/* Current chunk */}
-                  <div ref={chunkRef} data-current-chunk style={{ minWidth: 0, width: '100%' }}>
-                    <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={displayFontSize} />
-                  </div>
-
-                  {/* Next word */}
-                  <span style={{ fontSize: contextFontSize, fontFamily: RSVP_FONT, fontWeight: 500, letterSpacing: '0.02em', lineHeight: 1, color: 'var(--reader-fg)', opacity: showContext ? 0.28 : 0, whiteSpace: 'pre', textAlign: 'left', pointerEvents: 'none', userSelect: 'none' }}>
-                    {nextContext}
-                  </span>
+              <div data-text-container className="absolute inset-0 flex items-center justify-center" style={{ top: isSmallScreen ? '1.5rem' : '1.75rem', bottom: isSmallScreen ? '1.5rem' : '1.75rem' }}>
+                <div ref={chunkRef} data-current-chunk style={{ maxWidth: `${laneWidth}px`, width: '100%', display: 'flex', justifyContent: 'center' }}>
+                  <RsvpChunk words={chunkWords.length ? chunkWords : ['···']} fontSize={displayFontSize} />
                 </div>
               </div>
 
@@ -410,6 +381,20 @@ export default function SpeedReaderView({ text, extracting = false }: Props) {
               {/* Bottom guide line */}
               <div className="absolute bottom-3 w-full h-px" style={{ backgroundColor: 'var(--reader-accent)', opacity: 0.3 }} />
             </div>
+
+            {/* Sentence context strip */}
+            {sentenceContext && (
+              <div style={{ maxWidth: `${stageWidth}px`, width: '100%', textAlign: 'center', fontSize: `${contextFontSize}px`, fontFamily: RSVP_FONT, fontWeight: 500, lineHeight: 1.6, color: 'var(--reader-fg)', padding: '0 0.5rem' }}>
+                {sentenceContext.words.map((word, i) => {
+                  const isCurrent = i >= sentenceContext.currentStart && i < sentenceContext.currentEnd
+                  return (
+                    <span key={i} style={{ opacity: isCurrent ? 1 : 0.28, fontWeight: isCurrent ? 600 : 500 }}>
+                      {word}{i < sentenceContext.words.length - 1 ? ' ' : ''}
+                    </span>
+                  )
+                })}
+              </div>
+            )}
           </>
         )}
       </div>
