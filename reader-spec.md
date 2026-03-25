@@ -31,6 +31,7 @@
 ## Speed reader view
 - Displays one chunk of text at a time, centered on the screen
 - Focus point with RSVP (Rapid Serial Visual Presentation) technology for single word display with optimal reading position highlighting
+- RSVP context mode toggle to show surrounding words for improved comprehension
 - Adjustable WPM (words per minute) and chunk size controls
 - Progress bar, elapsed time, and time-remaining display
 - Context-word preview around the active chunk on larger screens
