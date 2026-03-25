@@ -14,14 +14,16 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
 }
 
-// Rough chars-per-page estimate based on font size and column count
-function charsPerPage(fontSize: number, columns = 1): number {
+// Rough chars-per-page estimate based on font size.
+// In spread mode the reader shows two pages simultaneously, so each page slot
+// still needs to fill a full column — do NOT divide by columns here.
+function charsPerPage(fontSize: number): number {
   const fs = Math.max(12, fontSize || 18)
-  return Math.round(800 * (18 / fs) / columns)
+  return Math.round(1800 * (18 / fs))
 }
 
 function splitHtmlIntoPages(html: string, fontSize: number, columns = 1): string[] {
-  const cpp = charsPerPage(fontSize, columns)
+  const cpp = charsPerPage(fontSize)
   // Split after each closing block-level tag, keeping the tag with its segment
   const segments = html.split(/(?<=<\/(?:p|h[1-6]|li|blockquote|pre|div)>)/)
   const pages: string[] = []
@@ -45,7 +47,7 @@ function splitHtmlIntoPages(html: string, fontSize: number, columns = 1): string
 }
 
 function splitIntoPages(text: string, fontSize: number, columns = 1): string[] {
-  const cpp = charsPerPage(fontSize, columns)
+  const cpp = charsPerPage(fontSize)
   const pages: string[] = []
   let remaining = text
 
