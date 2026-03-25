@@ -158,6 +158,14 @@ export async function epubToHtml(data: ArrayBuffer | string): Promise<string> {
     // Remove all <style> and <script> elements
     doc.querySelectorAll('style, script').forEach(el => el.remove())
 
+    // Replace <a> elements with <span> — internal EPUB links don't work in the
+    // paginated reader and prose-orange would otherwise style them as orange links
+    doc.querySelectorAll('a').forEach(a => {
+      const span = doc.createElement('span')
+      span.innerHTML = a.innerHTML
+      a.replaceWith(span)
+    })
+
     // Strip every class and style attribute from every element
     doc.querySelectorAll('[class], [style]').forEach(el => {
       el.removeAttribute('class')
