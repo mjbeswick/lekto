@@ -108,6 +108,78 @@ export async function extractEpubText(data: ArrayBuffer | string): Promise<strin
   return parts.join('\n\n')
 }
 
+/** Convert an EPUB to a single HTML string, one <section> per spine chapter. */
+export async function epubToHtml(data: ArrayBuffer | string): Promise<string> {
+  const zip = await JSZip.loadAsync(typeof data === 'string' ? base64ToBytes(data) : data)
+
+  const containerXml = await zip.file('META-INF/container.xml')?.async('string')
+  if (!containerXml) throw new Error('No META-INF/container.xml')
+
+  const opfPath = containerXml.match(/full-path="([^"]+\.opf)"/i)?.[1]
+  if (!opfPath) throw new Error('Could not find OPF path in container.xml')
+
+  const opfXml = await zip.file(opfPath)?.async('string')
+  if (!opfXml) throw new Error(`Could not read OPF file: ${opfPath}`)
+
+  const opfDir = opfPath.includes('/') ? opfPath.replace(/\/[^/]+$/, '/') : ''
+
+  // Parse spine itemrefs — skip linear="no" navigation items
+  const spineRefs = [...opfXml.matchAll(/<itemref\b[^>]*>/gi)]
+    .filter(m => !/linear\s*=\s*["']no["']/i.test(m[0]))
+    .map(m => m[0].match(/idref\s*=\s*["']([^"']+)["']/i)?.[1])
+    .filter((id): id is string => !!id)
+
+  // Build id → href map from manifest (attribute-order independent)
+  const manifestItems: Record<string, string> = {}
+  for (const m of opfXml.matchAll(/<item\b[^>]*>/gi)) {
+    const el = m[0]
+    const id = el.match(/\bid\s*=\s*["']([^"']+)["']/i)?.[1]
+    const href = el.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1]
+    const mediaType = el.match(/media-type\s*=\s*["']([^"']+)["']/i)?.[1] ?? ''
+    if (id && href && /html/i.test(mediaType)) manifestItems[id] = href
+  }
+
+  const sections: string[] = []
+  let chapterIndex = 0
+
+  for (const ref of spineRefs) {
+    const href = manifestItems[ref]
+    if (!href) continue
+
+    const cleanHref = href.split('?')[0].split('#')[0]
+    const fullPath = opfDir + cleanHref
+    const html = await (zip.file(fullPath) ?? zip.file(cleanHref))?.async('string')
+    if (!html) continue
+
+    chapterIndex++
+
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+
+    // Remove all <style> and <script> elements
+    doc.querySelectorAll('style, script').forEach(el => el.remove())
+
+    // Strip every class and style attribute from every element
+    doc.querySelectorAll('[class], [style]').forEach(el => {
+      el.removeAttribute('class')
+      el.removeAttribute('style')
+    })
+
+    // Determine chapter title: <title>, first <h1>, or fallback
+    const titleText = doc.querySelector('title')?.textContent?.trim()
+    const h1Text = doc.querySelector('h1')?.textContent?.trim()
+    const chapterTitle = (titleText && titleText.length > 0 ? titleText : null)
+      ?? (h1Text && h1Text.length > 0 ? h1Text : null)
+      ?? `Chapter ${chapterIndex}`
+
+    const bodyHtml = doc.body?.innerHTML ?? ''
+
+    sections.push(`<section><h2>${chapterTitle}</h2>${bodyHtml}</section>`)
+  }
+
+  if (sections.length === 0) throw new Error('No readable spine items found')
+  return sections.join('\n')
+}
+
 export async function extractEpubToDir(_base64Data: string, _destDir: string): Promise<void> {
   // Future use: extract epub files for epubjs local serving
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark, faBookmark, faPlus, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
-import type { TocItem } from './EpubReader'
+import type { TocItem } from '../../types'
 import type { Bookmark } from '../../types'
 
 interface SearchResult {
@@ -50,8 +50,8 @@ interface Props {
   initialTab?: 'contents' | 'bookmarks' | 'search'
 }
 
-function TocNode({ item, onSelect, currentHref }: { item: TocItem; onSelect: (href: string) => void; currentHref?: string }) {
-  const isActive = !!currentHref && item.href.split('#')[0] === currentHref.split('#')[0]
+function TocNode({ item, onSelect, currentHref }: { item: TocItem; onSelect: (id: string) => void; currentHref?: string }) {
+  const isActive = !!currentHref && item.id === currentHref
   return (
     <li>
       <button
@@ -61,17 +61,10 @@ function TocNode({ item, onSelect, currentHref }: { item: TocItem; onSelect: (hr
           ...(isActive ? { color: 'var(--reader-accent)', fontWeight: 600 } : {}),
         }}
         data-active={isActive || undefined}
-        onClick={() => onSelect(item.href)}
+        onClick={() => onSelect(item.id)}
       >
         {item.label}
       </button>
-      {item.subitems?.length ? (
-        <ul className="pl-4">
-          {item.subitems.map(sub => (
-            <TocNode key={sub.id} item={sub} onSelect={onSelect} currentHref={currentHref} />
-          ))}
-        </ul>
-      ) : null}
     </li>
   )
 }

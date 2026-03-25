@@ -12,35 +12,54 @@
           <stop stop-color="#FACC15" stop-opacity="0.34" />
           <stop offset="1" stop-color="#FACC15" stop-opacity="0" />
         </radialGradient>
-        <linearGradient id="pageFill" x1="512" y1="210" x2="512" y2="760" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#FFF9F0" />
-          <stop offset="1" stop-color="#E8D0AA" />
+        <radialGradient id="bookGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 528) scale(384 320)">
+          <stop stop-color="#FFEDD8" stop-opacity="0.5" />
+          <stop offset="0.65" stop-color="#FB923C" stop-opacity="0.1" />
+          <stop offset="1" stop-color="#FB923C" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="leftPage" x1="512" y1="0" x2="168" y2="0" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#CDA875" />
+          <stop offset="0.22" stop-color="#E8D0AA" />
+          <stop offset="1" stop-color="#FFF9F0" />
         </linearGradient>
-        <linearGradient id="bookmark" x1="512" y1="218" x2="512" y2="472" gradientUnits="userSpaceOnUse">
+        <linearGradient id="rightPage" x1="512" y1="0" x2="856" y2="0" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#CDA875" />
+          <stop offset="0.22" stop-color="#E8D0AA" />
+          <stop offset="1" stop-color="#FFF9F0" />
+        </linearGradient>
+        <linearGradient id="bookmark" x1="512" y1="176" x2="512" y2="476" gradientUnits="userSpaceOnUse">
           <stop stop-color="#FB923C" />
           <stop offset="1" stop-color="#EA580C" />
         </linearGradient>
-        <filter id="bookShadow" x="156" y="184" width="712" height="668" color-interpolation-filters="sRGB">
-          <feDropShadow dx="0" dy="28" stdDeviation="32" flood-color="#000000" flood-opacity="0.28" />
+        <clipPath id="iconClip">
+          <rect x="44" y="44" width="936" height="936" rx="236" />
+        </clipPath>
+        <filter id="bookShadow" filterUnits="userSpaceOnUse" x="72" y="100" width="880" height="940">
+          <feDropShadow dx="0" dy="28" stdDeviation="32" flood-color="#000000" flood-opacity="0.32" />
         </filter>
       </defs>
       <rect x="44" y="44" width="936" height="936" rx="236" fill="url(#surface)" />
-      <rect x="44" y="44" width="936" height="936" rx="236" stroke="#FFF7ED1F" stroke-width="8" />
-      <circle cx="310" cy="236" r="334" fill="url(#glowA)" />
-      <circle cx="760" cy="790" r="248" fill="url(#glowB)" />
-      <ellipse cx="512" cy="818" rx="280" ry="72" fill="#000000" fill-opacity="0.2" />
-      <g filter="url(#bookShadow)">
-        <path d="M222 292C222 250 252 218 294 216C378 213 444 230 494 270V758C441 726 379 711 301 714C255 716 222 685 222 642V292Z" fill="url(#pageFill)" />
-        <path d="M802 292C802 250 772 218 730 216C646 213 580 230 530 270V758C583 726 645 711 723 714C769 716 802 685 802 642V292Z" fill="url(#pageFill)" />
-        <path d="M222 292C222 250 252 218 294 216C378 213 444 230 494 270V758C441 726 379 711 301 714C255 716 222 685 222 642V292Z" stroke="#FFF8EE66" stroke-width="10" />
-        <path d="M802 292C802 250 772 218 730 216C646 213 580 230 530 270V758C583 726 645 711 723 714C769 716 802 685 802 642V292Z" stroke="#FFF8EE66" stroke-width="10" />
-        <path d="M484 270C494 262 503 257 512 254V744C502 742 493 746 484 752V270Z" fill="#FFF2D9" fill-opacity="0.72" />
-        <path d="M540 270C530 262 521 257 512 254V744C522 742 531 746 540 752V270Z" fill="#5B3D22" fill-opacity="0.22" />
-        <path d="M470 218H554C571.673 218 586 232.327 586 250V472L512 426L438 472V250C438 232.327 452.327 218 470 218Z" fill="url(#bookmark)" />
-        <path d="M512 426L586 472V250C586 232.327 571.673 218 554 218H512V426Z" fill="#000000" fill-opacity="0.08" />
-        <path d="M306 410C354 401 407 404 456 420" stroke="#CDA875" stroke-opacity="0.28" stroke-width="16" stroke-linecap="round" />
-        <path d="M306 478C358 470 410 474 456 488" stroke="#CDA875" stroke-opacity="0.18" stroke-width="16" stroke-linecap="round" />
-        <path d="M570 410C618 401 671 404 720 420" stroke="#CDA875" stroke-opacity="0.28" stroke-width="16" stroke-linecap="round" />
-        <path d="M570 478C622 470 674 474 720 488" stroke="#CDA875" stroke-opacity="0.18" stroke-width="16" stroke-linecap="round" />
+      <g clip-path="url(#iconClip)">
+        <circle cx="310" cy="236" r="334" fill="url(#glowA)" />
+        <circle cx="760" cy="790" r="248" fill="url(#glowB)" />
+        <ellipse cx="512" cy="528" rx="384" ry="320" fill="url(#bookGlow)" />
+        <ellipse cx="512" cy="868" rx="288" ry="52" fill="#000000" fill-opacity="0.22" />
+        <g filter="url(#bookShadow)">
+          <path d="M512 176 C430 156 304 148 172 188 L168 852 C304 888 428 880 512 880 Z" fill="url(#leftPage)" />
+          <path d="M512 176 C430 156 304 148 172 188 L168 852 C304 888 428 880 512 880 Z" stroke="#FFF8EE66" stroke-width="10" />
+          <path d="M512 176 C594 156 720 148 852 188 L856 852 C720 888 596 880 512 880 Z" fill="url(#rightPage)" />
+          <path d="M512 176 C594 156 720 148 852 188 L856 852 C720 888 596 880 512 880 Z" stroke="#FFF8EE66" stroke-width="10" />
+          <path d="M509 176 L508 880" stroke="#FFF2D9" stroke-opacity="0.72" stroke-width="6" />
+          <path d="M515 176 L516 880" stroke="#5B3D22" stroke-opacity="0.22" stroke-width="10" />
+          <path d="M478 176H546C559.255 176 570 186.745 570 200V476L512 440L454 476V200C454 186.745 464.745 176 478 176Z" fill="url(#bookmark)" />
+          <path d="M512 440L570 476V200C570 186.745 559.255 176 546 176H512V440Z" fill="#000000" fill-opacity="0.08" />
+          <path d="M238 440 C280 430 360 428 460 438" stroke="#CDA875" stroke-opacity="0.26" stroke-width="16" stroke-linecap="round" />
+          <path d="M238 516 C280 508 360 506 460 514" stroke="#CDA875" stroke-opacity="0.18" stroke-width="14" stroke-linecap="round" />
+          <path d="M238 592 C280 585 356 583 454 590" stroke="#CDA875" stroke-opacity="0.12" stroke-width="12" stroke-linecap="round" />
+          <path d="M564 440 C664 430 744 428 786 438" stroke="#CDA875" stroke-opacity="0.26" stroke-width="16" stroke-linecap="round" />
+          <path d="M564 516 C664 508 744 506 786 514" stroke="#CDA875" stroke-opacity="0.18" stroke-width="14" stroke-linecap="round" />
+          <path d="M564 592 C662 585 740 583 782 590" stroke="#CDA875" stroke-opacity="0.12" stroke-width="12" stroke-linecap="round" />
+        </g>
       </g>
+      <rect x="44" y="44" width="936" height="936" rx="236" stroke="#FFF7ED1F" stroke-width="8" fill="none" />
     </svg>

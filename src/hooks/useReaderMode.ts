@@ -18,7 +18,7 @@ export const useReaderModeStore = create<ReaderModeState>()(
   persist(
     (set) => ({
       mode: 'ebook',
-      layout: 'scroll',
+      layout: 'pages',
       setMode: (mode) => set({ mode }),
       setLayout: (layout) => set({ layout }),
       toggleMode: () => set((s) => ({ mode: s.mode === 'ebook' ? 'speed' : 'ebook' })),

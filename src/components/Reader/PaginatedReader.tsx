@@ -20,6 +20,30 @@ function charsPerPage(fontSize: number, columns = 1): number {
   return Math.round(800 * (18 / fs) / columns)
 }
 
+function splitHtmlIntoPages(html: string, fontSize: number, columns = 1): string[] {
+  const cpp = charsPerPage(fontSize, columns)
+  // Split after each closing block-level tag, keeping the tag with its segment
+  const segments = html.split(/(?<=<\/(?:p|h[1-6]|li|blockquote|pre|div)>)/)
+  const pages: string[] = []
+  let current = ''
+  let currentLen = 0
+
+  for (const segment of segments) {
+    const textLen = segment.replace(/<[^>]+>/g, '').length
+    if (current !== '' && currentLen + textLen > cpp) {
+      pages.push(current)
+      current = segment
+      currentLen = textLen
+    } else {
+      current += segment
+      currentLen += textLen
+    }
+  }
+
+  if (current !== '') pages.push(current)
+  return pages.length ? pages : ['']
+}
+
 function splitIntoPages(text: string, fontSize: number, columns = 1): string[] {
   const cpp = charsPerPage(fontSize, columns)
   const pages: string[] = []
@@ -43,13 +67,13 @@ function splitIntoPages(text: string, fontSize: number, columns = 1): string[] {
 }
 
 interface Props {
-  content: string
+  content: { markdown: string } | { html: string }
   initialPage?: number
   onProgressChange?: (page: number, percent: number) => void
   onWordTap?: () => void
 }
 
-function PageColumn({ text, ff, fontSize, lineHeight, paragraphSpacing, contentRef, isDark, maxWidth }: {
+function PageColumn({ text, ff, fontSize, lineHeight, paragraphSpacing, contentRef, isDark, maxWidth, isHtml }: {
   text: string
   ff: string
   fontSize: number
@@ -58,6 +82,7 @@ function PageColumn({ text, ff, fontSize, lineHeight, paragraphSpacing, contentR
   contentRef?: React.Ref<HTMLDivElement>
   isDark?: boolean
   maxWidth?: boolean
+  isHtml?: boolean
 }) {
   const proseStyle = {
     '--reader-paragraph-spacing': `${paragraphSpacing}em`,
@@ -74,7 +99,10 @@ function PageColumn({ text, ff, fontSize, lineHeight, paragraphSpacing, contentR
       style={{ backgroundColor: removePageBackground ? 'transparent' : 'var(--reader-page-bg)' }}
     >
       <div className={`reader-prose mx-auto w-full prose prose-base sm:prose-lg prose-orange ${isDark ? 'prose-invert' : ''} ${maxWidth ? 'max-w-2xl' : 'max-w-none'}`} style={proseStyle}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        {isHtml
+          ? <div dangerouslySetInnerHTML={{ __html: text }} />
+          : <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        }
       </div>
     </div>
   )
@@ -106,7 +134,10 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
   // Only use a two-page spread when the viewport is clearly wider than a portrait page.
   const isSpread = containerHeight > 0 && containerWidth / containerHeight >= SPREAD_MIN_ASPECT_RATIO
   const columns = isSpread ? 2 : 1
-  const pages = splitIntoPages(content, fontSize, columns)
+  const isHtml = 'html' in content
+  const pages = isHtml
+    ? splitHtmlIntoPages(content.html, fontSize, columns)
+    : splitIntoPages(content.markdown, fontSize, columns)
   const totalPages = pages.length
 
   // In spread mode pages advance by 2, aligned to even indices
@@ -217,10 +248,10 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {isSpread ? (
           <>
-            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} paragraphSpacing={paragraphSpacing} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
+            <PageColumn text={pages[page] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} paragraphSpacing={paragraphSpacing} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} isHtml={isHtml} />
             {/* Book spine */}
             <div className="flex-shrink-0 w-px self-stretch my-8" style={{ backgroundColor: 'var(--border)' }} />
-            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} paragraphSpacing={paragraphSpacing} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} />
+            <PageColumn text={pages[rightPage] ?? ''} ff={ff} fontSize={fontSize} lineHeight={lineHeight} paragraphSpacing={paragraphSpacing} isDark={theme === 'dark' || theme === 'amoled'} maxWidth={false} isHtml={isHtml} />
           </>
         ) : (
           <PageColumn
@@ -232,6 +263,7 @@ export default function PaginatedReader({ content, initialPage = 0, onProgressCh
             paragraphSpacing={paragraphSpacing}
             isDark={theme === 'dark' || theme === 'amoled'}
             maxWidth={maxWidth}
+            isHtml={isHtml}
           />
         )}
       </div>

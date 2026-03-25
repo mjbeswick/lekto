@@ -1,28 +1,32 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useAppStore } from '../../store/appStore'
 import { getReaderFontStack } from '../../utils/readerFonts'
 
 interface Props {
-  html: string
+  content: { html: string } | { markdown: string }
   initialOffset?: number
   onProgressChange?: (offset: number, percent: number) => void
 }
 
-export default function HtmlReader({ html, initialOffset = 0, onProgressChange }: Props) {
+export default function ScrollReader({ content, initialOffset = 0, onProgressChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const restoredRef = useRef(false)
   const { fontSize, fontFamily, lineHeight, paragraphSpacing, maxWidth, removeBookMargins, removePageBackground } = useAppStore()
+
+  const contentKey = 'html' in content ? content.html : content.markdown
 
   // Restore scroll position once after first render
   useEffect(() => {
     if (restoredRef.current) return
     const el = containerRef.current
-    if (!el || !html) return
+    if (!el || !contentKey) return
     restoredRef.current = true
     requestAnimationFrame(() => {
       if (el) el.scrollTop = initialOffset
     })
-  }, [html, initialOffset])
+  }, [contentKey, initialOffset])
 
   // Save scroll progress
   useEffect(() => {
@@ -54,8 +58,13 @@ export default function HtmlReader({ html, initialOffset = 0, onProgressChange }
         <div
           className={`reader-prose prose prose-base sm:prose-lg prose-orange dark:prose-invert ${removeBookMargins ? 'px-0 py-0 sm:px-0 sm:py-0' : 'px-4 py-6 sm:px-6 sm:py-8'}`}
           style={proseStyle}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        >
+          {'html' in content ? (
+            <div dangerouslySetInnerHTML={{ __html: content.html }} />
+          ) : (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content.markdown}</ReactMarkdown>
+          )}
+        </div>
       </div>
     </div>
   )

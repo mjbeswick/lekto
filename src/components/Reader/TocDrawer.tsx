@@ -1,28 +1,23 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
-import type { TocItem } from './EpubReader'
+import type { TocItem } from '../../types'
 
 interface Props {
   toc: TocItem[]
-  onSelect: (href: string) => void
+  onSelect: (id: string) => void
   onClose: () => void
 }
 
-function TocNode({ item, onSelect }: { item: TocItem; onSelect: (href: string) => void }) {
+function TocNode({ item, onSelect }: { item: TocItem; onSelect: (id: string) => void }) {
   return (
     <li>
       <button
         className="w-full text-left py-3 px-4 border-b text-sm transition-opacity active:opacity-60"
         style={{ borderColor: 'var(--border)' }}
-        onClick={() => onSelect(item.href)}
+        onClick={() => onSelect(item.id)}
       >
         {item.label}
       </button>
-      {item.subitems?.length ? (
-        <ul className="pl-4">
-          {item.subitems.map(sub => <TocNode key={sub.id} item={sub} onSelect={onSelect} />)}
-        </ul>
-      ) : null}
     </li>
   )
 }

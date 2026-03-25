@@ -1,4 +1,9 @@
 export type BookFormat = 'md' | 'epub' | 'txt' | 'pdf' | 'docx' | 'fb2'
+
+export interface TocItem {
+  id: string
+  label: string
+}
 export type Theme = 'light' | 'dark' | 'amoled' | 'sepia'
 
 export interface Collection {
