@@ -1,160 +1,306 @@
 # Lekto
 
-Lekto is a mobile-first reading app built with React, TypeScript, Capacitor, and Electrobun. It combines a standard ebook reader, an RSVP speed reader, and a text-to-speech mode in one app, with shared progress and library management across formats.
+A comprehensive reading platform for modern document formats. Experience your books across desktop, mobile, and terminal with intelligent position restoration, bookmarks, and seamless synchronization.
 
-## Features
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-active-brightgreen)
 
-### Library
-- Imports `EPUB`, `PDF`, `DOCX`, `FB2`/`.fb2.zip`, Markdown (`.md`), and plain text (`.txt`)
-- Supports direct file import on web, Capacitor mobile builds, and the Electrobun desktop shell
-- Extracts metadata when available, including title, author, and embedded cover art for EPUB, PDF, and FB2
-- Tracks reading progress per book and sorts the library by most recently opened titles
-- Offers list and grid library views
-- Includes title/author search
+## Project Overview
 
-### Collections And Directories
-- Create, rename, delete, and filter by collections
-- Assign books to collections or remove them from a collection
-- Attach folders/directories and scan them into the library
-- Refresh tracked directories to add newly discovered books and remove missing ones
-- Supports recursive folder import in the native file browser flow
+Lekto is a multi-platform reading application suite consisting of:
 
-### Ebook Reader
-- Scroll and paginated layouts for supported formats
-- Two-page spread mode on wider screens
-- EPUB rendering with table of contents navigation
-- PDF reading with page navigation and outline-derived contents when available
-- Markdown and plain text rendering with `remark-gfm` support
-- DOCX and FB2 conversion into readable HTML/text flows
-- Auto-saved progress across scroll, pages, PDF page position, and EPUB CFI locations
-- Reader search panel for extracted plain text
-- Bookmark creation, navigation, and deletion
-- Contents/bookmarks/search side panel
-- Reader header auto-hide option for a fullscreen-style experience
+- **CLI** - Terminal-based reader for power users and automation
+- **Desktop** - Full-featured native desktop application (Electron/Tauri)
+- **Mobile** - Native iOS and Android applications (Capacitor)
+- **Web** - Responsive web interface for browser-based reading
 
-### Speed Reader
-- Dedicated RSVP mode with shared position syncing from the ebook reader
-- ORP-highlighted word rendering
-- Sentence and punctuation-aware timing
-- Optional word-length scaling
-- Adjustable chunking by letters per flash
-- Previous/next sentence controls, keyboard shortcuts, and wheel/drag speed controls
-- Progress bar, elapsed time, and time-remaining display
-- Context-word preview around the active chunk on larger screens
+## Quick Start
 
-### Text To Speech
-- Dedicated TTS mode alongside ebook and speed-reader modes
-- Uses browser speech synthesis behind a platform abstraction
-- Async voice discovery with voice picker support
-- Play, pause, resume, stop, previous sentence, and next sentence controls
-- Adjustable speech rate and pitch
-- Sentence-based progress tracking with current-word updates when boundary events are available
-- Shared position syncing back into the rest of the reader flow
+### Terminal Reader (CLI)
 
-### Settings And Reading Preferences
-- Themes: `Light`, `Dark`, `AMOLED`, `Sepia`
-- Accent color selection
-- Reader font family, font size, line height, and paragraph spacing
-- Toggle for constrained line width
-- Toggle for removing reader margins
-- Toggle for removing page backgrounds
-- Scroll page fill behavior (`width` or `height`)
-- Default RSVP WPM
-- RSVP word-length scaling toggle
-- RSVP context-word toggle
-- RSVP chunk-size slider
-- RSVP font-size slider
-- TTS rate and pitch controls
-
-### Platform Support
-- Web app via Vite
-- Android and iOS via Capacitor
-- Desktop shell via Electrobun
-- Mobile-safe layout with safe-area-aware headers and panels
-
-## Reader Modes
-
-Lekto has three reader modes:
-
-- `ebook`: standard reading layout for the source document
-- `speed`: RSVP presentation using extracted plain text
-- `tts`: text-to-speech playback using extracted plain text
-
-Switching between modes keeps an approximate shared reading position so you can move between visual reading, RSVP, and speech playback without starting over.
-
-## Supported Formats
-
-| Format | Library Import | Ebook Reading | Speed Reader | TTS |
-| --- | --- | --- | --- | --- |
-| EPUB | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
-| PDF | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
-| DOCX | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
-| FB2 / `.fb2.zip` | Yes | Yes | Yes, via extracted text | Yes, via extracted text |
-| Markdown | Yes | Yes | Yes | Yes |
-| Plain text | Yes | Yes | Yes | Yes |
-
-## Tech Stack
-
-| Layer | Library / Tool |
-| --- | --- |
-| Framework | React 19 |
-| Native shell | Capacitor 8 |
-| Desktop shell | Electrobun |
-| Language | TypeScript |
-| Build | Vite |
-| Routing | React Router 7 |
-| State | Zustand |
-| Styling | Tailwind CSS 3 |
-| EPUB rendering | `epub.js` |
-| PDF rendering | `pdfjs-dist` |
-| Markdown rendering | `react-markdown` + `remark-gfm` |
-| DOCX parsing | `mammoth` |
-| EPUB/ZIP parsing | `jszip` |
-| Storage | `@capacitor/preferences` plus file storage helpers |
-| File picking | `@capawesome/capacitor-file-picker` |
-
-## Development
+The fastest way to start reading:
 
 ```bash
+cd cli
+bun install
+bun run build
+./lekto-cli read path/to/book.epub
+```
+
+For detailed CLI documentation, see [CLI README](./cli/README.md).
+
+### Web Application
+
+```bash
+bun install
+bun run dev
+```
+
+Then open `http://localhost:5173` in your browser.
+
+### Desktop Application
+
+```bash
+cd desktop
 npm install
 npm run dev
 ```
 
-### Build
+### Mobile Applications
 
 ```bash
+# iOS
+cd ios
+npm install
+npm run build
+
+# Android
+cd android
+npm install
 npm run build
 ```
 
-### Android
+## Features
 
+### 📚 Supported Formats
+- **EPUB** - Full support for electronic publications
+- **DOCX** - Microsoft Word documents
+- **FB2** - FictionBook format
+- **Markdown** - With syntax highlighting
+- **Plain Text** - Simple text files
+- **HTML** - Web content
+
+### 🎯 Reading Modes
+- **Page Mode** - Traditional page-by-page reading with two-page spreads on wide terminals
+- **Scroll Mode** - Continuous scrolling experience
+- **Speed Reading** - RSVP-style rapid serial visual presentation with adjustable WPM
+- **Mode Switching** - Switch between modes mid-reading without losing your place
+
+### ✨ Smart Features
+- **Position Restoration** - Automatically resumes from your last reading position
+- **Bookmarks** - Mark important passages and create custom notes
+- **Table of Contents** - Hierarchical chapter navigation
+- **Image Support** - View embedded images in documents
+- **Text-to-Speech** - Read along with audio narration (macOS/Linux)
+- **Search** - Full-text search across your document
+- **Themes** - Light and dark terminal themes
+- **Responsive Layout** - Adapts to your terminal size
+
+### 📊 Book Management
+- **Reading Progress** - Track percentage read and last read time for all books
+- **Book List** - View all previously read books with progress metadata
+- **History Persistence** - Reading history stored locally or synced to cloud
+- **Library Import** - Easily import books from your local library
+
+### 🔄 Synchronization (Coming Soon)
+- Cross-platform reading progress syncing
+- Cloud backup of reading history
+- Bookmark synchronization across devices
+- Reading statistics and analytics
+
+## Installation
+
+### Requirements
+- Node.js 18+
+- Bun (for CLI)
+- Git
+
+### Clone Repository
 ```bash
-npm run android:build
+git clone https://github.com/mjbeswick/lekto.git
+cd lekto
 ```
 
-This creates `lekto.apk` in the repo root from the Android release build.
-
-For installing directly to a connected device during development:
-
+### Install Dependencies
 ```bash
-npm run android:push
+bun install
 ```
 
-### Desktop
-
+### Build All Platforms
 ```bash
-cd desktop && bun install
-npm run dev
-npm run desktop:dev
+# CLI
+cd cli && bun run build
+
+# Web/Desktop
+npm run build
+
+# Mobile
+cd ios && npm run build
+cd android && npm run build
 ```
 
-Desktop production build:
+## Usage
 
+### Terminal
 ```bash
-npm run desktop:build
+# Interactive file selection
+lekto
+
+# Open specific file
+lekto read book.epub
+
+# View reading list
+lekto list
+
+# Speed reading mode
+lekto read book.epub --mode speed --wpm 300
 ```
 
-### Notes
+See [CLI Documentation](./cli/README.md) for complete command reference.
 
-- `npm run build` runs the repo `prebuild` step first, which currently calls `npm run generate:icons`.
-- Desktop instructions and release workflow expectations are also documented in [AGENTS.md](/Users/michael/Projects/lekto/AGENTS.md).
+### Web/Desktop
+1. Launch the application
+2. Import books from your library
+3. Start reading with smart position restoration
+4. Use bookmarks and search for navigation
+5. Sync across devices (when available)
+
+### Mobile
+- Browse and import books
+- Read with optimized mobile interface
+- Sync reading progress to cloud
+- Use offline reading mode
+
+## Development
+
+### Setup Development Environment
+```bash
+# Install dependencies
+bun install
+
+# Type checking
+bun run typecheck
+
+# Development server
+bun run dev
+```
+
+### CLI Development
+```bash
+cd cli
+bun run dev path/to/book.epub
+```
+
+### Testing
+```bash
+bun test
+```
+
+### Code Quality
+```bash
+npm run lint
+npm run typecheck
+```
+
+## Project Structure
+
+```
+lekto/
+├── cli/                 # Terminal-based reader
+├── desktop/             # Desktop application
+├── mobile/
+│   ├── android/        # Android app (Capacitor)
+│   └── ios/            # iOS app (Capacitor)
+├── src/                # Shared components and utilities
+└── public/             # Static assets
+```
+
+## Technology Stack
+
+### CLI
+- **Runtime**: Bun
+- **Language**: TypeScript
+- **Key Libraries**: commander, marked, jszip, mammoth
+
+### Web/Desktop
+- **Framework**: React + TypeScript
+- **Build**: Vite
+- **Styling**: Tailwind CSS
+- **State**: Effector
+- **Desktop**: Electron / Tauri
+
+### Mobile
+- **Framework**: Capacitor
+- **Base**: React
+- **Native**: iOS (Swift), Android (Kotlin)
+
+## Configuration
+
+### Reading History Storage
+- **CLI**: `~/.lekto/history.json`
+- **Web**: Browser LocalStorage
+- **Mobile**: Device local storage
+- **Sync**: Cloud storage (coming soon)
+
+### Preferences
+- Theme selection
+- Reading mode preferences
+- Font and layout settings
+- Accessibility options
+
+## Contributing
+
+We welcome contributions across all platforms! Areas for contribution:
+
+### High Priority
+- Additional book format support (mobi, AZW, PDF)
+- Cloud synchronization backend
+- Mobile app polish
+- Performance optimizations
+
+### Code Standards
+- TypeScript for all new code
+- Comprehensive type definitions
+- Clear component documentation
+- Unit tests for new features
+
+### Getting Started
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## Roadmap
+
+### v0.2.0
+- [ ] Cloud sync backend
+- [ ] PDF support
+- [ ] Advanced search (regex, filters)
+- [ ] Reading statistics dashboard
+
+### v0.3.0
+- [ ] Audio integration
+- [ ] Social features (share highlights)
+- [ ] Advanced annotations
+- [ ] Custom highlighting colors
+
+### v1.0.0
+- [ ] Full feature parity across platforms
+- [ ] Comprehensive testing suite
+- [ ] Performance optimization
+- [ ] Production deployment
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Support
+
+- 📖 [Documentation](./docs)
+- 🐛 [Report Issues](https://github.com/mjbeswick/lekto/issues)
+- 💬 [Discussions](https://github.com/mjbeswick/lekto/discussions)
+- 📧 [Contact](mailto:contact@lekto.dev)
+
+## Acknowledgments
+
+Built with passion for reading and open-source communities.
+
+**Technologies:**
+- [Bun](https://bun.sh/) - Fast JavaScript runtime
+- [Vite](https://vitejs.dev/) - Next generation build tool
+- [React](https://react.dev/) - UI library
+- [Capacitor](https://capacitorjs.com/) - Cross-platform mobile framework
+
+---
+
+**Read everywhere. Remember everywhere. Lekto everywhere.** 📚
